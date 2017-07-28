@@ -1,0 +1,1155 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09", 
+    "Description": "Ops Automator, template version 1.1.0.0, (SO0029)", 
+    "Parameters": {
+        "TagName": {
+            "Type": "String", 
+            "Default": "OpsAutomatorTaskList", 
+            "MinLength": 1, 
+            "MaxLength": 127, 
+            "Description": "Default name of tag that contains the list of tasks for a tagged resources."
+        }, 
+        "EnableTaskCleanup": {
+            "Type": "String", 
+            "AllowedValues": [
+                "Yes", 
+                "No"
+            ], 
+            "Default": "Yes", 
+            "Description": "Enable cleanup of task tracking table."
+        }, 
+        "RetainFailedTasks": {
+            "Type": "String", 
+            "AllowedValues": [
+                "Yes", 
+                "No"
+            ], 
+            "Default": "Yes", 
+            "Description": "Do not delete failed tasks."
+        }, 
+        "SendAnonymousData": {
+            "Type": "String", 
+            "AllowedValues": [
+                "Yes", 
+                "No"
+            ], 
+            "Default": "Yes", 
+            "Description": "Send Anonymous Metrics Data."
+        }, 
+        "TaskRetentionHours": {
+            "Type": "Number", 
+            "MinValue": 1, 
+            "Default": 168, 
+            "Description": "Number of hours after which tasks are deleted.."
+        }, 
+        "LogRetentionDays": {
+            "Type": "Number", 
+            "Default": 30, 
+            "AllowedValues": [
+                1, 
+                3, 
+                5, 
+                7, 
+                14, 
+                30, 
+                60, 
+                90, 
+                120, 
+                150, 
+                180, 
+                365, 
+                400, 
+                545, 
+                731, 
+                1827, 
+                3653
+            ], 
+            "Description": "Retention days for scheduler logs."
+        }, 
+        "ConfigBackupDays": {
+            "Type": "Number", 
+            "Default": 30, 
+            "MinValue": 1, 
+            "Description": "Retention days for scheduler configuration backups."
+        }, 
+        "SchedulerActive": {
+            "Type": "String", 
+            "AllowedValues": [
+                "Yes", 
+                "No"
+            ], 
+            "Default": "Yes", 
+            "Description": "Activate or deactivate scheduling of task."
+        }
+    }, 
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "Ops Automator (version 1.1.0.0)"
+                    }, 
+                    "Parameters": [
+                        "TagName"
+                    ]
+                }, 
+                {
+                    "Label": {
+                        "default": "Maintenace"
+                    }, 
+                    "Parameters": [
+                        "EnableTaskCleanup", 
+                        "RetainFailedTasks", 
+                        "SchedulerActive", 
+                        "TaskRetentionHours"
+                    ]
+                }
+            ], 
+            "ParameterLabels": {
+                "EnableTaskCleanup": {
+                    "default": "Cleanup Task Tracking Table"
+                }, 
+                "RetainFailedTasks": {
+                    "default": "Keep failed tasks"
+                }, 
+                "SchedulerActive": {
+                    "default": "Scheduling active"
+                }, 
+                "TagName": {
+                    "default": "Ops Automator Tagname"
+                }, 
+                "TaskRetentionHours": {
+                    "default": "Hours to keep tasks"
+                }, 
+                "ConfigBackupDays": {
+                    "default": "Days to keep configuration backups"
+                }, 
+                "SendAnonymousData": {
+                    "default": "Send anonymous usage data"
+                }
+            }
+        }
+    }, 
+    "Conditions": {
+        "EnableTaskCleanupCondition": {
+            "Fn::Equals": [
+                {
+                    "Ref": "EnableTaskCleanup"
+                }, 
+                "Yes"
+            ]
+        }, 
+        "KeepFailedTasksCondition": {
+            "Fn::Equals": [
+                {
+                    "Ref": "RetainFailedTasks"
+                }, 
+                "Yes"
+            ]
+        }
+    }, 
+    "Mappings": {
+        "EnabledDisabled": {
+            "Yes": {
+                "Value": "ENABLED"
+            }, 
+            "No": {
+                "Value": "DISABLED"
+            }
+        }, 
+        "YesNoBoolean": {
+            "Yes": {
+                "Value": "True"
+            }, 
+            "No": {
+                "Value": "False"
+            }
+        }, 
+        "Settings": {
+            "Metrics": {
+                "Url": "https://oszclq8tyh.execute-api.us-east-1.amazonaws.com/prod/generic", 
+                "SolutionId": "S00029"
+            }
+        }
+    }, 
+    "Resources": {
+        "SchedulerRole": {
+            "Type": "AWS::IAM::Role", 
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17", 
+                    "Statement": [
+                        {
+                            "Effect": "Allow", 
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            }, 
+                            "Action": "sts:AssumeRole"
+                        }, 
+                        {
+                            "Effect": "Allow", 
+                            "Principal": {
+                                "Service": "dynamodb.amazonaws.com"
+                            }, 
+                            "Action": "sts:AssumeRole"
+                        }, 
+                        {
+                            "Effect": "Allow", 
+                            "Principal": {
+                                "Service": "events.amazonaws.com"
+                            }, 
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                }, 
+                "Policies": [
+                    {
+                        "PolicyName": "SchedulerPolicy", 
+                        "PolicyDocument": {
+                            "Version": "2012-10-17", 
+                            "Statement": [
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "logs:DescribeLogStreams", 
+                                        "logs:PutRetentionPolicy"
+                                    ], 
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": "dynamodb:ListTables", 
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": "sns:Publish", 
+                                    "Resource": [
+                                        {
+                                            "Ref": "SchedulerSnsTopic"
+                                        }
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "s3:PutObject", 
+                                        "s3:DeleteObject", 
+                                        "s3:GetObject"
+                                    ], 
+                                    "Resource": {
+                                        "Fn::Sub": [
+                                            "arn:aws:s3:::${Name}/*", 
+                                            {
+                                                "Name": {
+                                                    "Ref": "Configuration"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "s3:ListBucket"
+                                    ], 
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "dynamodb:UpdateItem", 
+                                        "dynamodb:GetItem", 
+                                        "dynamodb:BatchWriteItem", 
+                                        "dynamodb:Query"
+                                    ], 
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "", 
+                                                [
+                                                    {
+                                                        "Fn::Join": [
+                                                            ":", 
+                                                            [
+                                                                "arn:aws:dynamodb", 
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                }, 
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                }, 
+                                                                "table/"
+                                                            ]
+                                                        ]
+                                                    }, 
+                                                    {
+                                                        "Ref": "TaskTrackingTable"
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "dynamodb:UpdateItem", 
+                                        "dynamodb:GetItem", 
+                                        "dynamodb:BatchWriteItem", 
+                                        "dynamodb:Query"
+                                    ], 
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "", 
+                                                [
+                                                    {
+                                                        "Fn::Join": [
+                                                            ":", 
+                                                            [
+                                                                "arn:aws:dynamodb", 
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                }, 
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                }, 
+                                                                "table/"
+                                                            ]
+                                                        ]
+                                                    }, 
+                                                    {
+                                                        "Ref": "TaskTrackingTable"
+                                                    }, 
+                                                    "/index/*"
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "dynamodb:Query", 
+                                        "dynamodb:Scan", 
+                                        "dynamodb:GetItem", 
+                                        "dynamodb:PutItem", 
+                                        "dynamodb:DeleteItem"
+                                    ], 
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "", 
+                                                [
+                                                    {
+                                                        "Fn::Join": [
+                                                            ":", 
+                                                            [
+                                                                "arn:aws:dynamodb", 
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                }, 
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                }, 
+                                                                "table/"
+                                                            ]
+                                                        ]
+                                                    }, 
+                                                    {
+                                                        "Ref": "ConfigurationTable"
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                }, 
+                                {
+                                    "Sid": "ConcurrencyTableAcces", 
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "dynamodb:UpdateItem", 
+                                        "dynamodb:DeleteItem"
+                                    ], 
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "", 
+                                                [
+                                                    {
+                                                        "Fn::Join": [
+                                                            ":", 
+                                                            [
+                                                                "arn:aws:dynamodb", 
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                }, 
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                }, 
+                                                                "table/"
+                                                            ]
+                                                        ]
+                                                    }, 
+                                                    {
+                                                        "Ref": "ConcurrencyTable"
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "dynamodb:GetItem", 
+                                        "dynamodb:UpdateItem"
+                                    ], 
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "", 
+                                                [
+                                                    {
+                                                        "Fn::Join": [
+                                                            ":", 
+                                                            [
+                                                                "arn:aws:dynamodb", 
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                }, 
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                }, 
+                                                                "table/"
+                                                            ]
+                                                        ]
+                                                    }, 
+                                                    {
+                                                        "Ref": "LastSchedulerExecutionTable"
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "events:EnableRule", 
+                                        "events:DisableRule", 
+                                        "events:PutRule"
+                                    ], 
+                                    "Resource": [
+                                        {
+                                            "Fn::Sub": "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${AWS::StackName}-SchedulerRule*"
+                                        }, 
+                                        {
+                                            "Fn::Sub": "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${AWS::StackName}-CompletionRule*"
+                                        }
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "events:ListRules"
+                                    ], 
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "cloudformation:ListStackResources"
+                                    ], 
+                                    "Resource": [
+                                        {
+                                            "Ref": "AWS::StackId"
+                                        }
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "cloudformation:DeleteStack"
+                                    ], 
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "lambda:InvokeFunction"
+                                    ], 
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                ":", 
+                                                [
+                                                    "arn:aws:lambda", 
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    }, 
+                                                    {
+                                                        "Ref": "AWS::AccountId"
+                                                    }, 
+                                                    "function", 
+                                                    {
+                                                        "Fn::Join": [
+                                                            "-", 
+                                                            [
+                                                                {
+                                                                    "Ref": "AWS::StackName"
+                                                                }, 
+                                                                "SchedulerDefault"
+                                                            ]
+                                                        ]
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ], 
+                                    "Sid": "SchedulerInvoke"
+                                }, 
+                                {
+                                    "Effect": "Allow", 
+                                    "Action": [
+                                        "sts:AssumeRole"
+                                    ], 
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                }, 
+                                {
+                                    "Action": [
+                                        "redshift:DescribeClusterSnapshots", 
+                                        "redshift:DeleteClusterSnapshot", 
+                                        "redshift:RevokeSnapshotAccess"
+                                    ], 
+                                    "Resource": "*", 
+                                    "Effect": "Allow", 
+                                    "Sid": "RedshiftDeleteSnapshot2065626c51c44d53b37765da7b2c1736"
+                                }, 
+                                {
+                                    "Action": [
+                                        "dynamodb:DescribeTable", 
+                                        "dynamodb:UpdateTable"
+                                    ], 
+                                    "Resource": "*", 
+                                    "Effect": "Allow", 
+                                    "Sid": "DynamodbSetCapacity033b1749bea34f008ae0a4190fc9a9bd"
+                                }, 
+                                {
+                                    "Action": [
+                                        "redshift:DescribeClusters", 
+                                        "redshift:CreateClusterSnapshot", 
+                                        "redshift:DescribeTags", 
+                                        "redshift:AuthorizeSnapshotAccess"
+                                    ], 
+                                    "Resource": "*", 
+                                    "Effect": "Allow", 
+                                    "Sid": "RedshiftCreateSnapshotfa6b76a22e82434088dd7b4c6e3fcbd8"
+                                }, 
+                                {
+                                    "Action": [
+                                        "ec2:DescribeSnapshots", 
+                                        "ec2:DeleteSnapshot"
+                                    ], 
+                                    "Resource": "*", 
+                                    "Effect": "Allow", 
+                                    "Sid": "Ec2DeleteSnapshot4fd10bfd1d9c493cba125a5c8b211f0d"
+                                }, 
+                                {
+                                    "Action": [
+                                        "ec2:CopySnapshot", 
+                                        "ec2:CreateTags"
+                                    ], 
+                                    "Resource": "*", 
+                                    "Effect": "Allow", 
+                                    "Sid": "Ec2CopySnapshot8c7a17bd489047feaa7b3c1596606542"
+                                }, 
+                                {
+                                    "Action": [
+                                        "dynamodb:Scan", 
+                                        "dynamodb:BatchWriteItem"
+                                    ], 
+                                    "Resource": "*", 
+                                    "Effect": "Allow", 
+                                    "Sid": "SchedulerTaskCleanup4912024347ea424398430403a0c28697"
+                                }, 
+                                {
+                                    "Action": [
+                                        "dynamodb:Scan", 
+                                        "s3:PutObject"
+                                    ], 
+                                    "Resource": "*", 
+                                    "Effect": "Allow", 
+                                    "Sid": "SchedulerConfigBackup076348b798b748daaa9f05d764c01a8f"
+                                }, 
+                                {
+                                    "Action": [
+                                        "ec2:CreateSnapshot", 
+                                        "ec2:DescribeTags", 
+                                        "ec2:DescribeInstances", 
+                                        "ec2:CreateTags"
+                                    ], 
+                                    "Resource": "*", 
+                                    "Effect": "Allow", 
+                                    "Sid": "Ec2CreateSnapshot88dd421e9f59413c8eb2098715129e3a"
+                                }
+                            ]
+                        }
+                    }
+                ], 
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole", 
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ], 
+                "Path": "/"
+            }
+        }, 
+        "LastSchedulerExecutionTable": {
+            "Type": "AWS::DynamoDB::Table", 
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "Name", 
+                        "AttributeType": "S"
+                    }
+                ], 
+                "KeySchema": [
+                    {
+                        "AttributeName": "Name", 
+                        "KeyType": "HASH"
+                    }
+                ], 
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 1, 
+                    "WriteCapacityUnits": 1
+                }
+            }
+        }, 
+        "ConfigurationTable": {
+            "Type": "AWS::DynamoDB::Table", 
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "Name", 
+                        "AttributeType": "S"
+                    }
+                ], 
+                "KeySchema": [
+                    {
+                        "AttributeName": "Name", 
+                        "KeyType": "HASH"
+                    }
+                ], 
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 5, 
+                    "WriteCapacityUnits": 2
+                }, 
+                "StreamSpecification": {
+                    "StreamViewType": "NEW_AND_OLD_IMAGES"
+                }
+            }
+        }, 
+        "TaskTrackingTable": {
+            "Type": "AWS::DynamoDB::Table", 
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "Id", 
+                        "AttributeType": "S"
+                    }, 
+                    {
+                        "AttributeName": "ConcurrencyId", 
+                        "AttributeType": "S"
+                    }, 
+                    {
+                        "AttributeName": "LastCompletionCheck", 
+                        "AttributeType": "S"
+                    }
+                ], 
+                "KeySchema": [
+                    {
+                        "AttributeName": "Id", 
+                        "KeyType": "HASH"
+                    }
+                ], 
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 5, 
+                    "WriteCapacityUnits": 5
+                }, 
+                "StreamSpecification": {
+                    "StreamViewType": "NEW_AND_OLD_IMAGES"
+                }, 
+                "GlobalSecondaryIndexes": [
+                    {
+                        "IndexName": "WaitForExecutionTasks", 
+                        "KeySchema": [
+                            {
+                                "AttributeName": "ConcurrencyId", 
+                                "KeyType": "HASH"
+                            }, 
+                            {
+                                "AttributeName": "Id", 
+                                "KeyType": "RANGE"
+                            }
+                        ], 
+                        "Projection": {
+                            "ProjectionType": "ALL"
+                        }, 
+                        "ProvisionedThroughput": {
+                            "ReadCapacityUnits": "2", 
+                            "WriteCapacityUnits": "2"
+                        }
+                    }, 
+                    {
+                        "IndexName": "WaitForCompletionTasks", 
+                        "KeySchema": [
+                            {
+                                "AttributeName": "Id", 
+                                "KeyType": "HASH"
+                            }, 
+                            {
+                                "AttributeName": "LastCompletionCheck", 
+                                "KeyType": "RANGE"
+                            }
+                        ], 
+                        "Projection": {
+                            "ProjectionType": "ALL"
+                        }, 
+                        "ProvisionedThroughput": {
+                            "ReadCapacityUnits": "2", 
+                            "WriteCapacityUnits": "2"
+                        }
+                    }
+                ]
+            }
+        }, 
+        "ConcurrencyTable": {
+            "Type": "AWS::DynamoDB::Table", 
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "ConcurrencyId", 
+                        "AttributeType": "S"
+                    }
+                ], 
+                "KeySchema": [
+                    {
+                        "AttributeName": "ConcurrencyId", 
+                        "KeyType": "HASH"
+                    }
+                ], 
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 2, 
+                    "WriteCapacityUnits": 2
+                }
+            }
+        }, 
+        "SchedulerLogGroup": {
+            "Type": "AWS::Logs::LogGroup", 
+            "Properties": {
+                "LogGroupName": {
+                    "Fn::Join": [
+                        "-", 
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            }, 
+                            "logs"
+                        ]
+                    ]
+                }, 
+                "RetentionInDays": {
+                    "Ref": "LogRetentionDays"
+                }
+            }
+        }, 
+        "SchedulerSnsTopic": {
+            "Type": "AWS::SNS::Topic", 
+            "Properties": {
+                "DisplayName": {
+                    "Ref": "AWS::StackName"
+                }
+            }
+        }, 
+        "SchedulerDefault": {
+            "Type": "AWS::Lambda::Function", 
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::Join": [
+                            "-", 
+                            [
+                                "solutions", 
+                                {
+                                    "Ref": "AWS::Region"
+                                }
+                            ]
+                        ]
+                    }, 
+                    "S3Key": "ops-automator/latest/ops-automator-1.1.0.0.zip"
+                }, 
+                "FunctionName": {
+                    "Fn::Join": [
+                        "-", 
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            }, 
+                            "SchedulerDefault"
+                        ]
+                    ]
+                }, 
+                "Handler": "main.lambda_handler", 
+                "Runtime": "python2.7", 
+                "Role": {
+                    "Fn::GetAtt": [
+                        "SchedulerRole", 
+                        "Arn"
+                    ]
+                }, 
+                "Environment": {
+                    "Variables": {
+                        "LAST_SCHEDULER_RUN_TABLE": {
+                            "Ref": "LastSchedulerExecutionTable"
+                        }, 
+                        "ACTION_TRACKING_TABLE": {
+                            "Ref": "TaskTrackingTable"
+                        }, 
+                        "CONFIG_TABLE": {
+                            "Ref": "ConfigurationTable"
+                        }, 
+                        "CONFIG_BUCKET": {
+                            "Ref": "Configuration"
+                        }, 
+                        "CONCURRENCY_TABLE": {
+                            "Ref": "ConcurrencyTable"
+                        }, 
+                        "SCHEDULER_TAG_NAME": {
+                            "Ref": "TagName"
+                        }, 
+                        "LOG_GROUP": {
+                            "Ref": "SchedulerLogGroup"
+                        }, 
+                        "STACK_NAME": {
+                            "Ref": "AWS::StackName"
+                        }, 
+                        "STACK_ID": {
+                            "Ref": "AWS::StackId"
+                        }, 
+                        "SNS_TOPIC": {
+                            "Ref": "SchedulerSnsTopic"
+                        }, 
+                        "SEND_METRICS": {
+                            "Fn::FindInMap": [
+                                "YesNoBoolean", 
+                                {
+                                    "Ref": "SendAnonymousData"
+                                }, 
+                                "Value"
+                            ]
+                        }, 
+                        "SOLUTION_ID": {
+                            "Fn::FindInMap": [
+                                "Settings", 
+                                "Metrics", 
+                                "SolutionId"
+                            ]
+                        }, 
+                        "METRICS_URL": {
+                            "Fn::FindInMap": [
+                                "Settings", 
+                                "Metrics", 
+                                "Url"
+                            ]
+                        }
+                    }
+                }, 
+                "MemorySize": 128, 
+                "Timeout": "300", 
+                "Description": "Task scheduler (default), version 1.1.0.0"
+            }, 
+            "DependsOn": [
+                "SchedulerRole"
+            ]
+        }, 
+        "Configuration": {
+            "Type": "AWS::S3::Bucket", 
+            "DeletionPolicy": "Retain", 
+            "Properties": {
+                "LifecycleConfiguration": {
+                    "Rules": [
+                        {
+                            "ExpirationInDays": {
+                                "Ref": "ConfigBackupDays"
+                            }, 
+                            "Prefix": "Backups/", 
+                            "Status": "Enabled"
+                        }
+                    ]
+                }
+            }
+        }, 
+        "SchedulerInvokePermissionDynamodb": {
+            "Type": "AWS::Lambda::Permission", 
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "SchedulerDefault", 
+                        "Arn"
+                    ]
+                }, 
+                "Action": "lambda:InvokeFunction", 
+                "Principal": "dynamodb.amazonaws.com"
+            }
+        }, 
+        "InvokePermissionCloudWatchEvents": {
+            "Type": "AWS::Lambda::Permission", 
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "SchedulerDefault", 
+                        "Arn"
+                    ]
+                }, 
+                "Action": "lambda:InvokeFunction", 
+                "Principal": "events.amazonaws.com", 
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "SchedulerRule", 
+                        "Arn"
+                    ]
+                }
+            }
+        }, 
+        "InvokePermissionCloudWatchEventsCompletion": {
+            "Type": "AWS::Lambda::Permission", 
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "SchedulerDefault", 
+                        "Arn"
+                    ]
+                }, 
+                "Action": "lambda:InvokeFunction", 
+                "Principal": "events.amazonaws.com", 
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "CompletionRule", 
+                        "Arn"
+                    ]
+                }
+            }
+        }, 
+        "SchedulerCleanupTask": {
+            "Type": "Custom::TaskConfig", 
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "SchedulerDefault", 
+                        "Arn"
+                    ]
+                }, 
+                "Timeout": "120", 
+                "Name": "TaskTableCleanup", 
+                "Description": "Internal task for cleaning task tracking table, do not delete", 
+                "Parameters": {
+                    "TaskRetentionHours": {
+                        "Ref": "TaskRetentionHours"
+                    }, 
+                    "RetainFailedTasks": {
+                        "Fn::If": [
+                            "KeepFailedTasksCondition", 
+                            "True", 
+                            "False"
+                        ]
+                    }
+                }, 
+                "Interval": "59 0/4 * * ?", 
+                "Internal": "True", 
+                "Action": "SchedulerTaskCleanup", 
+                "Enabled": {
+                    "Fn::If": [
+                        "EnableTaskCleanupCondition", 
+                        "True", 
+                        "False"
+                    ]
+                }, 
+                "StackId": {
+                    "Ref": "AWS::StackId"
+                }
+            }
+        }, 
+        "SchedulerBackupTask": {
+            "Type": "Custom::TaskConfig", 
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "SchedulerDefault", 
+                        "Arn"
+                    ]
+                }, 
+                "Timeout": "120", 
+                "Name": "TaskConfigurationBackup", 
+                "Description": "Internal task for daily backup of configuration table, do not delete", 
+                "Parameters": {
+                    "S3Bucket": {
+                        "Ref": "Configuration"
+                    }, 
+                    "S3Prefix": "Backups/"
+                }, 
+                "Interval": "0 0 * * ?", 
+                "Internal": "True", 
+                "Action": "SchedulerConfigBackup", 
+                "Enabled": "True", 
+                "StackId": {
+                    "Ref": "AWS::StackId"
+                }
+            }
+        }, 
+        "SchedulerSetupHelper": {
+            "Type": "Custom::SchedulerSetupHelper", 
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "SchedulerDefault", 
+                        "Arn"
+                    ]
+                }, 
+                "Timeout": "150", 
+                "LogRetentionDays": {
+                    "Ref": "LogRetentionDays"
+                }, 
+                "StackVersion": "1.1.0.0", 
+                "SchedulerRole": {
+                    "Fn::GetAtt": [
+                        "SchedulerRole", 
+                        "Arn"
+                    ]
+                }, 
+                "DeploymentVersion": "1.1.0.0"
+            }, 
+            "DependsOn": [
+                "ConfigurationTable"
+            ]
+        }, 
+        "SchedulerRule": {
+            "Type": "AWS::Events::Rule", 
+            "Properties": {
+                "Description": "Rule to trigger instance for task scheduler", 
+                "ScheduleExpression": "cron(0/1 * * * ? *)", 
+                "State": {
+                    "Fn::FindInMap": [
+                        "EnabledDisabled", 
+                        {
+                            "Ref": "SchedulerActive"
+                        }, 
+                        "Value"
+                    ]
+                }, 
+                "Targets": [
+                    {
+                        "Id": "TaskScheduler", 
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "SchedulerDefault", 
+                                "Arn"
+                            ]
+                        }
+                    }
+                ]
+            }
+        }, 
+        "CompletionRule": {
+            "Type": "AWS::Events::Rule", 
+            "Properties": {
+                "Description": "Rule to trigger instance for scheduler task completion check", 
+                "ScheduleExpression": "cron(0/1 * * * ? *)", 
+                "State": "ENABLED", 
+                "Targets": [
+                    {
+                        "Id": "TaskScheduler", 
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "SchedulerDefault", 
+                                "Arn"
+                            ]
+                        }
+                    }
+                ]
+            }
+        }, 
+        "ActionEventMappingTaskTracking": {
+            "Type": "AWS::Lambda::EventSourceMapping", 
+            "Properties": {
+                "BatchSize": 20, 
+                "Enabled": true, 
+                "EventSourceArn": {
+                    "Fn::GetAtt": [
+                        "TaskTrackingTable", 
+                        "StreamArn"
+                    ]
+                }, 
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "SchedulerDefault", 
+                        "Arn"
+                    ]
+                }, 
+                "StartingPosition": "TRIM_HORIZON"
+            }
+        }, 
+        "ActionEventMappingConfiguration": {
+            "Type": "AWS::Lambda::EventSourceMapping", 
+            "Properties": {
+                "BatchSize": 1, 
+                "Enabled": true, 
+                "EventSourceArn": {
+                    "Fn::GetAtt": [
+                        "ConfigurationTable", 
+                        "StreamArn"
+                    ]
+                }, 
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "SchedulerDefault", 
+                        "Arn"
+                    ]
+                }, 
+                "StartingPosition": "TRIM_HORIZON"
+            }
+        }
+    }, 
+    "Outputs": {
+        "LogGroup": {
+            "Value": {
+                "Ref": "SchedulerLogGroup"
+            }, 
+            "Description": "Name of the CloudWatch loggroup for the scheduler"
+        }, 
+        "ConfigurationBucketName": {
+            "Value": {
+                "Ref": "Configuration"
+            }, 
+            "Description": "Name of bucket with generated CloufFormation templates for managing tasks and creating cross account roles and backups"
+        }, 
+        "IssueSNSTopic": {
+            "Value": {
+                "Ref": "SchedulerSnsTopic"
+            }, 
+            "Description": "Topic to subribe to for notifications of errors and warnings"
+        }
+    }
+}
