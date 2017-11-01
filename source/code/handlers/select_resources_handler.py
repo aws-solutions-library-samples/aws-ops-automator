@@ -213,7 +213,7 @@ class SelectResourcesHandler:
 
             if tags_filter is None:
                 # test if name of the task is in list of tasks in tag value
-                if tagname in tags and taskname in tags[tagname].split(","):
+                if tagname in tags and taskname in [x.strip() for x in tags[tagname].split(',')]:
                     self._logger.debug(DEBUG_SELECTED_BY_TASK_NAME_IN_TAG_VALUE, safe_json(resource, indent=2),
                                        tagname, taskname)
                     return True
