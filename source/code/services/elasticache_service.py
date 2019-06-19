@@ -11,6 +11,7 @@
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
 
+import boto_retry
 from services.aws_service import AwsService
 
 ALLOWED_NODE_TYPE_MODIFICATIONS = "AllowedNodeTypeModifications"
@@ -28,10 +29,12 @@ RESERVED_CACHE_NODES_OFFERINGS = "ReservedCacheNodesOfferings"
 SNAPSHOTS = "Snapshots"
 TAGS_FOR_RESOURCE = "TagsForResource"
 
-MAPPED_PARAMETERS = {"MaxResults": "MaxRecords"}
+MAPPED_PARAMETERS = {
+    "MaxResults": "MaxRecords"
+}
 
-NEXT_TOKEN_ARGUMENT = "MaxRecords"
-NEXT_TOKEN_RESULT = "Marker"
+NEXT_TOKEN_ARGUMENT = "NextToken"
+NEXT_TOKEN_RESULT = "NextToken"
 
 CUSTOM_RESULT_PATHS = {
     CACHE_PARAMETERS: "{Parameters:@.Parameters, CacheNodeTypeSpecificParameters:@. CacheNodeTypeSpecificParameters}",
@@ -99,19 +102,18 @@ class ElasticacheService(AwsService):
             s = s.replace("describe_", "list_")
         return s
 
-    def _get_tags_for_resource(self, client, resource, resource_name):
+    def _get_tags_for_resource(self, client, resource):
         """
         Returns the tags for specific resources that require additional boto calls to retrieve their tags.
         Tags are not supported for this service.
         :param client: Client that can be used to make the boto call to retrieve the tags
         :param resource: The resource for which to retrieve the tags
-        :param resource_name: Name of the resource type
         :return: Tags
         """
-        if resource_name not in RESOURCES_WITH_TAGS:
-            raise ValueError("Resource type {] does not support tags".format(resource_name))
+        if self._resource_name not in RESOURCES_WITH_TAGS:
+            raise ValueError("Resource type {] does not support tags".format(self._resource_name))
 
-        if resource_name == CACHE_CLUSTERS:
+        if self._resource_name == CACHE_CLUSTERS:
             if resource["CacheClusterStatus"] not in ["available"]:
                 return []
             arn_name = resource["CacheClusterId"]
@@ -124,12 +126,18 @@ class ElasticacheService(AwsService):
 
         arn = ARN.format(client.meta.region_name, self.aws_account, arn_resource, arn_name)
 
+        if self._service_retry_strategy is not None:
+            if getattr(self._service_client, "list_tags_for_resource" + boto_retry.DEFAULT_SUFFIX, None) is None:
+                boto_retry.make_method_with_retries(boto_client_or_resource=self._service_client,
+                                                    name="list_tags_for_resource",
+                                                    service_retry_strategy=self._service_retry_strategy)
+            return client.list_tags_for_resource_with_retries(ResourceName=arn).get("TagList", [])
+
         return client.list_tags_for_resource(ResourceName=arn).get("TagList", [])
 
-    def _get_tag_resource(self, resource_name):
+    def _get_tag_resource(self):
         """
         Returns the name of the resource to retrieve the tags for the resource of type specified by resource name
-        :param resource_name: Type name of the resource
         :return: Name of the resource that will be used to retrieve the tags
         """
         return TAGS_FOR_RESOURCE

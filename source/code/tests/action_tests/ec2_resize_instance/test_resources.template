@@ -1,0 +1,51 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Ec2ResizeInstanceTestResourceStack",
+    "Outputs": {
+        "InstanceId": {
+            "Description": "Instance Id",
+            "Value": {
+                "Ref": "Instance0"
+            }
+        }
+    },
+    "Parameters": {
+        "InstanceAmi": {
+            "Description": "AMI ID for instances.",
+            "Type": "String"
+        },
+        "InstanceType": {
+            "Description": "AMI Instance Type (t2.micro, m1.large, etc.)",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "Instance0": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": {
+                    "Ref": "InstanceAmi"
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Ec2ResizeInstanceTestInstance0"
+                    }
+                ],
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        0,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+
+

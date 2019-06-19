@@ -50,7 +50,9 @@ RESOURCE_NAMES = [
 NEXT_TOKEN_ARGUMENT = "Marker"
 NEXT_TOKEN_RESULT = "NextMarker"
 
-MAPPED_PARAMETERS = {"MaxResults": "MaxItems"}
+MAPPED_PARAMETERS = {
+    "MaxResults": "MaxItems"
+}
 
 
 class LambdaService(AwsService):
@@ -66,7 +68,7 @@ class LambdaService(AwsService):
         AwsService.__init__(self, service_name='lambda',
                             resource_names=RESOURCE_NAMES,
                             role_arn=role_arn, session=session,
-                            resources_with_tags=[FUNCTION,FUNCTIONS],
+                            resources_with_tags=[FUNCTION, FUNCTIONS],
                             tags_as_dict=tags_as_dict,
                             as_named_tuple=as_named_tuple,
                             custom_result_paths=CUSTOM_RESULT_PATHS,
@@ -86,31 +88,25 @@ class LambdaService(AwsService):
             return s.replace("describe_", "get_")
         return s.replace("describe_", "list_")
 
-    def _get_tags_for_resource(self, client, resource, resource_name):
+    def _get_tags_for_resource(self, client, resource):
         """
         Returns the tags for specific resources that require additional boto calls to retrieve their tags. Most likely this
         method needs to be overwritten for specific services/resources
         :param client: Client that can be used to make the boto call to retrieve the tags
-        :param resource: The resource for which to retrieve the tags
-        :param resource_name: Name of the resource type
         :return: Tags for the specified resource
         """
-        if resource_name == FUNCTION:
+        if self._resource_name == FUNCTION:
             tags = resource.get("Tags", {})
         else:
-            tags = client.list_tags( Resource = resource["FunctionArn"]).get("Tags")
+            tags = client.list_tags(Resource=resource["FunctionArn"]).get("Tags")
         return [{"Key": t, "Value": tags[t]} for t in tags]
 
-    def _get_tag_resource(self, resource_name):
+    def _get_tag_resource(self):
         """
         Returns the name of the resource to retrieve the tags for the resource of type specified by resource name
-        :param resource_name: Type name of the resource
         :return: Name of the resource that will be used to retrieve the tags
         """
-        if resource_name == FUNCTIONS:
+        if self._resource_name == FUNCTIONS:
             return TAGS
         else:
             return None
-
-
-

@@ -1,0 +1,824 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AWS Instance Scheduler cluster, version %version%",
+  "Mappings": {
+    "VpcCidrs": {
+      "vpc": {
+        "cidr": "10.0.0.0/16"
+      },
+      "pubsubnet1": {
+        "cidr": "10.0.0.0/24"
+      },
+      "pubsubnet2": {
+        "cidr": "10.0.1.0/24"
+      }
+    },
+    "AWSRegionToAMI": {
+      "us-east-1": {
+        "AMIID": "ami-eca289fb"
+      },
+      "us-east-2": {
+        "AMIID": "ami-446f3521"
+      },
+      "us-west-1": {
+        "AMIID": "ami-9fadf8ff"
+      },
+      "us-west-2": {
+        "AMIID": "ami-7abc111a"
+      },
+      "eu-west-1": {
+        "AMIID": "ami-a1491ad2"
+      },
+      "eu-central-1": {
+        "AMIID": "ami-54f5303b"
+      },
+      "ap-northeast-1": {
+        "AMIID": "ami-9cd57ffd"
+      },
+      "ap-southeast-1": {
+        "AMIID": "ami-a900a3ca"
+      },
+      "ap-southeast-2": {
+        "AMIID": "ami-5781be34"
+      }
+    }
+  },
+  "Parameters": {
+    "EcsInstanceType": {
+      "Type": "String",
+      "Description": "ECS EC2 instance type",
+      "Default": "t2.micro",
+      "AllowedValues": [
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "c4.2xlarge",
+        "c4.4xlarge",
+        "c4.8xlarge",
+        "c3.large",
+        "c3.xlarge",
+        "c3.2xlarge",
+        "c3.4xlarge",
+        "c3.8xlarge"
+      ],
+      "ConstraintDescription": "Must be a valid EC2 instance type."
+    },
+    "KeyName": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the ECS instances",
+      "Default": ""
+    },
+    "VpcId": {
+      "Type": "String",
+      "Description": "Optional - VPC Id of existing VPC. Leave blank to have a new VPC created",
+      "Default": "",
+      "AllowedPattern": "^(?:vpc-[0-9a-f]{8}|)$",
+      "ConstraintDescription": "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
+    },
+    "SubnetIds": {
+      "Type": "CommaDelimitedList",
+      "Description": "Optional - Comma separated list of two (2) existing VPC Subnet Ids where ECS instances will run.  Required if setting VPC.",
+      "Default": ""
+    },
+    "AutoScalingGroupMinSize": {
+      "Type": "Number",
+      "Description": "Minimum size of ECS Auto Scaling Group",
+      "Default": "2",
+      "MinValue": 1
+    },
+    "AutoScalingGroupMaxSize": {
+      "Type": "Number",
+      "Description": "Maximum size of ECS Auto Scaling Group",
+      "Default": "10"
+    },
+    "SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "Optional - Existing security group to associate the container instances. Creates one by default.",
+      "Default": ""
+    },
+    "SourceCidr": {
+      "Type": "String",
+      "Description": "Optional - CIDR/IP range for EcsPort - defaults to 0.0.0.0/0",
+      "Default": "0.0.0.0/0",
+      "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(3[0-2]|[1-2][0-9]|[0-9]))$"
+    },
+    "EcsPort": {
+      "Type": "String",
+      "Description": "Optional - Security Group port to open on ECS instances - defaults to port 80",
+      "Default": "80"
+    },
+    "VpcAvailabilityZones": {
+      "Type": "CommaDelimitedList",
+      "Description": "Optional - Comma-delimited list of VPC availability zones in which to create subnets.  Required if setting VPC.",
+      "Default": ""
+    }
+  },
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "AutoScaling Group and Instance Parameters"
+          },
+          "Parameters": [
+            "AutoScalingGroupMinSize",
+            "AutoScalingGroupMaxSize",
+            "EcsInstanceType",
+            "KeyName",
+            "SecurityGroup"
+          ]
+        },
+        {
+          "Label": {
+            "default": "ECS Parameters"
+          },
+          "Parameters": [
+            "EcsPort",
+            "SourceCidr"
+          ]
+        },
+        {
+          "Label": {
+            "default": "VPC Parameters"
+          },
+          "Parameters": [
+            "VpcId",
+            "SubnetIds",
+            "VpcAvailabilityZones"
+          ]
+        }
+      ],
+      "ParameterLabels": {
+        "AutoScalingGroupMinSize": {
+          "default": "Minimum instances"
+        },
+        "AutoScalingGroupMaxSize": {
+          "default": "Maximum instances"
+        },
+        "EcsInstanceType": {
+          "default": "Instance type"
+        },
+        "SecurityGroup": {
+          "default": "Security group"
+        },
+        "KeyName": {
+          "default": "Key name"
+        },
+        "EcsPort": {
+          "default": "Ecs port"
+        },
+        "SourceCidr": {
+          "default": "Source IP range"
+        },
+        "VpcId": {
+          "default": "VPC"
+        },
+        "SubnetIds": {
+          "default": "Subnets"
+        },
+        "VpcAvailabilityZones": {
+          "default": "Availability zones"
+        }
+      }
+    }
+  },
+  "Conditions": {
+    "CreateVpcResources": {
+      "Fn::Equals": [
+        {
+          "Ref": "VpcId"
+        },
+        ""
+      ]
+    },
+    "CreateSecurityGroup": {
+      "Fn::Equals": [
+        {
+          "Ref": "SecurityGroup"
+        },
+        ""
+      ]
+    },
+    "CreateEC2LaunchConfigurationWithKeyPair": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "KeyName"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "CreateEC2LaunchConfigurationWithoutKeyPair": {
+      "Fn::Equals": [
+        {
+          "Ref": "KeyName"
+        },
+        ""
+      ]
+    },
+    "UseSpecifiedVpcAvailabilityZones": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Fn::Join": [
+                "",
+                {
+                  "Ref": "VpcAvailabilityZones"
+                }
+              ]
+            },
+            ""
+          ]
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "EcsCluster": {
+      "Type": "AWS::ECS::Cluster"
+    },
+    "Vpc": {
+      "Condition": "CreateVpcResources",
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "VpcCidrs",
+            "vpc",
+            "cidr"
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "AWS::StackName"
+                  },
+                  "vpc"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "PublicSubnetAz1": {
+      "Condition": "CreateVpcResources",
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "VpcCidrs",
+            "pubsubnet1",
+            "cidr"
+          ]
+        },
+        "AvailabilityZone": {
+          "Fn::If": [
+            "UseSpecifiedVpcAvailabilityZones",
+            {
+              "Fn::Select": [
+                "0",
+                {
+                  "Ref": "VpcAvailabilityZones"
+                }
+              ]
+            },
+            {
+              "Fn::Select": [
+                "0",
+                {
+                  "Fn::GetAZs": {
+                    "Ref": "AWS::Region"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "PublicSubnetAz2": {
+      "Condition": "CreateVpcResources",
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "VpcCidrs",
+            "pubsubnet2",
+            "cidr"
+          ]
+        },
+        "AvailabilityZone": {
+          "Fn::If": [
+            "UseSpecifiedVpcAvailabilityZones",
+            {
+              "Fn::Select": [
+                "1",
+                {
+                  "Ref": "VpcAvailabilityZones"
+                }
+              ]
+            },
+            {
+              "Fn::Select": [
+                "1",
+                {
+                  "Fn::GetAZs": {
+                    "Ref": "AWS::Region"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "InternetGateway": {
+      "Condition": "CreateVpcResources",
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "AttachGateway": {
+      "Condition": "CreateVpcResources",
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "RouteViaIgw": {
+      "Condition": "CreateVpcResources",
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "PublicRouteViaIgw": {
+      "Condition": "CreateVpcResources",
+      "DependsOn": "AttachGateway",
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteViaIgw"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "PubSubnet1RouteTableAssociation": {
+      "Condition": "CreateVpcResources",
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnetAz1"
+        },
+        "RouteTableId": {
+          "Ref": "RouteViaIgw"
+        }
+      }
+    },
+    "PubSubnet2RouteTableAssociation": {
+      "Condition": "CreateVpcResources",
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnetAz2"
+        },
+        "RouteTableId": {
+          "Ref": "RouteViaIgw"
+        }
+      }
+    },
+    "EcsSecurityGroup": {
+      "Condition": "CreateSecurityGroup",
+      "Type": "AWS::EC2::SecurityGroup",
+      "Metadata": {
+        "cfn_nag": {
+            "rules_to_suppress": [
+                {
+                    "id": "F1000",
+                    "reason": "Allow all outbound traffic."
+                }
+            ]
+          }
+    },
+      "Properties": {
+        "GroupDescription": "ECS Allowed Ports",
+        "VpcId": {
+          "Fn::If": [
+            "CreateVpcResources",
+            {
+              "Ref": "Vpc"
+            },
+            {
+              "Ref": "VpcId"
+            }
+          ]
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": {
+              "Ref": "EcsPort"
+            },
+            "ToPort": {
+              "Ref": "EcsPort"
+            },
+            "CidrIp": {
+              "Ref": "SourceCidr"
+            }
+          }
+        ]
+      }
+    },
+    "EcsInstancePolicy": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "cfn_nag": {
+            "rules_to_suppress": [
+                {
+                    "id": "W11",
+                    "reason": "The CloudWatch Logs policy has been scoped down to logs namespace."
+                }
+            ]
+        }
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "ecs-service",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "EcsInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "EcsInstancePolicy"
+          }
+        ]
+      }
+    },
+    "EcsInstanceLaunchConfiguration": {
+      "Condition": "CreateEC2LaunchConfigurationWithKeyPair",
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AWSRegionToAMI",
+            {
+              "Ref": "AWS::Region"
+            },
+            "AMIID"
+          ]
+        },
+        "InstanceType": {
+          "Ref": "EcsInstanceType"
+        },
+        "AssociatePublicIpAddress": true,
+        "IamInstanceProfile": {
+          "Ref": "EcsInstanceProfile"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SecurityGroups": {
+          "Fn::If": [
+            "CreateSecurityGroup",
+            [
+              {
+                "Ref": "EcsSecurityGroup"
+              }
+            ],
+            [
+              {
+                "Ref": "SecurityGroup"
+              }
+            ]
+          ]
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "echo ECS_CLUSTER=",
+                {
+                  "Ref": "EcsCluster"
+                },
+                " >> /etc/ecs/ecs.config\n"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "EcsInstanceLaunchConfigurationWithoutKeyPair": {
+      "Condition": "CreateEC2LaunchConfigurationWithoutKeyPair",
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AWSRegionToAMI",
+            {
+              "Ref": "AWS::Region"
+            },
+            "AMIID"
+          ]
+        },
+        "InstanceType": {
+          "Ref": "EcsInstanceType"
+        },
+        "AssociatePublicIpAddress": true,
+        "IamInstanceProfile": {
+          "Ref": "EcsInstanceProfile"
+        },
+        "SecurityGroups": {
+          "Fn::If": [
+            "CreateSecurityGroup",
+            [
+              {
+                "Ref": "EcsSecurityGroup"
+              }
+            ],
+            [
+              {
+                "Ref": "SecurityGroup"
+              }
+            ]
+          ]
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "echo ECS_CLUSTER=",
+                {
+                  "Ref": "EcsCluster"
+                },
+                " >> /etc/ecs/ecs.config\n"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "EcsInstanceAutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "VPCZoneIdentifier": {
+          "Fn::If": [
+            "CreateVpcResources",
+            [
+              {
+                "Fn::Join": [
+                  ",",
+                  [
+                    {
+                      "Ref": "PublicSubnetAz1"
+                    },
+                    {
+                      "Ref": "PublicSubnetAz2"
+                    }
+                  ]
+                ]
+              }
+            ],
+            {
+              "Ref": "SubnetIds"
+            }
+          ]
+        },
+        "LaunchConfigurationName": {
+          "Fn::If": [
+            "CreateEC2LaunchConfigurationWithKeyPair",
+            {
+              "Ref": "EcsInstanceLaunchConfiguration"
+            },
+            {
+              "Ref": "EcsInstanceLaunchConfigurationWithoutKeyPair"
+            }
+          ]
+        },
+        "MinSize": {
+          "Ref": "AutoScalingGroupMinSize"
+        },
+        "MaxSize": {
+          "Ref": "AutoScalingGroupMaxSize"
+        },
+        "DesiredCapacity": {
+          "Ref": "AutoScalingGroupMinSize"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "ECS Instance - ",
+                  {
+                    "Ref": "AWS::StackName"
+                  }
+                ]
+              ]
+            },
+            "PropagateAtLaunch": true
+          }
+        ]
+      }
+    },
+    "EcsScaleUpPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": {
+          "Ref": "EcsInstanceAutoScalingGroup"
+        },
+        "EstimatedInstanceWarmup": 60,
+        "PolicyType": "StepScaling",
+        "StepAdjustments": [
+          {
+            "MetricIntervalLowerBound": 0,
+            "MetricIntervalUpperBound": 10,
+            "ScalingAdjustment": 1
+          },
+          {
+            "MetricIntervalLowerBound": 10,
+            "MetricIntervalUpperBound": 25,
+            "ScalingAdjustment": 2
+          },
+          {
+            "MetricIntervalLowerBound": 25,
+            "ScalingAdjustment": 3
+          }
+        ]
+      }
+    },
+    "EcsMemoryReservationHighAlarmHigh": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": 1,
+        "Statistic": "Average",
+        "Threshold": 50,
+        "AlarmDescription": "Alarm if ECS Memory reservation is high",
+        "Period": 60,
+        "Unit": "Percent",
+        "AlarmActions": [
+          {
+            "Ref": "EcsScaleUpPolicy"
+          }
+        ],
+        "Namespace": "AWS/ECS",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": {
+              "Ref": "EcsCluster"
+            }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold",
+        "MetricName": "MemoryReservation"
+      }
+    },
+    "EcsScaleDownPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": {
+          "Ref": "EcsInstanceAutoScalingGroup"
+        },
+         "PolicyType": "StepScaling",
+        "StepAdjustments": [
+          {
+            "MetricIntervalLowerBound": -10,
+            "MetricIntervalUpperBound": 0,
+            "ScalingAdjustment": 0
+          },
+          {
+            "MetricIntervalLowerBound": -20,
+            "MetricIntervalUpperBound": -10,
+            "ScalingAdjustment": -1
+          },
+          {
+            "MetricIntervalLowerBound": -30,
+            "MetricIntervalUpperBound": -20,
+            "ScalingAdjustment": -2
+          },
+          {
+            "MetricIntervalUpperBound": -30,
+            "ScalingAdjustment": -3
+          }
+        ]
+      }
+    },
+    "EcsMemoryReservationHighAlarmLow": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": 1,
+        "Statistic": "Average",
+        "Threshold": 50,
+        "AlarmDescription": "Alarm if ECS Memory reservation is low",
+        "Period": 60,
+        "Unit": "Percent",
+        "AlarmActions": [
+          {
+            "Ref": "EcsScaleDownPolicy"
+          }
+        ],
+        "Namespace": "AWS/ECS",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": {
+              "Ref": "EcsCluster"
+            }
+          }
+        ],
+        "ComparisonOperator": "LessThanOrEqualToThreshold",
+        "MetricName": "MemoryReservation"
+      }
+    }
+  },
+  "Outputs": {
+    "Cluster": {
+      "Value": {
+        "Ref": "EcsCluster"
+      }
+    }
+  }
+}

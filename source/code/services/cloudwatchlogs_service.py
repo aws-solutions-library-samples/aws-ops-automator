@@ -13,7 +13,6 @@
 
 from services.aws_service import AwsService
 
-
 DESTINATIONS = "Destinations"
 EXPORT_TASKS = "ExportTasks"
 LOG_EVENTS = "LogEvents"
@@ -22,18 +21,22 @@ LOG_STREAMS = "LogStreams"
 METRIC_FILTERS = "MetricFilters"
 SUBSCRIPTION_FILTERS = "SubscriptionFilters"
 
-MAPPED_PARAMETERS = {"MaxResults": "limit"}
+MAPPED_PARAMETERS = {
+    "MaxResults": "limit"
+}
 
 NEXT_TOKEN_ARGUMENT = "nextToken"
 NEXT_TOKEN_RESULT = NEXT_TOKEN_ARGUMENT
 
-RESOURCE_NAMES = [DESTINATIONS,
-                  EXPORT_TASKS,
-                  LOG_GROUPS,
-                  LOG_STREAMS,
-                  METRIC_FILTERS,
-                  SUBSCRIPTION_FILTERS,
-                  LOG_EVENTS]
+RESOURCE_NAMES = [
+    DESTINATIONS,
+    EXPORT_TASKS,
+    LOG_GROUPS,
+    LOG_STREAMS,
+    METRIC_FILTERS,
+    SUBSCRIPTION_FILTERS,
+    LOG_EVENTS
+]
 
 
 class CloudwatchlogsService(AwsService):
@@ -85,7 +88,7 @@ class CloudwatchlogsService(AwsService):
 
     def _map_describe_function_parameters(self, resources, args):
         """
-        Maps the parameter names passed to the service class describe call to names used to make the call the the boto
+        Maps the parameter names passed to the service class describe call to names used to make the call the boto
         service client describe call
         :param resources: Name of the resource type
         :param args: parameters to be mapped
@@ -97,5 +100,3 @@ class CloudwatchlogsService(AwsService):
         # for this service arguments start with lowercase
         translated = {b[0].lower() + b[1:]: temp[b] for b in temp}
         return translated
-
-

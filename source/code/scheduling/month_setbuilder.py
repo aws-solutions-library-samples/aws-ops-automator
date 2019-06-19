@@ -20,15 +20,15 @@ class MonthSetBuilder(SetBuilder):
     Class for building month sets, 1-12 ans jan-dec
     """
 
-    def __init__(self, wrap=True, ignorecase=True):
+    def __init__(self, wrap=True, ignore_case=True):
         """
         Initializes set builder for month sets
         :param wrap: Set to True to allow wrapping at last month of the year
-        :param ignorecase: Set to True to ignore case when mapping month names
+        :param ignore_case: Set to True to ignore case when mapping month names
         """
         SetBuilder.__init__(self,
                             names=calendar.month_abbr[1:],
                             significant_name_characters=3,
                             offset=1,
-                            ignorecase=ignorecase,
+                            ignore_case=ignore_case,
                             wrap=wrap)

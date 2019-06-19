@@ -14,7 +14,7 @@
 import logging
 
 
-class SetBuilder:
+class SetBuilder(object):
     """
     # class for building set of values from values names or value strings
     """
@@ -35,7 +35,7 @@ class SetBuilder:
     RANGE_CHARACTER = '-'
 
     def __init__(self, names=None, min_value=None, max_value=None, offset=None, wrap=False,
-                 ignorecase=True, significant_name_characters=None,
+                 ignore_case=True, significant_name_characters=None,
                  first_item_wildcard=WILDCARD_FIRST,
                  all_items_wildcards=WILDCARD_ALL,
                  last_item_wildcard=WILDCARD_LAST):
@@ -46,7 +46,7 @@ class SetBuilder:
         :param max_value: Max value for value in set created from min and max value
         :param offset: Offset for first value in set created from names
         :param wrap: Set to True to let sets wrap at max value
-        :param ignorecase: Set to True to ignore case when mapping values from their names
+        :param ignore_case: Set to True to ignore case when mapping values from their names
         :param significant_name_characters: Number of significant characters to use when mapping values from their names
         :param first_item_wildcard: First item wildcard
         :param all_items_wildcards: All Items wildcard
@@ -60,11 +60,11 @@ class SetBuilder:
                 raise ValueError("min_value and max_value parameters can not be used with names parameter")
 
             # names to display for values
-            self._displaynames = [str(i) for i in names]
+            self._display_names = [str(i) for i in names]
             # names to identify values, use only the specified number of significant characters
             self._names = names if significant_name_characters == 0 else [name[0:significant_name_characters] for name in names]
             # convert to lowercase if case is ignored
-            if ignorecase:
+            if ignore_case:
                 self._names = [name.lower() for name in self._names]
             # offset for values
             self._offset = offset if offset else 0
@@ -90,7 +90,7 @@ class SetBuilder:
             self._max_value = max_value
             self._values = self._names
             # names used for display
-            self._displaynames = self._values
+            self._display_names = self._values
             # offset may not conflict with min value
             if offset is not None and offset != min_value:
                 raise ValueError("offset parameter should not be used or have the same value as min_value")
@@ -99,7 +99,7 @@ class SetBuilder:
         self._logging = logging.getLogger("SetBuilder")
 
         self._wrap = wrap
-        self._ignorecase = ignorecase
+        self._ignore_case = ignore_case
         self._all_items_wildcard_characters = all_items_wildcards
         self._first_item_wildcard = first_item_wildcard
         self._last_item_wildcard_character = last_item_wildcard
@@ -128,7 +128,7 @@ class SetBuilder:
         :param set_spec: Sets as comma separated string or list of strings
         :return:
         """
-        if isinstance(set_spec, str) or isinstance(set_spec, type(u"")):
+        if isinstance(set_spec, basestring):
             set_string_list = set_spec.split(",")
             return self._get_set_items(set_string_list)
         elif isinstance(set_spec, list) or isinstance(set_spec, set):
@@ -163,9 +163,9 @@ class SetBuilder:
 
         # build string from subset
         for subset in get_sub_sets():
-            s = self._displaynames[min(subset) - self._offset]
+            s = self._display_names[min(subset) - self._offset]
             if len(subset) > 1:
-                s = "-".join([s, self._displaynames[max(subset) - self._offset]])
+                s = "-".join([s, self._display_names[max(subset) - self._offset]])
             result.append(s)
 
         return ", ".join(result)
@@ -253,7 +253,7 @@ class SetBuilder:
                         self._first_item_wildcard,
                         self._last_item_wildcard_character])
 
-    def _seperator_characters(self):
+    def _separator_characters(self):
         # character that separates name from instructions like increments
         return SetBuilder.INCREMENT_CHARACTER
 
@@ -273,7 +273,8 @@ class SetBuilder:
                 if value is not None:
                     self._logging.debug("Parser : {}(\"{}\") returns {}".format(parser.__name__, set_str, value))
                     # add result from parser to result set
-                    set_items.update(set(value))
+                    if len(value) > 0:
+                        set_items.update(set(value))
                     # if the parser is "all-items" wildcard there is no need for further processing as all items are in the result
                     if parser == self._parse_all:
                         return set_items
@@ -302,7 +303,7 @@ class SetBuilder:
         str_after_separator = None
 
         # check if the string has a separator, in that case remove and store string after and including the character
-        for c in self._seperator_characters():
+        for c in self._separator_characters():
             if c in s:
                 i = s.index(c)
                 str_after_separator = s[i:]
@@ -315,7 +316,7 @@ class SetBuilder:
                 [t[0:self._significant_name_characters] for t in s.split(self.RANGE_CHARACTER)])
 
         # case sensitivity, to lowercase if case is ignored
-        if self._ignorecase:
+        if self._ignore_case:
             s = s.lower()
 
         # append separator and remaining part if it was truncated
@@ -408,8 +409,7 @@ class SetBuilder:
                 skip_to_next_value = step
         return result
 
-    @staticmethod
-    def _get_increment(incr_str, fn):
+    def _get_increment(self, incr_str, fn):
         # returns a set of values using a start value and a increment
         temp = incr_str.split(SetBuilder.INCREMENT_CHARACTER)
         # check if there is an increment character and if the increment value is present and valid
@@ -421,6 +421,9 @@ class SetBuilder:
 
             if incr <= 0:
                 raise ValueError("Increment value must be > 0 ({})".format(incr))
+
+            if temp[0] in SetBuilder.WILDCARD_ALL:
+                temp[0] = str(self._min_value)
 
             return fn(temp[0], incr)
         return None

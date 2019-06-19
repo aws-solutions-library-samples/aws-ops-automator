@@ -13,11 +13,10 @@
 
 import datetime
 
-import boto3
-
 import pytz
+import services
+from helpers import as_namedtuple
 from services.aws_service import AwsService
-from util.named_tuple_builder import as_namedtuple
 
 RESOURCE_NAMES = []
 
@@ -55,7 +54,7 @@ class TimeService(AwsService):
         result = {
             "Time": datetime.datetime.now(pytz.timezone("UTC")),
             "AwsAccount": self.aws_account,
-            "Region": region if region else boto3.Session().region_name
+            "Region": region if region else services.get_session().region_name
         }
 
         return [as_namedtuple("Time", result)] if use_tuple() else [result]
@@ -65,7 +64,7 @@ class TimeService(AwsService):
         Regions that can be used for this service, return all AWS regions (assuming they all support EC2)
         :return: Service regions
         """
-        return boto3.Session().get_available_regions(service_name="ec2")
+        return services.get_session().get_available_regions(service_name="ec2")
 
     def get(self, region=None, as_tuple=None, **kwargs):
         """

@@ -12,24 +12,37 @@
 ######################################################################################################################
 
 
-import copy
 import re
-import uuid
 
 import boto3
+import botocore.exceptions
 import jmespath
 
 import boto_retry
-from boto_retry import get_client_with_retries
-from util.named_tuple_builder import as_namedtuple
+import services
+from helpers import as_namedtuple
+from outputs import raise_exception, raise_value_error
 
-ERR_UNEXPECTED_MULIPLE_RESULTS = "Requested a single resource result but there are multiple resources in the result"
+ERR_UNEXPECTED_MULTIPLE_RESULTS = "Requested a single resource result but there are multiple resources in the result"
 ERR_NO_BOTO_SERVICE_METHOD = "Service client for service \"{}\" has no method named \"{}\""
 
 DEFAULT_NEXT_TOKEN = "NextToken"
 
+SERVICES_SUPPORTED_BY_RESOURCEGROUP_TAGGING_API = [
+    "elasticache",
+    "ec2",
+    "elb",
+    "emr",
+    "glacier",
+    "kinesis",
+    "rds",
+    "route53",
+    "s3",
+    "storagegateway"
+]
 
-class AwsService:
+
+class AwsService(object):
     """
     Base class for implementing AWS service classes
     """
@@ -63,7 +76,6 @@ class AwsService:
         :param service_retry_strategy: service retry strategy for making boto api calls
         """
 
-        self._region = None
         self._service_client = None
         self._assumed_role = None
 
@@ -100,7 +112,20 @@ class AwsService:
         self._sts_client = None
         self._aws_account = None
 
+        self._cached_tags = None
+
         self._service_retry_strategy = service_retry_strategy
+        self._context = self._service_retry_strategy.context if self._service_retry_strategy is not None else None
+
+        self._resource_name = None
+        self._use_tuple = None
+        self._describe_args = None
+        self._select_on_tag = None
+        self._use_cached_tags = None
+        self._cached_tags_region = None
+        self._cached_tags_session = None
+        self._tag_roles = []
+        self._tags = None
 
     @staticmethod
     def is_regional():
@@ -110,38 +135,6 @@ class AwsService:
         """
         return True
 
-    @staticmethod
-    def account_from_role_arn(role_arn):
-        """
-        Extracts an account number from a role arn, raises a ValueException if the arn does not match a valid arn format
-        :param role_arn: The arn
-        :return: The extracted account number
-        """
-        role_elements = role_arn.split(":")
-        if len(role_elements) < 5:
-            raise ValueError("Role \"%s\" is not a valid role arn", role_arn)
-        return role_elements[4]
-
-    @staticmethod
-    def get_session(role_arn=None, sts_client=None):
-        """
-        Created a session for the specified role
-        :param role_arn: Role arn
-        :param sts_client: Optional sts client, if not specified a (cache) sts client instance is used
-        :return: Session for the specified role
-        """
-
-        if role_arn is not None:
-            sts = sts_client if sts_client is not None else boto3.client("sts")
-            account = AwsService.account_from_role_arn(role_arn)
-            token = sts.assume_role(RoleArn=role_arn, RoleSessionName="{}-{}".format(account, str(uuid.uuid4())))
-            credentials = token["Credentials"]
-            return boto3.Session(aws_access_key_id=credentials["AccessKeyId"],
-                                 aws_secret_access_key=credentials["SecretAccessKey"],
-                                 aws_session_token=credentials["SessionToken"])
-        else:
-            return boto3.Session()
-
     @property
     def session(self):
         """
@@ -150,8 +143,8 @@ class AwsService:
         :return: Session
         """
         if self._session is None:
-            self._session = AwsService.get_session(role_arn=self.role_arn,
-                                                   sts_client=self.sts_client if self.role_arn is not None else None)
+            self._session = services.get_session(role_arn=self.role_arn,
+                                                 sts_client=self.sts_client if self.role_arn not in [None, ""] else None)
         return self._session
 
     @property
@@ -169,7 +162,7 @@ class AwsService:
         Returns all regions in which a service is available
         :return:  all regions in which the service is available
         """
-        return boto3.Session().get_available_regions(service_name=self.service_name)
+        return services.get_session().get_available_regions(service_name=self.service_name)
 
     def service_client(self, region=None, method_names=None):
         """
@@ -183,33 +176,21 @@ class AwsService:
             region = boto3.client(self.service_name).meta.config.region_name
 
         if self._service_client is None or self._service_client.meta.config.region_name != region:
-
             args = {
                 "service_name": self.service_name,
                 "region_name": region
             }
 
-            self._service_client = self.session.client(**args)
+            used_session = self._session if self._session is not None else services.get_session(self.role_arn)
+            self._service_client = used_session.client(**args)
 
-            if self._service_retry_strategy is not None and method_names is not None:
-                for method in method_names:
-                    boto_retry.make_method_with_retries(boto_client_or_resource=self._service_client, name=method,
+        if self._service_retry_strategy is not None and method_names is not None:
+            for method_name in method_names:
+                if getattr(self._service_client, method_name + boto_retry.DEFAULT_SUFFIX, None) is None:
+                    boto_retry.make_method_with_retries(boto_client_or_resource=self._service_client, name=method_name,
                                                         service_retry_strategy=self._service_retry_strategy)
 
         return self._service_client
-
-    @staticmethod
-    def get_aws_account(sts=None):
-        """
-        Returns the current AWS account
-        :param sts: Optional sts reused sts client
-        :return:
-        """
-        client = sts if sts is not None else get_client_with_retries("sts", ["get_caller_identity"])
-        if getattr(client, "get_caller_identity_with_retries", None):
-            return client.get_caller_identity_with_retries()["Account"]
-        else:
-            return client.get_caller_identity()["Account"]
 
     @property
     def aws_account(self):
@@ -219,10 +200,10 @@ class AwsService:
         :return: Current AWS account number for the instance of the service class
         """
         if self._aws_account is None:
-            if self.role_arn is not None:
-                self._aws_account = AwsService.account_from_role_arn(self.role_arn)
+            if self.role_arn not in [None, ""]:
+                self._aws_account = services.account_from_role_arn(self.role_arn)
             else:
-                self._aws_account = AwsService.get_aws_account(self.sts_client)
+                self._aws_account = services.get_aws_account(self.sts_client)
 
         return self._aws_account
 
@@ -241,25 +222,7 @@ class AwsService:
                     arn.replace("arn:aws:sts::", "arn:aws:iam::").replace(":assumed-role/", ":role/").split("/")[0:-1])
         return self._assumed_role
 
-    @staticmethod
-    def get_tag_value(obj, tagname):
-        """
-        Get the value for a tag from a returned resource, assuming the tags attribute is named "Tags"
-        :param obj: resource object
-        :param tagname: Name of the tag
-        :return: Value of the tag, None if the tag does not exists or is empty
-        """
-        tags = obj.get("Tags")
-        if tags is None:
-            return None
-
-        value = [t["Value"] for t in tags if t["Key"] == tagname]
-        if len(value) == 0:
-            return None
-
-        return value[0]
-
-    def _resource_name(self, resource_name):
+    def _get_resource_name(self, resource_name):
         """
         Returns a normalized resource name.
         :param resource_name: Name of the resource, not case sensitive and can be in camel as snake case. Raises a Value
@@ -315,7 +278,7 @@ class AwsService:
 
         # need to retrieve tags in an explicit call?
         if resource_name in self.resources_with_tags:
-            tagging_resource_name = self._get_tag_resource(resource_name)
+            tagging_resource_name = self._get_tag_resource()
             if tagging_resource_name:
                 get_tags_function_name = snake_to_camel_case(self.describe_resources_function_name(tagging_resource_name))
                 permissions.append("{}:{}".format(self.service_name, get_tags_function_name))
@@ -369,10 +332,9 @@ class AwsService:
         """
         return name
 
-    def _extract_resources(self, resourcename, resp, select):
+    def _extract_resources(self, resp, select):
         """
         Extracts the resources from the response from the boto client "describe" call
-        :param resourcename: Name of the resource
         :param resp: Response from boto client
         :param select: JMES path to filter returned resources and/or map/select attributes
         :return: Selected resources
@@ -380,7 +342,7 @@ class AwsService:
         if select is not None:
             expression = select
         else:
-            expression = self._custom_result_paths.get(resourcename, resourcename)
+            expression = self._custom_result_paths.get(self._resource_name, self._resource_name)
         if expression != "":
             resources = jmespath.search(expression, resp)
         else:
@@ -397,80 +359,81 @@ class AwsService:
         """
         Converts the tags attribute from Key:Value combinations into python dictionaries
         :param resource: Service resource
-        :return: Resource with tags as dictionary
         """
         if self._tags_as_dict:
-            # make copy for modified result
-            result = copy.copy(resource)
             for t in self._converted_tags:
-                if t in result:
-                    tags = result.get(t, []) or []
-                    result[t] = {tag["Key"]: tag["Value"] for tag in tags}
-            return result
-        return resource
+                if t in resource:
+                    tags = resource.get(t, []) or []
+                    resource[t] = tags if isinstance(tags, dict) else {tag["Key"].strip(): tag.get("Value", "").strip() for tag in
+                                                                       tags}
 
-    def _get_tags_for_resource(self, client, resource, resource_name):
+    def _get_tags_for_resource(self, client, resource):
         """
         Returns the tags for specific resources that require additional boto calls to retrieve their tags. Most likely this
         method needs to be overwritten for specific services/resources
         :param client: Client that can be used to make the boto call to retrieve the tags
         :param resource: The resource for which to retrieve the tags
-        :param resource_name: Name of the resource type
         :return: Tags for the specified resource
         """
-        return resource.get("Tags", [])
+        return resource.get("Tags", {})
 
-    def _get_tag_resource(self, resource_name):
+    def _get_tag_resource(self):
         """
         Returns the name of the service/resource specific resource that is used to explicitly retrieve the tags for that
         resource. Most likely this method needs to be overwritten for specific services/resources
-        :param resource_name:
         :return: Resource name for the tags
         """
         return ""
 
-    def _transform_returned_resource(self, client, resource, resource_name, tags, tags_as_dict, use_tuple, **kwargs):
+    def _transform_returned_resource(self, client, resource):
         """
         This method takes the resource from the boto "describe" method and transforms them into the requested
         output format of the service class describe function
         :param client: boto client for the service that can be used to retrieve additional attributes, eg tags
         :param resource: The resource returned from the boto call
-        :param resource_name: The name of the resource type
-        :param tags: Set true true if the tags must be retrieved for this resource
-        :param tags_as_dict: Set to true to convert the tags into Python dictionaries
-        :param use_tuple: Set to true to return the resources as un-mutable named tuples instead of dictionaries
-        :param kwargs: Additional service specific arguments for the transformation
         :return: The transformed service resource
         """
 
         # get tags for the resource
-        if tags:
+        if self._tags:
             if self._resources_with_tags is None:
                 raise Exception("Service {} does not support tags".format(self.service_name))
-            if resource_name not in self._resources_with_tags:
-                raise Exception("Resource {} for service {} does not support tags".format(resource_name, self.service_name))
-            resource["Tags"] = self._get_tags_for_resource(client, resource, resource_name)
+            if self._resource_name not in self._resources_with_tags:
+                raise Exception("Resource {} for service {} does not support tags".format(self._resource_name, self.service_name))
+            if resource.get("Tags", None) is None:
+                resource["Tags"] = self._get_tags_for_resource(client, resource)
 
         # convert tags to dictionaries
-        if tags_as_dict:
-            resource = self._convert_tags_to_dictionaries(resource)
+        if self._tags_as_dict and not isinstance(resource.get("Tags", {}), dict):
+            self._convert_tags_to_dictionaries(resource)
 
         # convert resource to named tuple
-        if use_tuple:
-            return as_namedtuple(resource_name, resource, deep=True, namefunc=self._tuple_name_func, exludes=self._tuple_excludes)
+        if self._use_tuple:
+            return as_namedtuple(self._resource_name, resource, deep=True, name_func=self._tuple_name_func,
+                                 excludes=self._tuple_excludes)
         else:
             return resource
 
-    def describe(self, service_resource, region=None, tags=False, tags_as_dict=None, as_tuple=None, select=None, **describe_args):
+    @staticmethod
+    def use_cached_tags(resource, tags_to_retrieve):
+        return False
+
+    def describe(self, service_resource, region=None, tags=False, tags_as_dict=None, as_tuple=None,
+                 select=None, filter_func=None, context=None, select_on_tag=None, tag_roles=None, **describe_args):
         """
         This method is used to retrieve service resources, specified by their name, from a service
+        :param filter_func: function for additional filtering of resources
         :param service_resource: Name of the service resource, not case sensitive, use camel or snake case
         :param region: Region from where resources are retrieved, if None then the current region is used
         :param tags: Set to True to return tags with the resource
         :param tags_as_dict: Set to True to return tags as python dictionaries
         :param as_tuple: Set to true to return results as immutable named dictionaries instead of dictionaries
         :param select: JMES path to select resources and select/transform attributes of returned resources
+        :param select_on_tag: only include resources that have a tag with this name
+        :param tag_roles: optional roles used to assume to select tags for a resource as this may be required by shared resources
+        from another account
         :param describe_args: Parameters passed to the boto "describe" function
+        :param context: Lambda context
         :return: Service resources of the specified resource type for the service.
         """
 
@@ -489,67 +452,100 @@ class AwsService:
             return tags_as_dict if tags_as_dict is not None else self._tags_as_dict
 
         # normalize resource name
-        resource_name = self._resource_name(service_resource)
+        self._resource_name = self._get_resource_name(service_resource)
         # get the name of the boto3 method to retrieve this resource type
-        describe_func_name = self.describe_resources_function_name(resource_name)
+        describe_func_name = self.describe_resources_function_name(self._resource_name)
 
         # get additional parameters for boto describe method and map parameter names
         if describe_args is None:
             function_args = {}
         else:
-            function_args = self._map_describe_function_parameters(resource_name, describe_args)
+            function_args = self._map_describe_function_parameters(self._resource_name, describe_args)
 
         # get method from boto service client
-        client = self.service_client(region=region, method_names=[describe_func_name])
+        if self._service_retry_strategy is not None:
+            method_names = [describe_func_name]
+            describe_func_name = describe_func_name + boto_retry.DEFAULT_SUFFIX
+        else:
+            method_names = None
+
+        client = self.service_client(region=region, method_names=method_names)
         describe_func = getattr(client, describe_func_name, None)
         if describe_func is None:
-            raise ValueError(ERR_NO_BOTO_SERVICE_METHOD.format(self.service_name, describe_func_name))
+            raise_value_error(ERR_NO_BOTO_SERVICE_METHOD, self.service_name, describe_func_name)
 
-        # use the method with retry logic if a retry strategy was used
-        if self._service_retry_strategy is not None:
-            describe_func = getattr(client, describe_func_name + boto_retry.DEFAULT_SUFFIX)
+        self._cached_tags = None
+
+        next_token = self._next_token_result_name(self._resource_name)
+
+        self._tags_as_dict = tags_as_dictionary()
+        self._use_tuple = use_tuple()
+        self._describe_args = describe_args
+        self._select_on_tag = select_on_tag
+        self._tags = tags
+        self._tag_roles = tag_roles
+        self._context = context
 
         done = False
         while not done:
 
             # call boto method to retrieve until no more resources are retrieved
-            resp = describe_func(**function_args)
+            try:
+                resp = describe_func(**function_args)
+            except Exception as ex:
+                expected_exceptions = describe_args.get(boto_retry.EXPECTED_EXCEPTIONS, [])
+                if type(ex).__name__ in expected_exceptions or getattr(ex, "response", {}).get("Error", {}) \
+                        .get("Code", "") in expected_exceptions:
+                    done = True
+                    continue
+                else:
+                    raise ex
 
             # extract resources from result and transform to requested output format
-            for obj in self._extract_resources(resourcename=resource_name, resp=resp, select=select):
-                # annotate with additional account and region attributes
+            resources_data = self._extract_resources(resp=resp, select=select)
+            self._use_cached_tags = self.__class__.use_cached_tags(self._resource_name, len(resources_data))
+
+            for obj in resources_data:
+                if filter_func is not None and not filter_func(obj):
+                    continue
+                # annotate additional account and region attributes
                 obj["AwsAccount"] = self.aws_account
                 obj["Region"] = self.service_client(region).meta.region_name if self.is_regional() else None
+                obj["Service"] = self.service_name
+                obj["ResourceTypeName"] = self._resource_name
 
                 # yield the transformed resource
-                yield self._transform_returned_resource(self.service_client(region=region),
-                                                        resource=obj,
-                                                        resource_name=resource_name,
-                                                        tags=tags,
-                                                        tags_as_dict=tags_as_dictionary(),
-                                                        use_tuple=use_tuple(),
-                                                        kwargs=describe_args)
+                transformed = self._transform_returned_resource(self.service_client(region=region), resource=obj)
 
-            # test if more resources are available
-            next_token = self._next_token_result_name(resource_name)
+                if select_on_tag is None or select_on_tag in transformed.get("Tags", {}):
+                    yield transformed
+
             # if there are set the continuation token parameter for the next call to the value of the results continuation token
-            if next_token in resp and resp[next_token] != "":
-                next_token_argument = self._next_token_argument_name(resource_name)
-                function_args[next_token_argument] = resp[next_token]
+            # test if more resources are available
+            if next_token in resp and resp[next_token] not in ["", False, None]:
+                self.set_continuation_call_parameters(function_args, next_token, resp)
             else:
                 # all resources retrieved
                 done = True
 
-    def get(self, service_resource, region=None, tags_as_dict=None, tags=False, as_tuple=None, select=None, **describe_args):
+    def set_continuation_call_parameters(self, function_args, next_token, resp):
+        next_token_argument = self._next_token_argument_name(self._resource_name)
+        function_args[next_token_argument] = resp[next_token]
+
+    def get(self, service_resource, region=None, tags_as_dict=None, tags=False, as_tuple=None, select_on_tag=None, select=None,
+            tag_roles=None, **describe_args):
         """
         Alternative for describe method in cases where only a single specific resource is expected. An exception is raised when
         multiple resources are returned from the service
+        :param select_on_tag: Get only if resource has this tag
         :param service_resource: Name of the service resource, not case sensitive, use camel or snake case
         :param region: Region from where resources are retrieved, if None then the current region is used
         :param tags: Set to True to return tags with the resource
         :param tags_as_dict: Set to True to return tags as python dictionaries
         :param as_tuple: Set to true to return results as immutable named dictionaries instead of dictionaries
         :param select: JMES path to select resources and select/transform attributes of returned resources
+        :param tag_roles: optional role used to assume to select tags for a resource as this may be required by shared resources
+        from another account
         :param describe_args: Parameters passed to the boto "describe" function
         :return: Service resource of the specified resource type for the service, None if the resource was not available.
         """
@@ -561,6 +557,8 @@ class AwsService:
                                 tags_as_dict=tags_as_dict,
                                 as_tuple=as_tuple,
                                 select=select,
+                                select_on_tag=select_on_tag,
+                                tag_roles=tag_roles,
                                 **describe_args)
 
         try:
@@ -569,7 +567,7 @@ class AwsService:
             try:
                 # if there is more than one result, raise Exception
                 results.next()
-                raise Exception(ERR_UNEXPECTED_MULIPLE_RESULTS)
+                raise_exception(ERR_UNEXPECTED_MULTIPLE_RESULTS)
             except StopIteration:
                 # Expected exception as there should be only one result
                 return result
@@ -594,4 +592,41 @@ class AwsService:
         Returns a list of how service resources are mapped to the corresponding boto method calls
         :return: Resource to boto client method mapping
         """
-        return [(r, self.describe_resources_function_name(r)) for r in self.resources]
+        return {r: self.describe_resources_function_name(r) for r in self.resources}
+
+    def cached_tags(self, resource_name, region=None, session=None):
+        if self._cached_tags is None or region != self._cached_tags_region or self._cached_tags_session != session:
+            tag_client = boto_retry.get_client_with_retries("resourcegroupstaggingapi",
+                                                            methods=["get_resources"],
+                                                            session=self._session if session is None
+                                                            else session,
+                                                            context=self._context,
+                                                            region=region if region is not None
+                                                            else self._session["region_name"])
+
+            args = {"ResourcesPerPage": 50,
+                    "ResourceTypeFilters": ["{}:{}".format(self.service_name, resource_name)]}
+
+            if self._select_on_tag is not None:
+                args["TagFilters"] = [{"Key": self._select_on_tag}]
+
+            self._cached_tags = {}
+
+            while True:
+
+                try:
+                    resp = tag_client.get_resources_with_retries(**args)
+                    for resource in resp.get("ResourceTagMappingList", []):
+                        self._cached_tags[resource["ResourceARN"]] = resource.get("Tags", {})
+
+                    if resp.get("PaginationToken", "") != "":
+                        args["PaginationToken"] = resp["PaginationToken"]
+                    else:
+                        break
+                except botocore.exceptions.ClientError as ex:
+                    if getattr(ex, "response", {}).get("Error", {}).get("Code", "") == "InvalidParameterValue":
+                        break
+
+            self._cached_tags_region = region
+            self._cached_tags_session = session
+        return self._cached_tags

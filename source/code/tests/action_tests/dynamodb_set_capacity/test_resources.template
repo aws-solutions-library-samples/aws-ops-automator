@@ -1,0 +1,80 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Test stack for Set DynamoDB Capacity",
+  "Parameters": {
+    "TaskListTagName": {
+      "Description": "Name of the task list tag.",
+      "Type": "String"
+    },
+    "TaskListTagValue": {
+      "Description": "Value of the task list tag for the instance.",
+      "Type": "String"
+    },
+    "IndexName": {
+      "Description": "Name of the Global Secondary Index.",
+      "Type": "String"
+    }
+  },
+  "Outputs": {
+    "TableName": {
+      "Description": "Table name",
+      "Value": {
+        "Ref": "CreateDynamDBBackupTestTable"
+      }
+    }
+  },
+  "Resources": {
+    "CreateDynamDBBackupTestTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "Id",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "Id",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 1,
+          "WriteCapacityUnits": 1
+        },
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": {
+              "Ref": "IndexName"
+            },
+            "KeySchema": [
+              {
+                "AttributeName": "Id",
+                "KeyType": "HASH"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "ALL"
+            },
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 1,
+              "WriteCapacityUnits": 1
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": {
+              "Ref": "TaskListTagName"
+            },
+            "Value": {
+              "Ref": "TaskListTagValue"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

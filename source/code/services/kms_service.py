@@ -19,20 +19,20 @@ PARAMETERS_FOR_INPUT = "ParametersForInput"
 
 ALIASES = "Aliases"
 GRANTS = "Grants"
-KEY = "Key"
 KEY_POLICIES = "KeyPolicies"
 KEYS = "Keys"
+KEY = "Key"
 RESOURCE_TAGS = "ResourceTags"
 RETIRABLE_GRANTS = "RetirableGrants"
 
 CUSTOM_RESULT_PATHS = {
-    KEY: "KeyMetadata",
     KEY_POLICY: "{Policy:@.Policy}",
     KEY_ROTATION_STATUS: "{KeyRotationEnabled:@.KeyRotationEnabled}",
     PARAMETERS_FOR_INPUT: "{ParametersValidTo:@.ParametersValidTo, PublicKey:@.PublicKey, KeyId:@.KeyId,ImportToken:@.ImportToken}",
     KEY_POLICIES: "{PolicyNames:@.PolicyNames}",
     RESOURCE_TAGS: "Tags",
-    RETIRABLE_GRANTS: "Grants"
+    RETIRABLE_GRANTS: "Grants",
+    KEY: "KeyMetadata"
 }
 
 RESOURCE_NAMES = [
@@ -49,15 +49,16 @@ RESOURCE_NAMES = [
 ]
 
 RESOURCES_WITH_TAGS = [
-    ALIASES,
-    KEY,
-    KEYS
+    KEYS,
+    KEY
 ]
 
 NEXT_TOKEN_ARGUMENT = "Marker"
 NEXT_TOKEN_RESULT = "NextMarker"
 
-MAPPED_PARAMETERS = {"MaxResults": "Limit"}
+MAPPED_PARAMETERS = {
+    "MaxResults": "Limit"
+}
 
 
 class KmsService(AwsService):
@@ -91,38 +92,25 @@ class KmsService(AwsService):
         :return: Name of the boto3 client function to retrieve the specified resource type
         """
         s = AwsService.describe_resources_function_name(self, resource_name)
-        if resource_name in [KEY_POLICY, KEY_ROTATION_STATUS, PARAMETERS_FOR_INPUT]:
-            return s.replace("describe_", "get_")
         if resource_name in [KEY]:
             return s
+        if resource_name in [KEY_POLICY, KEY_ROTATION_STATUS, PARAMETERS_FOR_INPUT, KEY]:
+            return s.replace("describe_", "get_")
         return s.replace("describe_", "list_")
 
-    def _get_tags_for_resource(self, client, resource, resource_name):
+    def _get_tags_for_resource(self, client, resource):
         """
         Returns the tags for specific resources that require additional boto calls to retrieve their tags.
         :param client: Client that can be used to make the boto call to retrieve the tags
         :param resource: The resource for which to retrieve the tags
-        :param resource_name: Name of the resource type
         :return: Tags
         """
-        try:
-            if resource_name == ALIASES:
-                if resource["AliasName"].startswith("alias/aws/"):
-                    return {}
-                else:
-                    keyid = "TagetKeyId"
-            else:
-               keyid = "KeyId"
-            tags = list(self.describe(RESOURCE_TAGS, region=client.meta.region_name, tags_as_dict=False, KeyId=resource[keyid]))
-        except Exception as ex:
-            # if master keys tags cannot be retrieved, as we don't know  the ids catch exception and skip
-            tags = []
+        tags = self.describe(RESOURCE_TAGS, region=client.meta.region_name, tags_as_dict=False, KeyId=resource["KeyId"])
         return [{"Key": t["TagKey"], "Value": t["TagValue"]} for t in tags]
 
-    def _get_tag_resource(self, resource_name):
+    def _get_tag_resource(self):
         """
         Returns the name of the resource to retrieve the tags for the resource of type specified by resource name
-        :param resource_name: Type name of the resource
         :return: Name of the resource that will be used to retrieve the tags
         """
         return RESOURCE_TAGS
