@@ -11,13 +11,13 @@
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
 import json
+import os
+from datetime import datetime
 
 import actions
 import configuration
 from actions import *
-from actions.action_base import ActionBase
 from boto_retry import get_client_with_retries
-from outputs import raise_exception
 
 BACKUP_OBJECT_KEY_TEMPLATE = "{}ConfigurationBackup-{:0>4d}{:0>2d}{:0>2d}{:0>2d}{:0>2d}{:0>2d}.json"
 
@@ -35,26 +35,26 @@ PARAM_S3_BUCKET = "S3Bucket"
 PARAM_S3_PREFIX = "S3Prefix"
 
 
-class SchedulerConfigBackupAction(ActionBase):
+class SchedulerConfigBackupAction:
+    """
+    Creates backup of scheduler task configuration dynamodb table to S3
+    """
+
     properties = {
 
         ACTION_TITLE: "Scheduler Config Backup",
         ACTION_VERSION: "1.0",
-        ACTION_DESCRIPTION: "Creates a daily backup of configuration table",
+        ACTION_DESCRIPION: "Creates a daily backup of configuration table",
         ACTION_AUTHOR: "AWS",
         ACTION_ID: "afcfa6ee-ec48-4506-84cb-b4c2bcc9217c",
 
         ACTION_SERVICE: "time",
         ACTION_RESOURCES: "",
         ACTION_AGGREGATION: ACTION_AGGREGATION_RESOURCE,
-
+        ACTION_MEMORY: 128,
         ACTION_CROSS_ACCOUNT: False,
         ACTION_INTERNAL: True,
         ACTION_MULTI_REGION: False,
-
-        ACTION_COMPLETION_TIMEOUT_MINUTES: 60,
-
-        ACTION_EXECUTE_SIZE: [ACTION_SIZE_STANDARD],
 
         ACTION_PARAMETERS: {
 
@@ -74,51 +74,42 @@ class SchedulerConfigBackupAction(ActionBase):
 
             }
         },
-        ACTION_PERMISSIONS: [
-            "dynamodb:Scan",
-            "s3:PutObject"
-        ]
+        ACTION_PERMISSIONS: ["dynamodb:Scan", "s3:PutObject"]
     }
 
-    def __init__(self, action_arguments, action_parameters):
-
-        ActionBase.__init__(self, action_arguments, action_parameters)
-
+    def __init__(self, arguments):
+        self.logger = arguments[actions.ACTION_PARAM_LOGGER]
+        self.context = arguments[actions.ACTION_PARAM_CONTEXT]
+        self.session = arguments[actions.ACTION_PARAM_SESSION]
         self.config_table = os.getenv(configuration.ENV_CONFIG_TABLE, None)
-        self.debug = self.get(actions.ACTION_PARAM_DEBUG, False)
+        self.session = arguments[actions.ACTION_PARAM_SESSION]
+        self.debug = arguments.get(actions.ACTION_PARAM_DEBUG, False)
 
         if self.config_table is None:
-            raise_exception(ERR_ENVIRONMENT_CONFIG_VARIABLE_, configuration.ENV_CONFIG_TABLE)
+            raise Exception(ERR_ENVIRONMENT_CONFIG_VARIABLE_.format(configuration.ENV_CONFIG_TABLE))
 
-        self.S3Bucket = self.get(PARAM_S3_BUCKET)
-        self.S3Prefix = self.get(PARAM_S3_PREFIX)
+        self.S3Bucket = arguments[PARAM_S3_BUCKET]
+        self.S3Prefix = arguments[PARAM_S3_PREFIX]
 
-    def execute(self):
+    def execute(self, _):
 
-        self._logger_.info("{}, version {}", str(self.__class__).split(".")[-1], self.properties[ACTION_VERSION])
-        self._logger_.debug("Implementation {}", __name__)
+        self.logger.info("{}, version {}", str(self.__class__).split(".")[-1], self.properties[ACTION_VERSION])
+        self.logger.debug("Implementation {}", __name__)
 
-        self._logger_.info(INF_BACKUP, self.config_table)
+        self.logger.info(INF_BACKUP, self.config_table)
 
         scan_args = {"TableName": self.config_table}
 
         backup_config_items = []
 
-        dynamodb_client = get_client_with_retries("dynamodb", ["scan"],
-                                                  context=self._context_,
-                                                  session=self._session_,
-                                                  logger=self._logger_)
+        dynamodb_client = get_client_with_retries("dynamodb", ["scan"], context=self.context, session=self.session)
 
         # get all configuration items
         while True:
-
-            if self.time_out():
-                break
-
             resp = dynamodb_client.scan_with_retries(**scan_args)
             for item in resp.get("Items", []):
                 if self.debug:
-                    self._logger_.debug(json.dumps(item))
+                    self.logger.debug(json.dumps(item))
                 backup_config_items.append(item)
 
             if "LastEvaluatedKey" in resp:
@@ -126,27 +117,18 @@ class SchedulerConfigBackupAction(ActionBase):
             else:
                 break
 
-        s3_client = get_client_with_retries("s3",
-                                            methods=[
-                                                "put_object"
-                                            ],
-                                            context=self._context_,
-                                            session=self._session_,
-                                            logger=self._logger_)
+        s3_client = get_client_with_retries("s3", ["put_object"], context=self.context, session=self.session)
 
         # create name of object in s3
-        dt = self._datetime_.now()
-        backup_object_key = BACKUP_OBJECT_KEY_TEMPLATE.format(self.S3Prefix, dt.year, dt.month, dt.day, dt.hour, dt.minute,
-                                                              dt.second)
+        dt = datetime.now()
+        backup_object_key = BACKUP_OBJECT_KEY_TEMPLATE.format(self.S3Prefix, dt.year, dt.month, dt.day, dt.hour,dt.minute, dt.second)
 
         backup_data = json.dumps(backup_config_items, indent=3)
         resp = s3_client.put_object_with_retries(Body=backup_data, Bucket=self.S3Bucket, Key=backup_object_key)
 
         if self.debug:
-            self._logger_.debug(resp)
+            self.logger.debug(resp)
 
         return {
-            "backed-up-config-items": len(backup_config_items),
-            "backup-name": backup_object_key,
-            "backup-bucket": self.S3Bucket
+            "backed-up-config-items": len(backup_config_items), "backup-name": backup_object_key, "backup-bucket": self.S3Bucket
         }

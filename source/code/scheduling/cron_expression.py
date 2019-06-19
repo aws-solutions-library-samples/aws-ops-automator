@@ -14,6 +14,7 @@
 from datetime import datetime, timedelta, tzinfo
 
 import pytz
+
 from scheduling.hour_setbuilder import HourSetBuilder
 from scheduling.minute_setbuilder import MinuteSetBuilder
 from scheduling.month_setbuilder import MonthSetBuilder
@@ -21,7 +22,7 @@ from scheduling.monthday_setbuilder import MonthdaySetBuilder
 from scheduling.weekday_setbuilder import WeekdaySetBuilder
 
 
-class CronExpression(object):
+class CronExpression:
     """
     Class for performing matching for datetimes using expressions in cron syntax. For a full description of the supported cron
     syntax and features see See https://en.wikipedia.org/wiki/Cron
@@ -411,7 +412,7 @@ class CronExpression(object):
         """
         # is the current month is the list
         if dt.month in self._month:
-            # get the index -1, note that if the index is -1  the last item in the list is used so no special
+            # get the index -1, note that if the index is -1 the the last item in the list is used so no special
             # handling required if it is the first one in the list and we have to move back to previous month
             index = self._month.index(dt.month) - 1
         else:

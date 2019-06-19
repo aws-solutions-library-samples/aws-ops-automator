@@ -11,16 +11,8 @@
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
 
-import os
-
-import boto3
-
-from boto_retry import get_client_with_retries
 from services.aws_service import AwsService
 
-WARN_NO_PRICING_API_ACCESS = "Valid instance types not available from pricing API {}, using values from Boto3 EC2 service model {}"
-
-ENV_EC2_VALID_INSTANCE_TYPES = "EC2_VALID_INSTANCE_TYPES"
 
 ADDRESSES = "Addresses"
 ATTRIBUTES = "AccountAttributes"
@@ -47,7 +39,6 @@ IMPORT_IMAGE_TASKS = "ImportImageTasks"
 IMPORT_SNAPSHOT_TASKS = "ImportSnapshotTasks"
 INSTANCE_ATTRIBUTE = "InstanceAttribute"
 INSTANCE_AVAILABILITY = "ScheduledInstanceAvailability"
-INSTANCE_CREDIT_SPECIFICATIONS = "InstanceCreditSpecifications"
 INSTANCE_STATUS = "InstanceStatus"
 INSTANCES = "Instances"
 INTERFACE_ATTRIBUTE = "NetworkInterfaceAttribute"
@@ -63,7 +54,7 @@ REGIONS = "Regions"
 RESERVED_INSTANCE_LISTINGS = "ReservedInstancesListings"
 RESERVED_INSTANCE_MODIFICATIONS = "ReservedInstancesModifications"
 RESERVED_INSTANCES = "ReservedInstances"
-RESERVED_INSTANCES_OFFERINGS = "ReservedInstancesOfferings"
+RESERVEED_INSTANCES_OFFERINGS = "ReservedInstancesOfferings"
 ROUTE_TABLES = "RouteTables"
 SCHEDULED_INSTANCES = "ScheduledInstances"
 SECURITY_GROUPS = "SecurityGroups"
@@ -160,6 +151,7 @@ CUSTOM_RESULT_PATHS = custom_result_paths = {
         "ProductCodes"
     ]]) + "}",
 
+    SECURITY_GROUPS: "StaleSecurityGroupSet",
     VOLUME_STATUS: "VolumeStatuses",
 
     VPC_ATTRIBUTE: "{" + ",".join(['"{}":{}'.format(i, i) for i in [
@@ -170,8 +162,7 @@ CUSTOM_RESULT_PATHS = custom_result_paths = {
 
     CLASSIC_LINK: VPCS,
     CLASSIC_LINK_DNS_SUPPORT: VPCS,
-    VPC_ENDPOINT_SERVICES: "ServiceNames"
-}
+    VPC_ENDPOINT_SERVICES: "ServiceNames"}
 
 RESOURCE_NAMES = [
     ATTRIBUTES,
@@ -194,7 +185,6 @@ RESOURCE_NAMES = [
     IMPORT_IMAGE_TASKS,
     IMPORT_SNAPSHOT_TASKS,
     INSTANCE_ATTRIBUTE,
-    INSTANCE_CREDIT_SPECIFICATIONS,
     INSTANCE_STATUS,
     INSTANCES,
     INTERNET_GATEWAYS,
@@ -210,7 +200,7 @@ RESOURCE_NAMES = [
     RESERVED_INSTANCES,
     RESERVED_INSTANCE_LISTINGS,
     RESERVED_INSTANCE_MODIFICATIONS,
-    RESERVED_INSTANCES_OFFERINGS,
+    RESERVEED_INSTANCES_OFFERINGS,
     ROUTE_TABLES,
     INSTANCE_AVAILABILITY,
     SCHEDULED_INSTANCES,
@@ -238,11 +228,9 @@ RESOURCE_NAMES = [
     VPC_PEERING_CONNECTIONS,
     VPCS,
     VPN_CONNECTIONS,
-    VPN_GATEWAYS
-]
+    VPN_GATEWAYS]
 
 RESOURCES_WITH_TAGS = [
-    ADDRESSES,
     CUSTOMER_GATEWAYS,
     DHCP_OPTIONS,
     IMAGES,
@@ -260,15 +248,10 @@ RESOURCES_WITH_TAGS = [
     VPC_PEERING_CONNECTIONS,
     VPCS,
     VPN_CONNECTIONS,
-    VPN_GATEWAYS
-]
-
-_valid_instance_types = None
+    VPN_GATEWAYS]
 
 
 class Ec2Service(AwsService):
-    _valid_instance_types = None
-
     def __init__(self, role_arn=None, session=None, tags_as_dict=True, as_named_tuple=False, service_retry_strategy=None):
         """
         :param role_arn: Optional (cross account) role to use to retrieve services
@@ -289,15 +272,26 @@ class Ec2Service(AwsService):
                             custom_result_paths=CUSTOM_RESULT_PATHS,
                             service_retry_strategy=service_retry_strategy)
 
-    def _transform_returned_resource(self, client, resource, use_cached_tags=False):
-
-        if self._resource_name in [INSTANCE_ATTRIBUTE,
-                                   IMAGE_ATTRIBUTE,
-                                   INTERFACE_ATTRIBUTE,
-                                   SNAPSHOT_ATTRIBUTE,
-                                   FLEET_REQUEST_HISTORY,
-                                   VOLUME_ATTRIBUTE,
-                                   VPC_ATTRIBUTE]:
+    def _transform_returned_resource(self, client, resource, resource_name, tags_as_dict, use_tuple, **kwargs):
+        """
+        This method takes the resource from the boto "describe" method and transforms them into the requested
+        output format of the service class describe function
+        :param client: boto client for the service that can be used to retrieve additional attributes, eg tags
+        :param resource: The resource returned from the boto call
+        :param resource_name: Tha name of the resource type
+        :param tags: Set true true if the tags must be retrieved for this resource
+        :param tags_as_dict: Set to true to convert the tags into Python dictionaries
+        :param use_tuple: Set to true to return the resources as un-mutable named tuples instead of dictionaries
+        :param kwargs: Additional service specific arguments for the transformation
+        :return: The transformed service resource
+        """
+        if resource_name in [INSTANCE_ATTRIBUTE,
+                             IMAGE_ATTRIBUTE,
+                             INTERFACE_ATTRIBUTE,
+                             SNAPSHOT_ATTRIBUTE,
+                             FLEET_REQUEST_HISTORY,
+                             VOLUME_ATTRIBUTE,
+                             VPC_ATTRIBUTE]:
             temp = {r: resource[r] for r in resource if resource[r] is not None}
             for r in temp:
                 if isinstance(temp[r], dict) and "Value" in temp[r]:
@@ -305,52 +299,16 @@ class Ec2Service(AwsService):
         else:
             temp = resource
 
-        return AwsService._transform_returned_resource(self, client, temp)
+        return AwsService._transform_returned_resource(self, client, temp, resource_name=resource_name, tags_as_dict=tags_as_dict,
+                                                       use_tuple=use_tuple, **kwargs)
 
-    def _get_tags_for_resource(self, client, resource):
+    def _get_tags_for_resource(self, client, resource, resource_name):
         """
         Returns the tags for specific resources that require additional boto calls to retrieve their tags.
         :param client: Client that can be used to make the boto call to retrieve the tags
         :param resource: The resource for which to retrieve the tags
+        :param resource_name: Name of the resource type
         :return: Tags
         """
         return resource.get(TAGS, [])
 
-    @staticmethod
-    def valid_instance_types(logger=None):
-
-        # first check if the environment variable is set
-        ec2_types = os.getenv(ENV_EC2_VALID_INSTANCE_TYPES, "").strip()
-        if ec2_types != "":
-            return [e.strip() for e in ec2_types.split(",")]
-
-        # if the types are not in the environment variable fetch the types from the pricing service api
-        global _valid_instance_types
-        if _valid_instance_types is None:
-            _valid_instance_types = []
-            # noinspection PyPep8
-            try:
-                pricing = get_client_with_retries("pricing", ["get_attribute_values"], region="us-east-1")
-
-                args = {
-                    "ServiceCode": "AmazonEC2",
-                    "AttributeName": "instanceType",
-                    "_expected_boto3_exceptions_": ["AccessDeniedException"]
-                }
-                while True:
-                    sc = pricing.get_attribute_values_with_retries(**args)
-                    for a in sc.get("AttributeValues"):
-                        if len(a["Value"].split(".")) > 1:
-                            _valid_instance_types.append(a["Value"])
-                    if "NextToken" in sc:
-                        args["NextToken"] = sc["NextToken"]
-                    else:
-                        break
-            except Exception as ex:
-                ec2 = boto3.Session().client("ec2")
-                # noinspection PyProtectedMember
-                _valid_instance_types = ec2._service_model._service_description["shapes"]["InstanceType"]["enum"]
-                version = ec2._service_model.api_version
-                if logger is not None:
-                    logger.warning(WARN_NO_PRICING_API_ACCESS, ex, version)
-        return _valid_instance_types

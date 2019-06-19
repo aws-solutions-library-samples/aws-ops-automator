@@ -1,15 +1,3 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
 from botocore.exceptions import ClientError, ParamValidationError
 
 from boto_retry.aws_service_retry import AwsApiServiceRetry
@@ -20,24 +8,30 @@ class Ec2ServiceRetry(AwsApiServiceRetry):
         Class that extends retry logic with Ec2 specific logic
     """
 
-    def __init__(self, context=None, logger=None, timeout=None, wait_strategy=None, lambda_time_out_margin=10):
+    def __init__(self, context=None, timeout=None, wait_strategy=None, lambda_time_out_margin=10):
+        """
+              Initializes retry logic
+              :param wait_strategy: Wait strategy that returns retry wait periods
+              :param context: Lambda context that is used to calculate remaining execution time
+              :param timeout: Timeout for method call. This time can not exceed the remaining time if a method is called
+              within the context of a lambda function.
+              :param lambda_time_out_margin: If called within the context of a Lambda function this time should at least be 
+              remaining before making a retry. This is to allow possible cleanup and logging actions in the remaining time
+              """
         AwsApiServiceRetry.__init__(
             self,
             call_retry_strategies=None,
             wait_strategy=wait_strategy,
             context=context,
             timeout=timeout,
-            logger=logger,
             lambda_time_out_margin=lambda_time_out_margin)
 
-        self._call_retry_strategies += [
-            self.snapshot_creation_per_volume_throttles,
-            self.resource_limit_exceeded,
-            self.request_limit_exceeded
-        ]
+        self._call_retry_strategies += [self.snaphot_creation_per_volume_throotles,
+                                        self.resource_limit_exceeded,
+                                        self.request_limit_exceeded]
 
     @classmethod
-    def snapshot_creation_per_volume_throttles(cls, ex):
+    def snaphot_creation_per_volume_throotles(cls, ex):
         """
         Retries in case the snapshot creation rate is exceeded for a volume
         :param ex: Exception to test
@@ -61,7 +55,7 @@ class Ec2ServiceRetry(AwsApiServiceRetry):
     @classmethod
     def request_limit_exceeded(cls, ex):
         """
-        Retries in case requests limits are exceeded.
+        Retries in case resource limits are exceeded. 
         :param ex: 
         :return: 
         """

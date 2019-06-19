@@ -10,41 +10,23 @@
 #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
-import os
 import random
+import sys
 import types
-from datetime import datetime
-from time import time
 
-import botocore.config
+import boto3
 
-import services
 from .aws_service_retry import AwsApiServiceRetry
 from .dynamodb_service_retry import DynamoDbServiceRetry
 from .ec2_service_retry import Ec2ServiceRetry
-from .logs_service_retry import CloudWatchLogsServiceRetry
 
 DEFAULT_SUFFIX = "_with_retries"
-DEFAULT_WAIT_SECONDS = 10
-DEFAULT_MAX_WAIT = 60
-DEFAULT_RANDOM_FACTOR = 0.25
+DEFAULT_WAIT_SECONDS = 5
+DEFAULT_INCR_SECONDS = 5
+DEFAUL_MAX_WAIT = 30
+DEFAULT_RANDOM_FACTOR = 0.2
 
 MAX_WAIT = 24 * 3600
-
-EXPECTED_EXCEPTIONS = "_expected_boto3_exceptions_"
-
-STATS_FORMAT = "{}: , calls: {}, failed: {}, retries: {}, timed-out {}"
-LOG_FORMAT = "{:0>4d}-{:0>2d}-{:0>2d} - {:0>2d}:{:0>2d}:{:0>2d}.{:0>3s} {}, retry: {}"
-ENV_BOTO_RETRY_STATS = "BOTO_RETRY_STATS"
-ENV_BOTO_STATS_OUTPUT = "BOTO_RETRY_OUTPUT"
-ENV_USER_AGENT = "USER_AGENT"
-
-stats_enabled = False
-
-boto_retry_stats = str(os.getenv(ENV_BOTO_RETRY_STATS, "false")).lower() == "true" or stats_enabled
-boto_stats_output = str(os.getenv(ENV_BOTO_STATS_OUTPUT, "false")).lower() == "true"
-
-statistics = {}
 
 
 def make_method_with_retries(boto_client_or_resource, name, service_retry_strategy=None, method_suffix=DEFAULT_SUFFIX):
@@ -77,24 +59,28 @@ def make_method_with_retries(boto_client_or_resource, name, service_retry_strate
     return wrapped_api_method
 
 
-def get_default_wait_strategy(service):
+def get_default_wait_strategy(_):
     """
     Returns the default wait strategy for a service
-    :param service:  service name
+    :param _: Not used, placeholder for making default strategy specific for each service
     :return: Default wait strategy
     """
-
-    if service == "logs":
-        return MultiplyWaitStrategy(start=2, factor=2, max_wait=15, random_factor=DEFAULT_RANDOM_FACTOR)
-
-    return MultiplyWaitStrategy(start=DEFAULT_WAIT_SECONDS, max_wait=DEFAULT_MAX_WAIT, random_factor=DEFAULT_RANDOM_FACTOR)
+    return LinearWaitStrategy(start=DEFAULT_WAIT_SECONDS, incr=DEFAULT_INCR_SECONDS, max_wait=DEFAUL_MAX_WAIT,
+                              random_factor=DEFAULT_RANDOM_FACTOR)
 
 
-def get_default_retry_strategy(service, wait_strategy=None, context=None, logger=None):
+def get_default_retry_strategy(service, wait_strategy=None, context=None):
+    """
+    Gets the default retry strategy for a service
+    :param service: Name of the service
+    :param wait_strategy: Optional wait strategy, if not used then the default strategy for the service is used
+    :param context: Lambda execution context
+    :return: Retry strategy for the service
+    """
     if wait_strategy is None:
         wait_strategy = get_default_wait_strategy(service)
     service_retry_strategy_class = _get_service_retry_strategy_class(service)
-    strategy = service_retry_strategy_class(wait_strategy=wait_strategy, context=context, logger=logger)
+    strategy = service_retry_strategy_class(wait_strategy=wait_strategy, context=context)
     return strategy
 
 
@@ -108,16 +94,27 @@ def _get_service_retry_strategy_class(service):
         retry_class = Ec2ServiceRetry
     elif service == "dynamodb":
         retry_class = DynamoDbServiceRetry
-    elif service == "logs":
-        retry_class = CloudWatchLogsServiceRetry
     else:
         retry_class = AwsApiServiceRetry
-
     return retry_class
 
 
 def get_client_with_retries(service_name, methods, context=None, region=None, session=None, wait_strategy=None,
-                            method_suffix=DEFAULT_SUFFIX, logger=None):
+                            method_suffix=DEFAULT_SUFFIX):
+    """
+    Creates a bot3 client for the specified service name and region. The return client will have additional method for the
+    specified methods that are wrapped with the logic of the specified wait strategy or the default strategy for that service.
+    The method names must be valid for the boto3 service client. The name of the added functions is the name of the original
+    function plus the (default) value of method_suffix parameter
+    :param service_name: Name of the service
+    :param methods: List of methods for which a new method will be added to the client wrapped in retry logic
+    :param context: Lambda execution context
+    :param region: Region for the client
+    :param session: Boto3 session, if None a new session will be created
+    :param wait_strategy: WaitStrategy to use for the added methods, if None the default strategy will be used for the service
+    :param method_suffix: Suffix to add to the methods with retry logic that are added to the client, use none for DEFAULT_SUFFIX
+    :return: Client for the service with additional method that use retry logic
+    """
     args = {
         "service_name": service_name,
     }
@@ -125,21 +122,12 @@ def get_client_with_retries(service_name, methods, context=None, region=None, se
     if region is not None:
         args["region_name"] = region
 
-    user_agent = os.getenv(ENV_USER_AGENT, None)
-    if user_agent is not None:
-        session_config = botocore.config.Config(user_agent=user_agent)
-        args["config"] = session_config
-
-    if session is not None:
-        aws_session = session
-    else:
-        aws_session = services.get_session()
+    aws_session = session if session is not None else boto3.Session()
 
     result = aws_session.client(**args)
 
     # get strategy for the service
-    service_retry_strategy = get_default_retry_strategy(context=context, service=service_name,
-                                                        wait_strategy=wait_strategy, logger=logger)
+    service_retry_strategy = get_default_retry_strategy(context=context, service=service_name, wait_strategy=wait_strategy)
 
     # add a new method to the client instance that wraps the original method with service specific retry logic
     for method in methods:
@@ -188,9 +176,9 @@ def _apply_randomness(value, random_factor):
     return value + (random.uniform(random_factor * -1, random_factor) * value) if random_factor != 0 else value
 
 
-class WaitStrategy(object):
+class WaitStrategy:
     """
-    Implements wait strategy with defined wait
+    Implements wait strategy with defined wait waits 
     """
 
     def __init__(self, waits, random_factor=0):
@@ -224,7 +212,7 @@ class WaitStrategy(object):
         self._index = 0
 
 
-class ConstantWaitStrategy(object):
+class ConstantWaitStrategy:
     """
     Implements wait strategy with constant wait waits [step,step,step...]
     """
@@ -256,7 +244,7 @@ class ConstantWaitStrategy(object):
         pass
 
 
-class LinearWaitStrategy(object):
+class LinearWaitStrategy:
     """
     Implements wait strategy with incrementing wait waits [start, start+incr, start+incr+incr..., max_wait]
     """
@@ -294,12 +282,12 @@ class LinearWaitStrategy(object):
         self._val = self.start
 
 
-class MultiplyWaitStrategy(object):
+class MultiplyWaitStrategy:
     """
     Implements wait strategy with multiplied wait waits [start, start* factor, start*factor*factor..., max_wait]
     """
 
-    def __init__(self, start=DEFAULT_WAIT_SECONDS, factor=2, max_wait=MAX_WAIT, random_factor=0.0):
+    def __init__(self, start=DEFAULT_WAIT_SECONDS, factor=2, max_wait=MAX_WAIT, random_factor=0):
         """
         Initializes Multiply wait strategy
         :param start: Start wait period
@@ -326,36 +314,3 @@ class MultiplyWaitStrategy(object):
 
     def reset(self):
         self._val = self.start
-
-
-def update_calls(client_or_resource, method_name, retry):
-    if boto_retry_stats:
-        dt = datetime.fromtimestamp(time())
-        full_name = "{}.{}".format(type(client_or_resource).__name__, method_name)
-        if boto_stats_output:
-            print(LOG_FORMAT.format(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, str(dt.microsecond)[0:3], full_name,
-                                    retry))
-        if method_name in statistics:
-            statistics[full_name]["calls"] += 1
-        else:
-            statistics[full_name] = {"calls": 1, "retries": 0, "failed": 0, "timed-out": 0}
-
-
-def update_retries(client_or_resource, method_name, failed, retries, timed_out):
-    if boto_retry_stats:
-        full_name = "{}.{}".format(type(client_or_resource).__name__, method_name)
-        statistics[full_name]["retries"] += retries
-        statistics[full_name]["failed"] += failed
-        timed_out[full_name]["timed-out"] += 1 if timed_out else 0
-
-
-def print_statistics():
-    if boto_retry_stats and boto_stats_output:
-        for name in sorted(statistics):
-            print(STATS_FORMAT.format(name, statistics[name]["calls"], statistics[name]["failed"], statistics[name]["retries"],
-                                      statistics["timed-out"]))
-
-
-def clear_statistics():
-    global statistics
-    statistics = {}

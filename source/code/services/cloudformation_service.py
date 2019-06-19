@@ -21,55 +21,27 @@ STACK_EVENTS = "StackEvents"
 STACK_RESOURCE = "StackResource"
 STACK_RESOURCES = "StackResources"
 STACKS = "Stacks"
-STACK_LIST = "StackList"
 STACKS_SUMMARY = "StacksSummary"
-STACK_POLICY = "StackPolicy"
-TEMPLATE = "Template"
-TEMPLATE_SUMMARY = "TemplateSummary"
 
 CUSTOM_RESULT_PATHS = {
     CHANGE_SET: "",
     STACK_RESOURCE: "StackResourceDetail",
     CHANGE_SETS_SUMMARY: "Summaries",
     RESOURCES_SUMMARY: "StackResourceSummaries",
-    STACKS_SUMMARY: "StackSummaries",
-    STACK_LIST: "StackSummaries",
-    STACK_POLICY: "{StackPolicy:StackPolicyBody}",
-    TEMPLATE: "{" + ",".join(['"{}":{}'.format(i, i) for i in [
-        "TemplateBody",
-        "StagesAvailable",
-
-    ]]) + "}",
-    TEMPLATE_SUMMARY: "{" + ",".join(['"{}":{}'.format(i, i) for i in [
-        "Parameters",
-        "Description",
-        "Capabilities",
-        "CapabilitiesReason",
-        "ResourceTypes",
-        "Version",
-        "Metadata",
-        "DeclaredTransforms"
-    ]]) + "}",
+    STACKS_SUMMARY: "StackSummaries"
 }
 
-RESOURCE_NAMES = [
-    ACCOUNT_LIMITS,
-    CHANGE_SET,
-    STACK_EVENTS,
-    STACK_RESOURCE,
-    STACK_RESOURCES,
-    STACKS,
-    CHANGE_SETS_SUMMARY,
-    RESOURCES_SUMMARY,
-    STACKS_SUMMARY,
-    STACK_POLICY,
-    TEMPLATE,
-    TEMPLATE_SUMMARY
-]
+RESOURCE_NAMES = [ACCOUNT_LIMITS,
+                  CHANGE_SET,
+                  STACK_EVENTS,
+                  STACK_RESOURCE,
+                  STACK_RESOURCES,
+                  STACKS,
+                  CHANGE_SETS_SUMMARY,
+                  RESOURCES_SUMMARY,
+                  STACKS_SUMMARY]
 
-RESOURCES_WITH_TAGS = [
-    STACKS
-]
+RESOURCES_WITH_TAGS = [STACKS]
 
 
 class CloudformationService(AwsService):
@@ -106,11 +78,5 @@ class CloudformationService(AwsService):
 
         if resource_name in [CHANGE_SETS_SUMMARY, RESOURCES_SUMMARY, STACKS_SUMMARY]:
             s = s.replace("describe_", "list_")[0:-len("_Summary")]
-
-        elif resource_name in [STACK_POLICY, TEMPLATE, TEMPLATE_SUMMARY]:
-            s = s.replace("describe_", "get_")
-
-        elif resource_name == STACK_LIST:
-            s = "list_stacks"
 
         return s

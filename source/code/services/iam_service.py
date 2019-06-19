@@ -13,6 +13,7 @@
 
 from services.aws_service import AwsService
 
+
 ACCESS_KEYS = "AccessKeys"
 ACCOUNT_ALIASES = "AccountAliases"
 ATTACHED_GROUP_POLICIES = "AttachedGroupPolicies"
@@ -84,14 +85,12 @@ RESOURCE_NAMES = [
     USER_POLICIES,
     USERS,
     VIRTUAL_MFA_DEVICES
-]
 
+]
 NEXT_TOKEN_ARGUMENT = "Marker"
 NEXT_TOKEN_RESULT = NEXT_TOKEN_ARGUMENT
 
-MAPPED_PARAMETERS = {
-    "MaxResults": "MaxItems"
-}
+MAPPED_PARAMETERS = {"MaxResults": "MaxItems"}
 
 
 class IamService(AwsService):
@@ -134,11 +133,4 @@ class IamService(AwsService):
         # IAM prefix for function name is list_ instead of describe_
         return s.replace("describe_", "list_")
 
-    @staticmethod
-    def select_service_roles(roles, service_principal_name):
-        return [r for r in roles
-                if any([s for s in r.get("AssumeRolePolicyDocument", {}).get("Statement", [])
-                        if s["Effect"] == "Allow" and
-                        s["Action"] == "sts:AssumeRole" and
-                        s["Principal"].get("Service", "") == service_principal_name])]
 

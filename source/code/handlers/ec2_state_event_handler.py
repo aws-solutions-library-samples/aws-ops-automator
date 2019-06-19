@@ -12,95 +12,131 @@
 ######################################################################################################################
 
 
-import services.ec2_service
-from handlers import EC2_EVENT_SOURCE
-from handlers.event_handler_base import *
-from handlers.event_handler_base import EventHandlerBase
+from datetime import datetime
 
-ERR_EC2_STATE_EVENT = "Error testing Ec2State event {}"
+import handlers
+from boto_retry import get_client_with_retries
+from configuration.task_configuration import TaskConfiguration
+from main import lambda_handler
+from util import safe_dict, safe_json
+from util.logger import Logger
 
-EC2_STATE_EVENT_TITLE = "EC2 state events"
 EC2_STATE_NOTIFICATION = "EC2 Instance State-change Notification"
-EC2_EVENT_STATE_PARAM = "Ec2State{}"
-EC2_STATE_SCOPE_PARAM = "Ec2State{}Scope"
+EC2_STATE_EVENT = "ec2:state"
 
-EVENT_DESCRIPTION_STARTED = "Run task when EC2 instance is started"
-EVENT_DESCRIPTION_STOPPED = "Run task when EC2 instance is stopped"
-EVENT_DESCRIPTION_TERMINATED = "Run task when EC2 instance is terminated"
-EVENT_LABEL_STARTED = "Instance started"
-EVENT_LABEL_STOPPED = "Instance stopped"
-EVENT_LABEL_TERMINATED = "Instance terminated"
+INFO_EVENT = "Scheduling task {} for ec2 event with state {} for instance {}, account {} in region {}\nTask definition is {}"
 
-EC2_STATE_RUNNING = "running"
-EC2_STATE_STOPPED = "stopped"
-EC2_STATE_TERMINATED = "terminated"
-
-# scope for reacting to EC2_State events
-EC2_EVENT_STATE_SCOPE = "Ec2ventStateScope"
-EC2_EVENT_STATE_SCOPE_RESOURCE = "Resource"
-EC2_EVENT_STATE_SCOPE_REGION = "Region"
-
-HANDLED_EVENTS = {
-    EVENT_SOURCE_TITLE: EC2_STATE_EVENT_TITLE,
-    EVENT_SOURCE: handlers.EC2_EVENT_SOURCE,
-    EVENT_PARAMETER: EC2_EVENT_STATE_PARAM,
-    EVENT_SCOPE_PARAMETER: EC2_STATE_SCOPE_PARAM,
-    EVENT_EVENTS: {
-        EC2_STATE_RUNNING: {
-            EVENT_LABEL: EVENT_LABEL_STARTED,
-            EVENT_DESCRIPTION: EVENT_DESCRIPTION_STARTED},
-        EC2_STATE_STOPPED: {
-            EVENT_LABEL: EVENT_LABEL_STOPPED,
-            EVENT_DESCRIPTION: EVENT_DESCRIPTION_STOPPED},
-        EC2_STATE_TERMINATED: {
-            EVENT_LABEL: EVENT_LABEL_TERMINATED,
-            EVENT_DESCRIPTION: EVENT_DESCRIPTION_TERMINATED}
-    }
-}
+LOG_STREAM = "{}-{:0>4d}{:0>2d}{:0>2d}"
 
 
-class Ec2StateEventHandler(EventHandlerBase):
+class Ec2StateEventHandler:
+    """
+    Class that handles time based events from CloudWatch rules
+    """
+
     def __init__(self, event, context):
-        EventHandlerBase.__init__(self, event=event,
-                                  context=context,
-                                  resource=services.ec2_service.INSTANCES,
-                                  handled_event_source=EC2_EVENT_SOURCE,
-                                  handled_event_detail_type=EC2_STATE_NOTIFICATION,
-                                  event_name_in_detail="state")
+        """
+        Initializes the instance.
+        :param event: event to handle
+        :param context: CLambda context
+        """
+        self._context = context
+        self._event = event
+        self._table = None
+
+        # setup logging
+        classname = self.__class__.__name__
+        dt = datetime.utcnow()
+        logstream = LOG_STREAM.format(classname, dt.year, dt.month, dt.day)
+        self._logger = Logger(logstream=logstream, buffersize=20, context=context)
 
     @staticmethod
-    def is_handling_event(event, logger):
+    def is_handling_request(event):
+        """
+        Tests if event is handled by instance of this handler.
+        :param event: tested event
+        :param: Tested event
+        :return: True if the event is a cloudwatch rule event
+        """
+        return event.get("source", "") == "aws.ec2" and event.get("detail-type") == EC2_STATE_NOTIFICATION
+
+    def handle_request(self):
+        """
+        Handled the cloudwatch rule timer event
+        :return: Started tasks, if any, information
+        """
+
+        def is_matching_event_state(event_state, ec2event):
+            return event_state in [s.strip() for s in ec2event.split(",")] or ec2event != "*"
+
         try:
-            return event.get("source", "") == EC2_EVENT_SOURCE and \
-                   event.get("detail-type") == EC2_STATE_NOTIFICATION
-        except Exception as ex:
-            logger.error(ERR_EC2_STATE_EVENT, ex)
-            return False
 
-    def _resource_ids(self):
-        return [r.split("/")[-1] for r in self._event.get("resources")]
+            result = []
+            start = datetime.now()
+            self._logger.info("Handler {}", self.__class__.__name__)
 
-    def _select_parameters(self, event_name, task):
+            state = self._event.get("detail", {}).get("state")
+            if state is not None:
+                state = state.lower()
 
-        params = {}
+            account = self._event["account"]
+            region = self._event["region"]
+            instance_id = self._event["detail"]["instance-id"]
+            dt = self._event["time"]
+            task = None
 
-        # no specific instance the service of the task is not ec2, this allows rds service tasks to be triggered by ec2 events
-        if task[handlers.TASK_SERVICE] != "ec2":
-            return params
+            try:
 
-        # if the scope is regional then no specific is but all instances in the region
-        if task.get(handlers.TASK_EVENT_SCOPES, {}).get(EC2_EVENT_SOURCE, {}).get(EC2_STATE_NOTIFICATION, {}).get(
-                event_name, "") == handlers.EVENT_SCOPE_REGION:
-            return params
+                # for all ec2 events tasks in configuration
+                for task in [t for t in TaskConfiguration(context=self._context, logger=self._logger).get_tasks() if
+                             t.get("events") is not None
+                             and EC2_STATE_EVENT in t["events"]
+                             and t.get("enabled", True)]:
 
-        # just the source instance of the event
-        params["InstanceIds"] = self._resource_ids()
+                    task_name = task["name"]
 
-        return params
+                    ec2_event = task["events"][EC2_STATE_EVENT]
 
-    def _source_resource_tags(self, session, task):
-        ec2 = get_client_with_retries("ec2", methods=["DescribeTags"], context=self._context, region=self._event_region(),
-                                      session=session, logger=self._logger)
+                    if not is_matching_event_state(state, ec2_event):
+                        continue
 
-        resp = ec2.describe_tags_with_retries(Filters=[{"Name": "resource-id", "Values": self._resource_ids()}])
-        return {t["Key"]: t["Value"] for t in resp.get("Tags", [])}
+                    result.append(task_name)
+
+                    self._logger.info(
+                        INFO_EVENT, task_name, state, instance_id, account, region, safe_json(task, indent=2))
+                    # create an event for lambda function that scans for resources for this task
+                    event = {
+                        handlers.HANDLER_EVENT_ACTION: handlers.HANDLER_ACTION_SELECT_RESOURCES,
+                        handlers.HANDLER_SELECT_ARGUMENTS: {
+                            handlers.HANDLER_EVENT_REGIONS: [region],
+                            handlers.HANDLER_EVENT_ACCOUNT: account,
+                            "InstanceIds": [instance_id]
+                        },
+                        handlers.HANDLER_EVENT_SOURCE: EC2_STATE_EVENT,
+                        handlers.HANDLER_EVENT_TASK: task,
+                        handlers.HANDLER_EVENT_TASK_DT: dt
+                    }
+
+                    if self._context is not None:
+                        # start lambda function to scan for task resources
+                        payload = str.encode(safe_json(event))
+                        client = get_client_with_retries("lambda", ["invoke"], context=self._context)
+                        client.invoke_with_retries(FunctionName=self._context.function_name,
+                                                   Qualifier=self._context.function_version,
+                                                   InvocationType="Event", LogType="None", Payload=payload)
+                    else:
+                        # or if not running in lambda environment pass event to main task handler
+                        lambda_handler(event, None)
+
+                return safe_dict({
+                    "datetime": datetime.now().isoformat(),
+                    "running-time": (datetime.now() - start).total_seconds(),
+                    "event-datetime": dt,
+                    "started-tasks": result
+                })
+
+            except ValueError as ex:
+                self._logger.error("{}\n{}".format(ex, safe_json(task, indent=2)))
+
+        finally:
+            self._logger.flush()

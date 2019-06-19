@@ -1,84 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Ops Automator, template version %version%, (SO0029)",
-    "Mappings": {
-        "Send": {
-            "AnonymousUsage": {
-                "Data": "Yes"
-            }
-        },
-        "Settings": {
-            "Names": {
-                "CloudTrailRdsEventRule": "OpsAutomatorCloudTrailRdsEventRule",
-                "CloudWatchQueueHandlerLambdaFunction": "OpsAutomatorCloudWatchQueueHandler",
-                "ConfigurationBucket": "",
-                "EbsSnapshotEventRule": "OpsAutomatorEbsSnapshotEventRule",
-                "Ec2StateEventRule": "OpsAutomatorEc2StateEventRule",
-                "EventsTopic": "EventsTopic",
-                "EventsTopicDisplayName": "OpsAutomatorEvents",
-                "IssuesTopic": "IssuesTopic",
-                "IssuesTopicDisplayName": "Issues",
-                "LogQueueName": "OpsAutomatorCloudWatchLogQueue",
-                "NotificationsTopic": "NotificationsTopic",
-                "NotificationsTopicDisplayName": "Notifications",
-                "OpsAutomatorCompletionRule": "OpsAutomatorCompletionRule",
-                "OpsAutomatorLambdaFunction": "OpsAutomator",
-                "OpsAutomatorRule": "OpsAutomatorRule",
-                "ReportingBucket": "",
-                "ResourcesBucket": "",
-                "TaggingEventRule": "OpsAutomatorTaggingEventRule"
-            },
-            "Metrics": {
-                "Url": "https://metrics.awssolutionsbuilder.com/generic",
-                "SolutionId": "S00029"
-            },
-            "Templates": {
-                "OptimizeCrossAccountTemplate": "True"
-            },
-            "ActionMemory": {
-                "Standard": "128",
-                "Medium": "256",
-                "Large": "512",
-                "XLarge": "1024",
-                "XXLarge": "2048",
-                "XXXLarge": "3008",
-                "ECS": ""
-            },
-            "EcsCluster": {
-                "ClusterName": ""
-            },
-            "Resources": {
-                "ResourceToS3SizeKB": 16,
-                "EncryptResourceData": "False"
-            },
-            "ServiceLimits": {
-                "MaxConcurrentEbsSnapshotCopies": 5,
-                "MaxConcurrentRdsSnapshotCopies": 5,
-                "MaxConcurrentImageCopies": 25
-            },
-            "CloudWatchApiLimits": {
-                "MaxPutCallsPerStream": 5,
-                "MaxDescribeCalls": 5,
-                "MaxApiCalls": 40
-            }
-        },
-        "EnabledDisabled": {
-            "Yes": {
-                "Value": "ENABLED"
-            },
-            "No": {
-                "Value": "DISABLED"
-            }
-        },
-        "YesNoBoolean": {
-            "Yes": {
-                "Value": "True"
-            },
-            "No": {
-                "Value": "False"
-            }
-        }
-    },
     "Parameters": {
         "TagName": {
             "Type": "String",
@@ -96,15 +18,6 @@
             "Default": "Yes",
             "Description": "Enable cleanup of task tracking table."
         },
-        "EnableTaskExport": {
-            "Type": "String",
-            "AllowedValues": [
-                "Yes",
-                "No"
-            ],
-            "Default": "No",
-            "Description": "Enable S3 export of task tracking table."
-        },
         "RetainFailedTasks": {
             "Type": "String",
             "AllowedValues": [
@@ -114,20 +27,20 @@
             "Default": "Yes",
             "Description": "Do not delete failed tasks."
         },
-        "UseCloudWatchMetrics": {
+        "SendAnonymousData": {
             "Type": "String",
             "AllowedValues": [
                 "Yes",
                 "No"
             ],
             "Default": "Yes",
-            "Description": "Collect CloudWatch metrics data for Ops Automator. Detailed metrics for individual tasks can be configured at task level."
+            "Description": "Send Anonymous Metrics Data."
         },
         "TaskRetentionHours": {
             "Type": "Number",
             "MinValue": 1,
             "Default": 168,
-            "Description": "Number of hours after which tasks are deleted."
+            "Description": "Number of hours after which tasks are deleted.."
         },
         "LogRetentionDays": {
             "Type": "Number",
@@ -151,14 +64,16 @@
                 1827,
                 3653
             ],
-            "Description": "Retention days for Ops Automator logs."
+            "Description": "Retention days for scheduler logs."
         },
+
         "ConfigBackupDays": {
             "Type": "Number",
             "Default": 30,
             "MinValue": 1,
-            "Description": "Retention days for Ops Automator configuration backups."
+            "Description": "Retention days for scheduler configuration backups."
         },
+
         "SchedulerActive": {
             "Type": "String",
             "AllowedValues": [
@@ -177,31 +92,24 @@
                         "default": "Ops Automator (version %version%)"
                     },
                     "Parameters": [
-                        "TagName",
-                        "UseCloudWatchMetrics",
-                        "SchedulerActive"
+                        "TagName"
                     ]
                 },
                 {
                     "Label": {
-                        "default": "Maintenance"
+                        "default": "Maintenace"
                     },
                     "Parameters": [
                         "EnableTaskCleanup",
-                        "EnableTaskExport",
-                        "TaskRetentionHours",
                         "RetainFailedTasks",
-                        "LogRetentionDays",
-                        "ConfigBackupDays"
+                        "SchedulerActive",
+                        "TaskRetentionHours"
                     ]
                 }
             ],
             "ParameterLabels": {
                 "EnableTaskCleanup": {
                     "default": "Cleanup Task Tracking Table"
-                },
-                "EnableTaskExport": {
-                    "default": "Export Task Tracking Table to Amazon S3"
                 },
                 "RetainFailedTasks": {
                     "default": "Keep failed tasks"
@@ -210,7 +118,7 @@
                     "default": "Scheduling active"
                 },
                 "TagName": {
-                    "default": "TaskScheduler Tagname"
+                    "default": "Ops Automator Tagname"
                 },
                 "TaskRetentionHours": {
                     "default": "Hours to keep tasks"
@@ -218,73 +126,17 @@
                 "ConfigBackupDays": {
                     "default": "Days to keep configuration backups"
                 },
-                "UseCloudWatchMetrics": {
-                    "default": "Enable CloudWatch Metrics"
+                "SendAnonymousData": {
+                    "default": "Send anonymous usage data"
                 }
             }
         }
     },
     "Conditions": {
-        "CustomConfigBucketName": {
-            "Fn::Not": [
-                {
-                    "Fn::Equals": [
-                        {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Names",
-                                "ConfigurationBucket"
-                            ]
-                        },
-                        ""
-                    ]
-                }
-            ]
-        },
-        "CustomReportingBucketName": {
-            "Fn::Not": [
-                {
-                    "Fn::Equals": [
-                        {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Names",
-                                "ReportingBucket"
-                            ]
-                        },
-                        ""
-                    ]
-                }
-            ]
-        },
-        "CustomResourcesBucketName": {
-            "Fn::Not": [
-                {
-                    "Fn::Equals": [
-                        {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Names",
-                                "ResourcesBucket"
-                            ]
-                        },
-                        ""
-                    ]
-                }
-            ]
-        },
         "EnableTaskCleanupCondition": {
             "Fn::Equals": [
                 {
                     "Ref": "EnableTaskCleanup"
-                },
-                "Yes"
-            ]
-        },
-        "EnableTaskExportCondition": {
-            "Fn::Equals": [
-                {
-                    "Ref": "EnableTaskExport"
                 },
                 "Yes"
             ]
@@ -296,325 +148,35 @@
                 },
                 "Yes"
             ]
+        }
+    },
+    "Mappings": {
+        "EnabledDisabled": {
+            "Yes": {
+                "Value": "ENABLED"
+            },
+            "No": {
+                "Value": "DISABLED"
+            }
         },
-        "EncryptResourceData": {
-            "Fn::Equals": [
-                {
-                    "Fn::FindInMap": [
-                        "Settings",
-                        "Resources",
-                        "EncryptResourceData"
-                    ]
-                },
-                "True"
-            ]
+        "YesNoBoolean": {
+            "Yes": {
+                "Value": "True"
+            },
+            "No": {
+                "Value": "False"
+            }
         },
-        "UseEcs": {
-            "Fn::Not": [
-                {
-                    "Fn::Equals": [
-                        {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "EcsCluster",
-                                "ClusterName"
-                            ]
-                        },
-                        ""
-                    ]
-                }
-            ]
-        },
-        "CloudWatchPutLimit800": {
-            "Fn::Or": [
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "ap-south-1"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "ap-northeast-1"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "ap-northeast-2"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "ap-southeast-1"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "ap-southeast-2"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "eu-central-1"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "eu-west-2"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "sa-east-1"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "us-east-2"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "us-west-1"
-                    ]
-                }
-            ]
-        },
-        "FifoQueue": {
-            "Fn::Or": [
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "eu-west-1"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "ap-northeast-1"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "ap-southeast-2"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "us-east-1"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "us-east-2"
-                    ]
-                },
-                {
-                    "Fn::Equals": [
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "us-west-2"
-                    ]
-                }
-            ]
+        "Settings": {
+            "Metrics": {
+                "Url": "https://oszclq8tyh.execute-api.us-east-1.amazonaws.com/prod/generic",
+                "SolutionId" : "S00029"
+            }
         }
     },
     "Resources": {
-        "OpsAutomatorEventsForwardRole": {
+        "SchedulerRole": {
             "Type": "AWS::IAM::Role",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "lambda.amazonaws.com"
-                            },
-                            "Action": "sts:AssumeRole"
-                        }
-                    ]
-                },
-                "Policies": [
-                    {
-                        "PolicyName": "OpsAutomatorEventForwardRolePolicy",
-                        "PolicyDocument": {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "sns:Publish"
-                                    ],
-                                    "Resource": {
-                                        "Ref": "OpsAutomatorEventsTopic"
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                ],
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                ],
-                "Path": "/"
-            }
-        },
-        "OpsAutomatorCloudWatchLogHandlerRole": {
-            "Type": "AWS::IAM::Role",
-            "Metadata": {
-                "cfn_nag": {
-                    "rules_to_suppress": [
-                        {
-                            "id": "W11",
-                            "reason": "logs:DescribeLogStreams actions requires * resource."
-                        }
-                    ]
-                }
-            },
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "lambda.amazonaws.com"
-                            },
-                            "Action": "sts:AssumeRole"
-                        }
-                    ]
-                },
-                "Policies": [
-                    {
-                        "PolicyName": "OpsAutomatorCloudWatchHandlerRolePolicy",
-                        "PolicyDocument": {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "dynamodb:GetRecords",
-                                        "dynamodb:GetShardIterator",
-                                        "dynamodb:DescribeStream",
-                                        "dynamodb:ListStreams"
-                                    ],
-                                    "Resource": [
-                                        {
-                                            "Fn::GetAtt": [
-                                                "TriggerTable",
-                                                "StreamArn"
-                                            ]
-                                        }
-                                    ]
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "dynamodb:PutItem"
-                                    ],
-                                    "Resource": [
-                                        {
-                                            "Fn::Join": [
-                                                "",
-                                                [
-                                                    {
-                                                        "Fn::Join": [
-                                                            ":",
-                                                            [
-                                                                "arn:aws:dynamodb",
-                                                                {
-                                                                    "Ref": "AWS::Region"
-                                                                },
-                                                                {
-                                                                    "Ref": "AWS::AccountId"
-                                                                },
-                                                                "table/"
-                                                            ]
-                                                        ]
-                                                    },
-                                                    {
-                                                        "Ref": "TriggerTable"
-                                                    }
-                                                ]
-                                            ]
-                                        }
-                                    ]
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "logs:DescribeLogStreams"
-                                    ],
-                                    "Resource": [
-                                        "*"
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                ],
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                ],
-                "Path": "/"
-            }
-        },
-        "OpsAutomatorLambdaRole": {
-            "Type": "AWS::IAM::Role",
-            "Metadata": {
-                "cfn_nag": {
-                    "rules_to_suppress": [
-                        {
-                            "id": "W11",
-                            "reason": "The only wildcard (*) resource on this role is grouped into a Policy Statement with SID: ActionsRequireAllResources. All actions in the ActionsRequireAllResources Policy Statement support all resources."
-                        }
-                    ]
-                }
-            },
             "Properties": {
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
@@ -639,97 +201,37 @@
                                 "Service": "events.amazonaws.com"
                             },
                             "Action": "sts:AssumeRole"
-                        },
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "ecs-tasks.amazonaws.com"
-                            },
-                            "Action": [
-                                "sts:AssumeRole"
-                            ]
                         }
                     ]
                 },
                 "Policies": [
                     {
-                        "PolicyName": "OpsAutomatorLambdaRolePolicy",
+                        "PolicyName": "SchedulerPolicy",
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [
                                 {
                                     "Effect": "Allow",
                                     "Action": [
-                                        "logs:CreateLogGroup",
-                                        "logs:CreateLogStream",
-                                        "logs:PutLogEvents",
-                                        "logs:PutRetentionPolicy",
-                                        "logs:DescribeLogStreams"
+                                        "logs:DescribeLogStreams",
+                                        "logs:PutRetentionPolicy"
                                     ],
                                     "Resource": [
-                                        {
-                                            "Fn::Join": [
-                                                ":",
-                                                [
-                                                    "arn:aws:logs",
-                                                    {
-                                                        "Ref": "AWS::Region"
-                                                    },
-                                                    {
-                                                        "Ref": "AWS::AccountId"
-                                                    },
-                                                    "log-group",
-                                                    { 
-                                                        "Ref": "OpsAutomatorLogGroup"
-                                                    },
-                                                    "*"
-                                                ]
-                                            ]
-                                        },
-                                        {
-                                            "Fn::Join": [
-                                                ":",
-                                                [
-                                                    "arn:aws:logs",
-                                                    {
-                                                        "Ref": "AWS::Region"
-                                                    },
-                                                    {
-                                                        "Ref": "AWS::AccountId"
-                                                    },
-                                                    "log-group:/aws/lambda/*"
-                                                ]
-                                            ]
-                                        }
+                                        "*"
                                     ]
                                 },
                                 {
                                     "Effect": "Allow",
-                                    "Action": [
-                                        "sns:Publish"
-                                    ],
+                                    "Action": "dynamodb:ListTables",
                                     "Resource": [
-                                        {
-                                            "Ref": "OpsAutomatorIssuesTopic"
-                                        },
-                                        {
-                                            "Ref": "OpsAutomatorNotificationsTopic"
-                                        }
+                                        "*"
                                     ]
                                 },
                                 {
                                     "Effect": "Allow",
-                                    "Action": [
-                                        "sns:Publish",
-                                        "sns:RemovePermission",
-                                        "sns:AddPermission",
-                                        "sns:GetTopicAttributes",
-                                        "sns:Subscribe"
-                                    ],
+                                    "Action": "sns:Publish",
                                     "Resource": [
-                                        {
-                                            "Ref": "OpsAutomatorEventsTopic"
-                                        }
+                                        {"Ref": "SchedulerSnsTopic"}
                                     ]
                                 },
                                 {
@@ -739,39 +241,22 @@
                                         "s3:DeleteObject",
                                         "s3:GetObject"
                                     ],
-                                    "Resource": [
-                                        {
-                                            "Fn::Sub": [
-                                                "arn:aws:s3:::${Name}/*",
-                                                {
-                                                    "Name": {
-                                                        "Ref": "TaskResources"
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    ]
+                                    "Resource": {
+                                        "Fn::Sub": [
+                                            "arn:aws:s3:::${Name}/*",
+                                            {
+                                                "Name": {"Ref": "Configuration"}
+
+                                            }
+                                        ]
+                                    }
                                 },
                                 {
                                     "Effect": "Allow",
-                                    "Action": "s3:PutObject",
-                                    "Resource": [
-                                        {
-                                            "Fn::Sub": [
-                                                "arn:aws:s3:::${Name}/*",
-                                                {
-                                                    "Name": {
-                                                        "Ref": "Reporting"
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": "s3:ListBucket",
-                                    "Resource": "arn:aws:s3:::*"
+                                    "Action": [
+                                        "s3:ListBucket"
+                                    ],
+                                    "Resource": ["*"]
                                 },
                                 {
                                     "Effect": "Allow",
@@ -783,14 +268,62 @@
                                     ],
                                     "Resource": [
                                         {
-                                            "Fn::GetAtt": [ "TaskTrackingTable", "Arn" ]
-                                        },
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    {
+                                                        "Fn::Join": [
+                                                            ":",
+                                                            [
+                                                                "arn:aws:dynamodb",
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                },
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                },
+                                                                "table/"
+                                                            ]
+                                                        ]
+                                                    },
+                                                    {
+                                                        "Ref": "TaskTrackingTable"
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:UpdateItem",
+                                        "dynamodb:GetItem",
+                                        "dynamodb:BatchWriteItem",
+                                        "dynamodb:Query"
+                                    ],
+                                    "Resource": [
                                         {
                                             "Fn::Join": [
                                                 "",
                                                 [
                                                     {
-                                                        "Fn::GetAtt": [ "TaskTrackingTable", "Arn" ]
+                                                        "Fn::Join": [
+                                                            ":",
+                                                            [
+                                                                "arn:aws:dynamodb",
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                },
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                },
+                                                                "table/"
+                                                            ]
+                                                        ]
+                                                    },
+                                                    {
+                                                        "Ref": "TaskTrackingTable"
                                                     },
                                                     "/index/*"
                                                 ]
@@ -807,21 +340,68 @@
                                         "dynamodb:PutItem",
                                         "dynamodb:DeleteItem"
                                     ],
-                                    "Resource": { 
-                                        "Fn::GetAtt": [ "ConfigurationTable", "Arn" ]
-                                    }
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    {
+                                                        "Fn::Join": [
+                                                            ":",
+                                                            [
+                                                                "arn:aws:dynamodb",
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                },
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                },
+                                                                "table/"
+                                                            ]
+                                                        ]
+                                                    },
+                                                    {
+                                                        "Ref": "ConfigurationTable"
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ]
                                 },
                                 {
-                                    "Sid": "ConcurrencyTableAccess",
+                                    "Sid": "ConcurrencyTableAcces",
                                     "Effect": "Allow",
                                     "Action": [
                                         "dynamodb:UpdateItem",
-                                        "dynamodb:GetItem",
                                         "dynamodb:DeleteItem"
                                     ],
-                                    "Resource": { 
-                                        "Fn::GetAtt": [ "ConcurrencyTable", "Arn" ]
-                                    }
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    {
+                                                        "Fn::Join": [
+                                                            ":",
+                                                            [
+                                                                "arn:aws:dynamodb",
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                },
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                },
+                                                                "table/"
+                                                            ]
+                                                        ]
+                                                    },
+                                                    {
+                                                        "Ref": "ConcurrencyTable"
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ]
                                 },
                                 {
                                     "Effect": "Allow",
@@ -829,189 +409,91 @@
                                         "dynamodb:GetItem",
                                         "dynamodb:UpdateItem"
                                     ],
-                                    "Resource": { 
-                                        "Fn::GetAtt": [ "LastSchedulerExecutionTable", "Arn" ]
-                                    }
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": "dynamodb:PutItem",
-                                    "Resource": { 
-                                        "Fn::GetAtt": [ "TriggerTable", "Arn" ]
-                                    }
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "dynamodb:GetRecords",
-                                        "dynamodb:GetShardIterator",
-                                        "dynamodb:DescribeStream",
-                                        "dynamodb:ListStreams"
-                                    ],
-                                    "Resource": {
-                                        "Fn::GetAtt": [ "TaskTrackingTable", "StreamArn" ]
-                                    }
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "events:EnableRule",
-                                        "events:DisableRule"
-                                    ],
                                     "Resource": [
                                         {
-                                            "Fn::Sub": [
-                                                "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${AWS::StackName}-${Rule}",
-                                                {
-                                                    "Rule": {
-                                                        "Fn::FindInMap": [
-                                                            "Settings",
-                                                            "Names",
-                                                            "OpsAutomatorRule"
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    {
+                                                        "Fn::Join": [
+                                                            ":",
+                                                            [
+                                                                "arn:aws:dynamodb",
+                                                                {
+                                                                    "Ref": "AWS::Region"
+                                                                },
+                                                                {
+                                                                    "Ref": "AWS::AccountId"
+                                                                },
+                                                                "table/"
+                                                            ]
                                                         ]
+                                                    },
+                                                    {
+                                                        "Ref": "LastSchedulerExecutionTable"
                                                     }
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "Fn::Sub": [
-                                                "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${AWS::StackName}-${Rule}",
-                                                {
-                                                    "Rule": {
-                                                        "Fn::FindInMap": [
-                                                            "Settings",
-                                                            "Names",
-                                                            "OpsAutomatorCompletionRule"
-                                                        ]
-                                                    }
-                                                }
+                                                ]
                                             ]
                                         }
                                     ]
                                 },
                                 {
                                     "Effect": "Allow",
-                                    "Action": "cloudformation:ListStackResources",
-                                    "Resource": {
-                                        "Ref": "AWS::StackId"
-                                    }
-                                },
-                                {
-                                    "Effect": "Allow",
                                     "Action": [
-                                        "cloudformation:GetTemplate",
-                                        "cloudformation:ListStackResources"
+                                        "events:EnableRule",
+                                        "events:DisableRule",
+                                        "events:PutRule"
                                     ],
-                                    "Resource": {
-                                        "Fn::Sub": "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*"
-                                    }
+                                    "Resource": [
+                                      { "Fn::Sub": "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${AWS::StackName}-SchedulerRule*" },
+                                      { "Fn::Sub": "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${AWS::StackName}-CompletionRule*" }
+                                    ]
                                 },
                                 {
                                     "Effect": "Allow",
                                     "Action": [
-                                        "lambda:InvokeFunction",
-                                        "lambda:GetFunction"
+                                        "events:ListRules"
+                                    ],
+                                    "Resource": [
+                                      "*"
+                                    ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "cloudformation:ListStackResources"
                                     ],
                                     "Resource": [
                                         {
-                                            "Fn::Join": [
-                                                ":",
-                                                [
-                                                    "arn:aws:lambda",
-                                                    {
-                                                        "Ref": "AWS::Region"
-                                                    },
-                                                    {
-                                                        "Ref": "AWS::AccountId"
-                                                    },
-                                                    "function",
-                                                    {
-                                                        "Fn::Join": [
-                                                            "-",
-                                                            [
-                                                                {
-                                                                    "Ref": "AWS::StackName"
-                                                                },
-                                                                {
-                                                                    "Fn::FindInMap": [
-                                                                        "Settings",
-                                                                        "Names",
-                                                                        "OpsAutomatorLambdaFunction"
-                                                                    ]
-                                                                },
-                                                                "Standard"
-                                                            ]
-                                                        ]
-                                                    }
-                                                ]
-                                            ]
+                                            "Ref": "AWS::StackId"
                                         }
-                                    ],
-                                    "Sid": "OpsAutomatorLambdaInvoke"
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": "ecs:RunTask",
-                                    "Resource": {
-                                        "Fn::Sub": "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/${AWS::StackName}-ops-automator-task:*"
-                                    }
+                                    ]
                                 },
                                 {
                                     "Effect": "Allow",
                                     "Action": [
-                                        "ec2:RunInstances",
-                                        "ec2:TerminateInstance"
+                                        "cloudformation:DeleteStack"
                                     ],
-                                    "Resource": {
-                                        "Fn::Join": [
-                                            ":",
-                                            [
-                                                "arn:aws:ec2:*",
-                                                {
-                                                    "Ref": "AWS::AccountId"
-                                                },
-                                                "instance/*"
-                                            ]
-                                        ]
-                                    }
+                                    "Resource": [
+                                        "*"
+                                    ]
                                 },
                                 {
-                                    "Sid": "ActionsRequireAllResources",
                                     "Effect": "Allow",
                                     "Action": [
-                                        "cloudformation:DeleteStack",
-
-                                        "cloudwatch:PutMetricData",
-
-                                        "dynamodb:ListTables",
-
-                                        "ec2:DescribeVpcs",
-                                        "ec2:DescribeSubnets",
-                                        "ec2:DescribeImages",
-                                        "ec2:DescribeInternetGateways",
-                                        "ec2:DescribeSecurityGroups",
-                                        "ec2:DescribeSubnets",
-                                        "ec2:DescribeVpcEndpoints",
-                                        "ec2:DescribeRouteTables",
-                                        "ec2:DescribeNatGateways",
-
-                                        "events:PutRule",
-                                        "events:ListRules",
-
-                                        "iam:PassRole",
-
-                                        "logs:DescribeLogGroups",
-
-                                        "pricing:GetAttributeValues",
-
-                                        "ssm:GetParameter",
-                                        "ssm:GetParameters",
-
-                                        "sts:AssumeRole",
-
-                                        "tag:GetResources"
+                                        "lambda:InvokeFunction"
                                     ],
-                                    "Resource": "*"
+                                    "Resource": [{ "Fn::Join": [ ":", [ "arn:aws:lambda", {"Ref" : "AWS::Region"}, {"Ref" : "AWS::AccountId"}, "function", { "Fn::Join": [ "-", [ {"Ref" :"AWS::StackName"}, "SchedulerDefault" ] ]}  ]]}],
+                                    "Sid" : "SchedulerInvoke"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "sts:AssumeRole"
+                                    ],
+                                    "Resource": [
+                                        "*"
+                                    ]
                                 }
                             ]
                         }
@@ -1039,7 +521,10 @@
                         "KeyType": "HASH"
                     }
                 ],
-                "BillingMode": "PAY_PER_REQUEST"
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 1,
+                    "WriteCapacityUnits": 1
+                }
             }
         },
         "ConfigurationTable": {
@@ -1057,7 +542,10 @@
                         "KeyType": "HASH"
                     }
                 ],
-                "BillingMode": "PAY_PER_REQUEST",
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 5,
+                    "WriteCapacityUnits": 2
+                },
                 "StreamSpecification": {
                     "StreamViewType": "NEW_AND_OLD_IMAGES"
                 }
@@ -1086,16 +574,9 @@
                         "KeyType": "HASH"
                     }
                 ],
-                "BillingMode": "PAY_PER_REQUEST",
-                "TimeToLiveSpecification": {
-                    "AttributeName": "TTL",
-                    "Enabled": {
-                        "Fn::If": [
-                            "EnableTaskCleanupCondition",
-                            true,
-                            false
-                        ]
-                    }
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 5,
+                    "WriteCapacityUnits": 5
                 },
                 "StreamSpecification": {
                     "StreamViewType": "NEW_AND_OLD_IMAGES"
@@ -1115,6 +596,10 @@
                         ],
                         "Projection": {
                             "ProjectionType": "ALL"
+                        },
+                        "ProvisionedThroughput": {
+                            "ReadCapacityUnits": "2",
+                            "WriteCapacityUnits": "2"
                         }
                     },
                     {
@@ -1131,9 +616,15 @@
                         ],
                         "Projection": {
                             "ProjectionType": "ALL"
+                        },
+                        "ProvisionedThroughput": {
+                            "ReadCapacityUnits": "2",
+                            "WriteCapacityUnits": "2"
                         }
                     }
+
                 ]
+
             }
         },
         "ConcurrencyTable": {
@@ -1151,34 +642,13 @@
                         "KeyType": "HASH"
                     }
                 ],
-                "BillingMode": "PAY_PER_REQUEST",
-                "StreamSpecification": {
-                    "StreamViewType": "NEW_AND_OLD_IMAGES"
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 2,
+                    "WriteCapacityUnits": 2
                 }
             }
         },
-        "TriggerTable": {
-            "Type": "AWS::DynamoDB::Table",
-            "Properties": {
-                "AttributeDefinitions": [
-                    {
-                        "AttributeName": "Name",
-                        "AttributeType": "S"
-                    }
-                ],
-                "KeySchema": [
-                    {
-                        "AttributeName": "Name",
-                        "KeyType": "HASH"
-                    }
-                ],
-                "BillingMode": "PAY_PER_REQUEST",
-                "StreamSpecification": {
-                    "StreamViewType": "KEYS_ONLY"
-                }
-            }
-        },
-        "OpsAutomatorLogGroup": {
+        "SchedulerLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
                 "LogGroupName": {
@@ -1197,216 +667,14 @@
                 }
             }
         },
-        "OpsAutomatorIssuesTopic": {
+        "SchedulerSnsTopic": {
             "Type": "AWS::SNS::Topic",
             "Properties": {
-                "DisplayName": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "IssuesTopicDisplayName"
-                                ]
-                            }
-                        ]
-                    ]
-                },
-                "TopicName": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "IssuesTopic"
-                                ]
-                            }
-                        ]
-                    ]
-                }
+                "DisplayName": {"Ref": "AWS::StackName"}
+
             }
         },
-        "OpsAutomatorNotificationsTopic": {
-            "Type": "AWS::SNS::Topic",
-            "Properties": {
-                "DisplayName": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "NotificationsTopicDisplayName"
-                                ]
-                            }
-                        ]
-                    ]
-                },
-                "TopicName": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "NotificationsTopic"
-                                ]
-                            }
-                        ]
-                    ]
-                }
-            }
-        },
-        "OpsAutomatorEventsTopic": {
-            "Type": "AWS::SNS::Topic",
-            "Properties": {
-                "DisplayName": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "EventsTopicDisplayName"
-                                ]
-                            }
-                        ]
-                    ]
-                },
-                "TopicName": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "EventsTopic"
-                                ]
-                            }
-                        ]
-                    ]
-                }
-            }
-        },
-        "OpsAutomatorEventsTopicPolicy": {
-            "Type": "AWS::SNS::TopicPolicy",
-            "Metadata": {
-                "cfn_nag": {
-                    "rules_to_suppress": [
-                        {
-                            "id": "F18",
-                            "reason": "* is used as Account pseudo variable cannot be used, access is restricted by condition"
-                        }
-                    ]
-                }
-            },
-            "Properties": {
-                "Topics": [
-                    {
-                        "Ref": "OpsAutomatorEventsTopic"
-                    }
-                ],
-                "PolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Id": "default_policy",
-                    "Statement": [
-                        {
-                            "Sid": "default_sid",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "AWS": "*"
-                            },
-                            "Action": [
-                                "SNS:GetTopicAttributes",
-                                "SNS:SetTopicAttributes",
-                                "SNS:AddPermission",
-                                "SNS:RemovePermission",
-                                "SNS:DeleteTopic",
-                                "SNS:Subscribe",
-                                "SNS:ListSubscriptionsByTopic",
-                                "SNS:Publish",
-                                "SNS:Receive"
-                            ],
-                            "Resource": {
-                                "Ref": "OpsAutomatorEventsTopic"
-                            },
-                            "Condition": {
-                                "StringEquals": {
-                                    "AWS:SourceOwner": {
-                                        "Ref": "AWS::AccountId"
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "Sid": "publish_sid_events",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "events.amazonaws.com"
-                            },
-                            "Action": "SNS:Publish",
-                            "Resource": {
-                                "Ref": "OpsAutomatorEventsTopic"
-                            }
-                        },
-                        {
-                            "Sid": "publish_sid_s3",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": "s3.amazonaws.com"
-                            },
-                            "Action": "SNS:Publish",
-                            "Resource": {
-                                "Ref": "OpsAutomatorEventsTopic"
-                            }
-                        },
-                        {
-                            "Sid": "subscribe_sid",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "AWS": {
-                                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
-                                }
-                            },
-                            "Action": [
-                                "SNS:Subscribe",
-                                "SNS:Receive"
-                            ],
-                            "Resource": {
-                                "Ref": "OpsAutomatorEventsTopic"
-                            }
-                        }
-                    ]
-                }
-            }
-        },
-        "OpsAutomatorLambdaFunctionStandard": {
+        "SchedulerDefault": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
                 "Code": {
@@ -1414,747 +682,117 @@
                         "Fn::Join": [
                             "-",
                             [
-                                "%bucket%",
+                                "solutions",
                                 {
                                     "Ref": "AWS::Region"
                                 }
+
                             ]
                         ]
                     },
-                    "S3Key": "%prefix%ops-automator-%version%.zip"
+                    "S3Key": "ops-automator/latest/ops-automator-%version%.zip"
                 },
-                "FunctionName": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "OpsAutomatorLambdaFunction"
-                                ]
-                            },
-                            "Standard"
-                        ]
-                    ]
-                },
+                "FunctionName": { "Fn::Join": [ "-", [ {"Ref" :"AWS::StackName"}, "SchedulerDefault" ] ]},
                 "Handler": "main.lambda_handler",
                 "Runtime": "python2.7",
                 "Role": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorLambdaRole",
+                        "SchedulerRole",
                         "Arn"
                     ]
                 },
                 "Environment": {
-                    "Variables": {
-                        "LAST_SCHEDULER_RUN_TABLE": {
-                            "Ref": "LastSchedulerExecutionTable"
-                        },
-                        "RESOURCE_BUCKET": {
-                            "Ref": "TaskResources"
-                        },
-                        "RESOURCE_TO_S3_SIZE": {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Resources",
-                                "ResourceToS3SizeKB"
-                            ]
-                        },
-                        "ACTION_TRACKING_TABLE": {
-                            "Ref": "TaskTrackingTable"
-                        },
-                        "CONFIG_TABLE": {
-                            "Ref": "ConfigurationTable"
-                        },
-                        "CONFIG_BUCKET": {
-                            "Ref": "Configuration"
-                        },
-                        "REPORTING_BUCKET": {
-                            "Ref": "Reporting"
-                        },
-                        "CONCURRENCY_TABLE": {
-                            "Ref": "ConcurrencyTable"
-                        },
-                        "TASKLIST_TAG_NAME": {
-                            "Ref": "TagName"
-                        },
-                        "LOG_GROUP": {
-                            "Ref": "OpsAutomatorLogGroup"
-                        },
-                        "CLOUDWATCH_TRIGGER_TABLE": {
-                            "Ref": "TriggerTable"
-                        },
-                        "LOGGING_QUEUE_URL": {
-                            "Ref": "OpsAutomatorCloudWatchQueue"
-                        },
-                        "LAMBDA_NAME": {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Names",
-                                "OpsAutomatorLambdaFunction"
-                            ]
-                        },
-                        "STACK_NAME": {
-                            "Ref": "AWS::StackName"
-                        },
-                        "STACK_ID": {
-                            "Ref": "AWS::StackId"
-                        },
-                        "OPS_AUTOMATOR_ACCOUNT": {
-                            "Ref": "AWS::AccountId"
-                        },
-                        "OPS_AUTOMATOR_ROLE_ARN": {
-                            "Fn::GetAtt": [
-                                "OpsAutomatorLambdaRole",
-                                "Arn"
-                            ]
-                        },
-                        "LAMBDA_TIMEOUT": "900",
-                        "TASK_CLEANUP_ENABLED": {
-                            "Fn::If": [
-                                "EnableTaskCleanupCondition",
-                                "True",
-                                "False"
-                            ]
-                        },
-                        "TASK_RETENTION_HOURS": {
-                            "Ref": "TaskRetentionHours"
-                        },
-                        "KEEP_FAILED_TASKS": {
-                            "Fn::If": [
-                                "KeepFailedTasksCondition",
-                                "True",
-                                "False"
-                            ]
-                        },
-                        "USER_AGENT": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    "OpsAutomator",
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    "%version%"
-                                ]
-                            ]
-                        },
-                        "SEND_METRICS": {
-                            "Fn::FindInMap": [
-                                "YesNoBoolean",
-                                {
-                                    "Fn::FindInMap": [
-                                        "Send",
-                                        "AnonymousUsage",
-                                        "Data"
-                                    ]
-                                },
-                                "Value"
-                            ]
-                        },
-                        "OPS_AUTOMATOR_RULE": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    {
-                                        "Fn::FindInMap": [
-                                            "Settings",
-                                            "Names",
-                                            "OpsAutomatorRule"
-                                        ]
-                                    }
-                                ]
-                            ]
-                        },
-                        "COMPLETION_RULE": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    {
-                                        "Fn::FindInMap": [
-                                            "Settings",
-                                            "Names",
-                                            "OpsAutomatorCompletionRule"
-                                        ]
-                                    }
-                                ]
-                            ]
-                        },
-                        "SNS_ISSUES_TOPIC_ARN": {
-                            "Ref": "OpsAutomatorIssuesTopic"
-                        },
-                        "SNS_RESULT_TOPIC_ARN": {
-                            "Ref": "OpsAutomatorNotificationsTopic"
-                        },
-                        "EVENTS_TOPIC_ARN": {
-                            "Ref": "OpsAutomatorEventsTopic"
-                        },
-                        "BOTO_RETRY_STATS": "False",
-                        "BOTO_RETRY_OUTPUT": "False",
-                        "CLOUDWATCH_METRICS": {
-                            "Fn::FindInMap": [
-                                "YesNoBoolean",
-                                {
-                                    "Ref": "UseCloudWatchMetrics"
-                                },
-                                "Value"
-                            ]
-                        },
-                        "USE_ECS": {
-                            "Fn::If": [
-                                "UseEcs",
-                                "True",
-                                "False"
-                            ]
-                        },
-                        "ECS_CLUSTER": {
-                            "Fn::If": [
-                                "UseEcs",
-                                {
-                                    "Fn::FindInMap": [
-                                        "Settings",
-                                        "EcsCluster",
-                                        "ClusterName"
-                                    ]
-                                },
-                                {
-                                    "Ref": "AWS::NoValue"
-                                }
-                            ]
-                        },
-                        "ECS_OPS_AUTOMATOR_TASK": {
-                            "Fn::If": [
-                                "UseEcs",
-                                {
-                                    "Ref": "OpsAutomatorTask"
-                                },
-                                ""
-                            ]
-                        },
-                        "DEBUG_TASK_TRACKING_HANDLER": "False",
-                        "DEBUG_MAIN_EVENT_HANDLER": "False",
-                        "DEBUG_EVENT_HANDLERS": "False",
-                        "RESOURCE_ENCRYPTION_KEY": {
-                            "Fn::If": [
-                                "EncryptResourceData",
-                                {
-                                    "Ref": "ResourceEncryptionKey"
-                                },
-                                ""
-                            ]
-                        },
-                        "SERVICE_LIMIT_CONCURRENT_EBS_SNAPSHOT_COPY": {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "ServiceLimits",
-                                "MaxConcurrentEbsSnapshotCopies"
-                            ]
-                        },
-                        "SERVICE_LIMIT_CONCURRENT_RDS_SNAPSHOT_COPY": {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "ServiceLimits",
-                                "MaxConcurrentRdsSnapshotCopies"
-                            ]
-                        },
-                        "SERVICE_LIMIT_CONCURRENT_IMAGE_COPY": {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "ServiceLimits",
-                                "MaxConcurrentImageCopies"
-                            ]
-                        },
-                        "SOLUTION_ID": {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Metrics",
-                                "SolutionId"
-                            ]
-                        },
-                        "METRICS_URL": {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Metrics",
-                                "Url"
-                            ]
-                        }
-                    }
-                },
-                "MemorySize": {
-                    "Fn::FindInMap": [
-                        "Settings",
-                        "ActionMemory",
-                        "Standard"
-                    ]
-                },
-                "Timeout": 900,
-                "Description": "Ops Automator %size%, version %version%"
-            }
-        },
-        "OpsAutomatorCloudWatchQueueHandlerLambda": {
-            "Type": "AWS::Lambda::Function",
-            "Properties": {
-                "Code": {
-                    "S3Bucket": {
-                        "Fn::Join": [
-                            "-",
-                            [
-                                "%bucket%",
-                                {
-                                    "Ref": "AWS::Region"
-                                }
-                            ]
-                        ]
+                  "Variables": {
+                    "LAST_SCHEDULER_RUN_TABLE": {
+                      "Ref": "LastSchedulerExecutionTable"
                     },
-                    "S3Key": "%prefix%cloudwatch-handler-%version%.zip"
-                },
-                "FunctionName": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "CloudWatchQueueHandlerLambdaFunction"
-                                ]
-                            }
-                        ]
-                    ]
-                },
-                "Handler": "cloudwatch_queue_handler_lambda.lambda_handler",
-                "Runtime": "python2.7",
-                "Role": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorCloudWatchLogHandlerRole",
-                        "Arn"
-                    ]
-                },
-                "Environment": {
-                    "Variables": {
-                        "CWL_LIMIT_PUT_CALLS_PER_STREAM": {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "CloudWatchApiLimits",
-                                "MaxPutCallsPerStream"
-                            ]
+                    "ACTION_TRACKING_TABLE": {
+                      "Ref": "TaskTrackingTable"
+                    },
+                    "CONFIG_TABLE": {
+                      "Ref": "ConfigurationTable"
+                    },
+                    "CONFIG_BUCKET": {
+                      "Ref": "Configuration"
+                    },
+                    "CONCURRENCY_TABLE": {
+                      "Ref": "ConcurrencyTable"
+                    },
+                    "SCHEDULER_TAG_NAME": {
+                      "Ref": "TagName"
+                    },
+                    "LOG_GROUP": {
+                      "Ref": "SchedulerLogGroup"
+                    },
+                    "STACK_NAME": {
+                      "Ref": "AWS::StackName"
+                    },
+                    "STACK_ID": {
+                      "Ref": "AWS::StackId"
+                    },
+                    "SNS_TOPIC": {
+                      "Ref": "SchedulerSnsTopic"
+                    },
+                    "SEND_METRICS": {
+                      "Fn::FindInMap": [
+                        "YesNoBoolean",
+                        {
+                          "Ref": "SendAnonymousData"
                         },
-                        "CWL_LIMIT_PUT_CALLS_PER_ACCOUNT": {
-                            "Fn::If": [
-                                "CloudWatchPutLimit800",
-                                800,
-                                1500
-                            ]
-                        },
-                        "CWL_LIMIT_API_CALLS": {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "CloudWatchApiLimits",
-                                "MaxApiCalls"
-                            ]
-                        },
-                        "LOGGING_QUEUE_URL": {
-                            "Ref": "OpsAutomatorCloudWatchQueue"
-                        },
-                        "CLOUDWATCH_TRIGGER_TABLE": {
-                            "Ref": "TriggerTable"
-                        },
-                        "LOG_GROUP": {
-                            "Ref": "OpsAutomatorLogGroup"
-                        }
+                        "Value"
+                      ]
+                    },
+                    "SOLUTION_ID": {
+                      "Fn::FindInMap": [
+                        "Settings",
+                        "Metrics",
+                        "SolutionId"
+                      ]
+                    },
+                    "METRICS_URL": {
+                      "Fn::FindInMap": [
+                        "Settings",
+                        "Metrics",
+                        "Url"
+                      ]
                     }
+                  }
                 },
                 "MemorySize": 128,
-                "Timeout": 900,
-                "Description": "Ops Automator CloudWatch Queue Handler, version %version%"
-            }
-        },
-        "OpsAutomatorEventsTopicSubscription": {
-            "Type": "AWS::SNS::Subscription",
-            "Properties": {
-                "Endpoint": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
-                        "Arn"
-                    ]
-                },
-                "Protocol": "lambda",
-                "TopicArn": {
-                    "Ref": "OpsAutomatorEventsTopic"
-                }
-            }
-        },
-        "OpsAutomatorTask": {
-            "Type": "AWS::ECS::TaskDefinition",
-            "Condition": "UseEcs",
-            "Properties": {
-                "Family": {
-                    "Fn::Sub": "${AWS::StackName}-ops-automator-task"
-                },
-                "ContainerDefinitions": [
-                    {
-                        "Essential": true,
-                        "Environment": [
-                            {
-                                "Name": "IS_ECS_JOB",
-                                "Value": "True"
-                            },
-                            {
-                                "Name": "SUPPRESS_LOG_TO_STDOUT",
-                                "Value": "True"
-                            }
-                        ],
-                        "LogConfiguration": {
-                            "LogDriver": "awslogs",
-                            "Options": {
-                                "awslogs-group": {
-                                    "Ref": "OpsAutomatorLogGroup"
-                                },
-                                "awslogs-stream-prefix": "Ecs",
-                                "awslogs-region": {
-                                    "Ref": "AWS::Region"
-                                }
-                            }
-                        },
-                        "Name": "ops-automator",
-                        "Image": {
-                            "Fn::Sub": [
-                                "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${repository}:latest",
-                                {
-                                    "repository": {
-                                        "Ref": "OpsAutomatorEcsRepository"
-                                    }
-                                }
-                            ]
-                        },
-                        "MemoryReservation": 128
-                    }
-                ],
-                "TaskRoleArn": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorLambdaRole",
-                        "Arn"
-                    ]
-                },
-                "Volumes": []
-            }
+                "Timeout": "300",
+                "Description": "Task scheduler (default), version %version%"
+            },
+            "DependsOn": [
+                "SchedulerRole"
+            ]
         },
         "Configuration": {
             "Type": "AWS::S3::Bucket",
-            "Metadata": {
-                "cfn_nag": {
-                    "rules_to_suppress": [
-                        {
-                            "id": "W35",
-                            "reason": "Access logging is not required for this bucket. Custom metrics reporting is already done."
-                        }
-                    ]
-                }
-            },
             "DeletionPolicy": "Retain",
             "Properties": {
-                "BucketName": {
-                    "Fn::If": [
-                        "CustomConfigBucketName",
-                        {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Names",
-                                "ConfigurationBucket"
-                            ]
-                        },
-                        {
-                            "Ref": "AWS::NoValue"
-                        }
-                    ]
-                },
-                "BucketEncryption": {
-                    "ServerSideEncryptionConfiguration": [
-                        {
-                            "ServerSideEncryptionByDefault": {
-                                "SSEAlgorithm": "AES256"
-                            }
-                        }
-                    ]
-                },
                 "LifecycleConfiguration": {
                     "Rules": [
                         {
-                            "ExpirationInDays": {
-                                "Ref": "ConfigBackupDays"
-                            },
+                            "ExpirationInDays": {"Ref": "ConfigBackupDays"},
                             "Prefix": "Backups/",
                             "Status": "Enabled"
                         }
                     ]
-                },
-                "AccessControl": "Private",  
-                "PublicAccessBlockConfiguration": {  
-                    "BlockPublicAcls": true,  
-                    "BlockPublicPolicy": true,  
-                    "IgnorePublicAcls": true,  
-                    "RestrictPublicBuckets": true  
                 }
+
             }
         },
-        "Reporting": {
-            "Type": "AWS::S3::Bucket",
-            "Metadata": {
-                "cfn_nag": {
-                    "rules_to_suppress": [
-                        {
-                            "id": "W35",
-                            "reason": "Access logging is not required for this bucket. Custom metrics reporting is already done."
-                        }
-                    ]
-                }
-            },
-            "DeletionPolicy": "Retain",
-            "Properties": {
-                "BucketName": {
-                    "Fn::If": [
-                        "CustomReportingBucketName",
-                        {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Names",
-                                "ReportingBucket"
-                            ]
-                        },
-                        {
-                            "Ref": "AWS::NoValue"
-                        }
-                    ]
-                },
-                "BucketEncryption": {
-                    "ServerSideEncryptionConfiguration": [
-                        {
-                            "ServerSideEncryptionByDefault": {
-                                "SSEAlgorithm": "AES256"
-                            }
-                        }
-                    ]
-                },
-                "AccessControl": "Private",  
-                "PublicAccessBlockConfiguration": {  
-                    "BlockPublicAcls": true,  
-                    "BlockPublicPolicy": true,  
-                    "IgnorePublicAcls": true,  
-                    "RestrictPublicBuckets": true  
-                }
-            }
-        },
-        "OpsAutomatorCloudWatchQueue": {
-            "Type": "AWS::SQS::Queue",
-            "Properties": {
-                "FifoQueue": {
-                    "Fn::If": [
-                        "FifoQueue",
-                        true,
-                        {
-                            "Ref": "AWS::NoValue"
-                        }
-                    ]
-                },
-                "MessageRetentionPeriod": 86400,
-                "ReceiveMessageWaitTimeSeconds": 0,
-                "VisibilityTimeout": 300,
-                "QueueName": {
-                    "Fn::Join": [
-                        "",
-                        [
-                            {
-                                "Fn::Join": [
-                                    "-",
-                                    [
-                                        {
-                                            "Ref": "AWS::StackName"
-                                        },
-                                        {
-                                            "Fn::FindInMap": [
-                                                "Settings",
-                                                "Names",
-                                                "LogQueueName"
-                                            ]
-                                        }
-                                    ]
-                                ]
-                            },
-                            {
-                                "Fn::If": [
-                                    "FifoQueue",
-                                    ".fifo",
-                                    ""
-                                ]
-                            }
-                        ]
-                    ]
-                }
-            }
-        },
-        "OpsAutomatorCloudWatchQueuePolicy": {
-            "Type": "AWS::SQS::QueuePolicy",
-            "Properties": {
-                "PolicyDocument": {
-                    "Id": "OpsAutomatorPutPolicy",
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Sid": "AllowSendMessage",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "AWS": {
-                                    "Fn::GetAtt": [
-                                        "OpsAutomatorLambdaRole",
-                                        "Arn"
-                                    ]
-                                }
-                            },
-                            "Action": [
-                                "sqs:SendMessage"
-                            ],
-                            "Resource": [
-                                {
-                                    "Fn::GetAtt": [
-                                        "OpsAutomatorCloudWatchQueue",
-                                        "Arn"
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            "Sid": "AllowReceiveMessage",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "AWS": {
-                                    "Fn::GetAtt": [
-                                        "OpsAutomatorCloudWatchLogHandlerRole",
-                                        "Arn"
-                                    ]
-                                }
-                            },
-                            "Action": [
-                                "sqs:DeleteMessage",
-                                "sqs:ReceiveMessage"
-                            ],
-                            "Resource": [
-                                {
-                                    "Fn::GetAtt": [
-                                        "OpsAutomatorCloudWatchQueue",
-                                        "Arn"
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "Queues": [
-                    {
-                        "Ref": "OpsAutomatorCloudWatchQueue"
-                    }
-                ]
-            }
-        },
-        "TaskResources": {
-            "Type": "AWS::S3::Bucket",
-            "Metadata": {
-                "cfn_nag": {
-                    "rules_to_suppress": [
-                        {
-                            "id": "W35",
-                            "reason": "Access logging is not required for this bucket. Custom metrics reporting is already done."
-                        }
-                    ]
-                }
-            },
-            "DeletionPolicy": "Retain",
-            "Properties": {
-                "BucketName": {
-                    "Fn::If": [
-                        "CustomResourcesBucketName",
-                        {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "Names",
-                                "ResourcesBucket"
-                            ]
-                        },
-                        {
-                            "Ref": "AWS::NoValue"
-                        }
-                    ]
-                },
-                "BucketEncryption": {
-                    "ServerSideEncryptionConfiguration": [
-                        {
-                            "ServerSideEncryptionByDefault": {
-                                "SSEAlgorithm": "AES256"
-                            }
-                        }
-                    ]
-                },
-                "AccessControl": "Private",  
-                "PublicAccessBlockConfiguration": {  
-                    "BlockPublicAcls": true,  
-                    "BlockPublicPolicy": true,  
-                    "IgnorePublicAcls": true,  
-                    "RestrictPublicBuckets": true  
-                }
-            }
-        },
-        "OpsAutomatorInvokePermissionDynamodb": {
+        "SchedulerInvokePermissionDynamodb": {
             "Type": "AWS::Lambda::Permission",
             "Properties": {
                 "FunctionName": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
+                        "SchedulerDefault",
                         "Arn"
                     ]
                 },
                 "Action": "lambda:InvokeFunction",
                 "Principal": "dynamodb.amazonaws.com"
-            }
-        },
-        "CloudWatchHandlerInvokePermissionDynamodb": {
-            "Type": "AWS::Lambda::Permission",
-            "Properties": {
-                "FunctionName": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorCloudWatchQueueHandlerLambda",
-                        "Arn"
-                    ]
-                },
-                "Action": "lambda:InvokeFunction",
-                "Principal": "dynamodb.amazonaws.com"
-            }
-        },
-        "InvokePermissionSNS": {
-            "Type": "AWS::Lambda::Permission",
-            "Properties": {
-                "FunctionName": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
-                        "Arn"
-                    ]
-                },
-                "Action": "lambda:InvokeFunction",
-                "Principal": "sns.amazonaws.com",
-                "SourceArn": {
-                    "Ref": "OpsAutomatorEventsTopic"
-                }
             }
         },
         "InvokePermissionCloudWatchEvents": {
@@ -2162,7 +800,7 @@
             "Properties": {
                 "FunctionName": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
+                        "SchedulerDefault",
                         "Arn"
                     ]
                 },
@@ -2170,10 +808,11 @@
                 "Principal": "events.amazonaws.com",
                 "SourceArn": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorRule",
+                        "SchedulerRule",
                         "Arn"
                     ]
                 }
+
             }
         },
         "InvokePermissionCloudWatchEventsCompletion": {
@@ -2181,7 +820,7 @@
             "Properties": {
                 "FunctionName": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
+                        "SchedulerDefault",
                         "Arn"
                     ]
                 },
@@ -2189,271 +828,25 @@
                 "Principal": "events.amazonaws.com",
                 "SourceArn": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorCompletionRule",
+                        "CompletionRule",
                         "Arn"
                     ]
                 }
+
             }
         },
-        "Ec2StateEventRule": {
-            "Type": "AWS::Events::Rule",
-            "Properties": {
-                "Description": {
-                    "Fn::Sub": "Ops Automator - Rule for CloudWatch EC2 events for stack ${AWS::StackName}"
-                },
-                "Name": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "Ec2StateEventRule"
-                                ]
-                            }
-                        ]
-                    ]
-                },
-                "EventPattern": {
-                    "source": [
-                        "aws.ec2"
-                    ],
-                    "detail-type": [
-                        "EC2 Instance State-change Notification"
-                    ],
-                    "detail": {
-                        "state": [
-                            "running",
-                            "stopped",
-                            "terminated"
-                        ]
-                    }
-                },
-                "Targets": [
-                    {
-                        "Arn": {
-                            "Ref": "OpsAutomatorEventsTopic"
-                        },
-                        "Id": "EC2StateEventsToTopic"
-                    }
-                ]
-            }
-        },
-        "EbsSnapshotEventRule": {
-            "Type": "AWS::Events::Rule",
-            "Properties": {
-                "Description": {
-                    "Fn::Sub": "Ops Automator - Rule for CloudWatch EBS events for stack ${AWS::StackName}"
-                },
-                "Name": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "EbsSnapshotEventRule"
-                                ]
-                            }
-                        ]
-                    ]
-                },
-                "EventPattern": {
-                    "source": [
-                        "aws.ec2"
-                    ],
-                    "detail-type": [
-                        "EBS Snapshot Notification"
-                    ],
-                    "detail": {
-                        "event": [
-                            "copySnapshot",
-                            "createSnapshot",
-                            "shareSnapshot"
-                        ],
-                        "result": [
-                            "succeeded"
-                        ]
-                    }
-                },
-                "Targets": [
-                    {
-                        "Arn": {
-                            "Ref": "OpsAutomatorEventsTopic"
-                        },
-                        "Id": "EbsSnapshotEventsToTopic"
-                    }
-                ]
-            }
-        },
-        "CloudTrailRdsEventRule": {
-            "Type": "AWS::Events::Rule",
-            "Properties": {
-                "Description": {
-                    "Fn::Sub": "Ops Automator - Rule for CloudTrail events for stack ${AWS::StackName}"
-                },
-                "Name": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "CloudTrailRdsEventRule"
-                                ]
-                            }
-                        ]
-                    ]
-                },
-                "EventPattern": {
-                    "source": [
-                        "aws.rds"
-                    ],
-                    "detail-type": [
-                        "AWS API Call via CloudTrail"
-                    ],
-                    "detail": {
-                        "eventSource": [
-                            "rds.amazonaws.com"
-                        ],
-                        "eventName": [
-                            "CreateDBCluster",
-                            "CreateDBInstance",
-                            "DeleteDBCluster",
-                            "DeleteDBInstance",
-                            "RestoreDBClusterSnapshot",
-                            "RestoreDBInstanceFromDBSnapshot",
-                            "StartDBCluster",
-                            "StartDBInstance",
-                            "StartDBInstance",
-                            "StopDBCluster",
-                            "StopDBInstance"
-                        ]
-                    }
-                },
-                "Targets": [
-                    {
-                        "Arn": {
-                            "Ref": "OpsAutomatorEventsTopic"
-                        },
-                        "Id": "CloudTrailRdsEventsToTopic"
-                    }
-                ]
-            }
-        },
-        "TagChangeEventsRule": {
-            "Type": "AWS::Events::Rule",
-            "Properties": {
-                "Description": {
-                    "Fn::Sub": "Ops Automator - Rule for tag change events for stack ${AWS::StackName}"
-                },
-                "Name": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "TaggingEventRule"
-                                ]
-                            }
-                        ]
-                    ]
-                },
-                "EventPattern": {
-                    "source": [
-                        "aws.tag"
-                    ],
-                    "detail-type": [
-                        "Tag Change on Resource"
-                    ],
-                    "detail": {
-                        "service": [
-                            "ec2",
-                            "rds"
-                        ],
-                        "resource-type": [
-                            "instance",
-                            "volume",
-                            "snapshot",
-                            "image",
-                            "db",
-                            "cluster"
-                        ]
-                    }
-                },
-                "Targets": [
-                    {
-                        "Arn": {
-                            "Ref": "OpsAutomatorEventsTopic"
-                        },
-                        "Id": "TagChangeEventsToTopic"
-                    }
-                ]
-            }
-        },
-        "OpsAutomatorExportTask": {
+        "SchedulerCleanupTask": {
             "Type": "Custom::TaskConfig",
             "Properties": {
                 "ServiceToken": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
+                        "SchedulerDefault",
                         "Arn"
                     ]
                 },
-                "Timeout": "300",
-                "Name": "TaskTableExport",
-                "Description": "Internal task for exporting task tracking table to S3, do not delete",
-                "Parameters": {
-                    "S3Bucket": {
-                        "Ref": "Configuration"
-                    },
-                    "S3Prefix": "Exports/"
-                },
-                "Interval": "59 0/4 * * ?",
-                "Internal": "True",
-                "Action": "SchedulerTaskExport",
-                "TaskMetrics": "False",
-                "Enabled": {
-                    "Fn::If": [
-                        "EnableTaskExportCondition",
-                        "True",
-                        "False"
-                    ]
-                },
-                "StackId": {
-                    "Ref": "AWS::StackId"
-                }
-            }
-        },
-        "OpsAutomatorCleanupTask": {
-            "Type": "Custom::TaskConfig",
-            "Properties": {
-                "ServiceToken": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
-                        "Arn"
-                    ]
-                },
-                "Timeout": "300",
+                "Timeout": "120",
                 "Name": "TaskTableCleanup",
-                "Description": "Internal task for cleaning task tracking table, do not delete. Deletes task not deleted by TTL",
+                "Description": "Internal task for cleaning task tracking table, do not delete",
                 "Parameters": {
                     "TaskRetentionHours": {
                         "Ref": "TaskRetentionHours"
@@ -2466,9 +859,8 @@
                         ]
                     }
                 },
-                "Interval": "0 2 * * ?",
+                "Interval": "59 0/4 * * ?",
                 "Internal": "True",
-                "TaskMetrics": "False",
                 "Action": "SchedulerTaskCleanup",
                 "Enabled": {
                     "Fn::If": [
@@ -2480,21 +872,19 @@
                 "StackId": {
                     "Ref": "AWS::StackId"
                 }
-            },
-            "DependsOn": [
-                "OpsAutomatorExportTask"
-            ]
+            }
         },
-        "OpsAutomatorBackupTask": {
+
+        "SchedulerBackupTask": {
             "Type": "Custom::TaskConfig",
             "Properties": {
                 "ServiceToken": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
+                        "SchedulerDefault",
                         "Arn"
                     ]
                 },
-                "Timeout": "300",
+                "Timeout": "120",
                 "Name": "TaskConfigurationBackup",
                 "Description": "Internal task for daily backup of configuration table, do not delete",
                 "Parameters": {
@@ -2505,31 +895,21 @@
                 },
                 "Interval": "0 0 * * ?",
                 "Internal": "True",
-                "TaskMetrics": "False",
                 "Action": "SchedulerConfigBackup",
                 "Enabled": "True",
                 "StackId": {
                     "Ref": "AWS::StackId"
                 }
-            },
-            "DependsOn": [
-                "OpsAutomatorCleanupTask"
-            ]
+            }
         },
-        "OpsAutomatorSetupHelper": {
-            "Type": "Custom::OpsAutomatorSetupHelper",
+
+        "SchedulerSetupHelper": {
+            "Type": "Custom::SchedulerSetupHelper",
             "Properties": {
                 "ServiceToken": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
+                        "SchedulerDefault",
                         "Arn"
-                    ]
-                },
-                "UseEcs": {
-                    "Fn::If": [
-                        "UseEcs",
-                        "True",
-                        "False"
                     ]
                 },
                 "Timeout": "150",
@@ -2537,59 +917,20 @@
                     "Ref": "LogRetentionDays"
                 },
                 "StackVersion": "%version%",
-                "OpsAutomatorLambdaRole": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorLambdaRole",
-                        "Arn"
-                    ]
-                },
-                "OptimizeCrossAccountTemplate": {
-                    "Fn::FindInMap": [
-                        "Settings",
-                        "Templates",
-                        "OptimizeCrossAccountTemplate"
-                    ]
-                },
-                "EventForwardLambdaRole": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorEventsForwardRole",
-                        "Arn"
-                    ]
-                },
-                "OpsAutomatorTopicArn": {
-                    "Ref": "OpsAutomatorEventsTopic"
+                "SchedulerRole": {
+                    "Fn::GetAtt": ["SchedulerRole", "Arn"]
                 },
                 "DeploymentVersion": "%version%"
+
             },
             "DependsOn": [
-                "ConfigurationTable",
-                "TriggerTable",
-                "OpsAutomatorCloudWatchQueueHandlerLambda"
+                "ConfigurationTable"
             ]
         },
-        "OpsAutomatorRule": {
+        "SchedulerRule": {
             "Type": "AWS::Events::Rule",
             "Properties": {
-                "Description": {
-                    "Fn::Sub": "Ops Automator - Rule to trigger scheduled tasks for stack ${AWS::StackName}"
-                },
-                "Name": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "OpsAutomatorRule"
-                                ]
-                            }
-                        ]
-                    ]
-                },
+                "Description": "Rule to trigger instance for task scheduler",
                 "ScheduleExpression": "cron(0/1 * * * ? *)",
                 "State": {
                     "Fn::FindInMap": [
@@ -2602,10 +943,10 @@
                 },
                 "Targets": [
                     {
-                        "Id": "OpsAutomator",
+                        "Id": "TaskScheduler",
                         "Arn": {
                             "Fn::GetAtt": [
-                                "OpsAutomatorLambdaFunctionStandard",
+                                "SchedulerDefault",
                                 "Arn"
                             ]
                         }
@@ -2613,37 +954,19 @@
                 ]
             }
         },
-        "OpsAutomatorCompletionRule": {
+
+        "CompletionRule": {
             "Type": "AWS::Events::Rule",
             "Properties": {
-                "Description": {
-                    "Fn::Sub": "Ops Automator - Rule to trigger completion checks for stack ${AWS::StackName}"
-                },
-                "Name": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            {
-                                "Ref": "AWS::StackName"
-                            },
-                            {
-                                "Fn::FindInMap": [
-                                    "Settings",
-                                    "Names",
-                                    "OpsAutomatorCompletionRule"
-                                ]
-                            }
-                        ]
-                    ]
-                },
+                "Description": "Rule to trigger instance for scheduler task completion check",
                 "ScheduleExpression": "cron(0/1 * * * ? *)",
                 "State": "ENABLED",
                 "Targets": [
                     {
-                        "Id": "OpsAutomatorCompletion",
+                        "Id": "TaskScheduler",
                         "Arn": {
                             "Fn::GetAtt": [
-                                "OpsAutomatorLambdaFunctionStandard",
+                                "SchedulerDefault",
                                 "Arn"
                             ]
                         }
@@ -2664,39 +987,17 @@
                 },
                 "FunctionName": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
+                        "SchedulerDefault",
                         "Arn"
                     ]
                 },
                 "StartingPosition": "TRIM_HORIZON"
-            },
-            "DependsOn": "OpsAutomatorLambdaRole"
-        },
-        "ActionEventMappingConcurrencyTable": {
-            "Type": "AWS::Lambda::EventSourceMapping",
-            "Properties": {
-                "BatchSize": 1,
-                "Enabled": true,
-                "EventSourceArn": {
-                    "Fn::GetAtt": [
-                        "ConcurrencyTable",
-                        "StreamArn"
-                    ]
-                },
-                "FunctionName": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
-                        "Arn"
-                    ]
-                },
-                "StartingPosition": "TRIM_HORIZON"
-            },
-            "DependsOn": "OpsAutomatorLambdaRole"
+            }
         },
         "ActionEventMappingConfiguration": {
             "Type": "AWS::Lambda::EventSourceMapping",
             "Properties": {
-                "BatchSize": 20,
+                "BatchSize": 1,
                 "Enabled": true,
                 "EventSourceArn": {
                     "Fn::GetAtt": [
@@ -2706,172 +1007,33 @@
                 },
                 "FunctionName": {
                     "Fn::GetAtt": [
-                        "OpsAutomatorLambdaFunctionStandard",
+                        "SchedulerDefault",
                         "Arn"
                     ]
                 },
                 "StartingPosition": "TRIM_HORIZON"
             }
-        },
-        "ActionEventMappingTriggerTable": {
-            "Type": "AWS::Lambda::EventSourceMapping",
-            "Properties": {
-                "Enabled": true,
-                "EventSourceArn": {
-                    "Fn::GetAtt": [
-                        "TriggerTable",
-                        "StreamArn"
-                    ]
-                },
-                "FunctionName": {
-                    "Fn::GetAtt": [
-                        "OpsAutomatorCloudWatchQueueHandlerLambda",
-                        "Arn"
-                    ]
-                },
-                "StartingPosition": "TRIM_HORIZON"
-            }
-        },
-        "OpsAutomatorEcsRepository": {
-            "Condition": "UseEcs",
-            "Type": "AWS::ECR::Repository"
-        },
-        "ResourceEncryptionKey": {
-            "Type": "AWS::KMS::Key",
-            "Properties": {
-                "Description": "KMS key for encrypting Ops Automator resource data",
-                "EnableKeyRotation": true,
-                "KeyPolicy": {
-                    "Version": "2012-10-17",
-                    "Id": "key-default-1",
-                    "Statement": [
-                        {
-                            "Sid": "Enable IAM User Permissions",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "AWS": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "arn:aws:iam::",
-                                            {
-                                                "Ref": "AWS::AccountId"
-                                            },
-                                            ":root"
-                                        ]
-                                    ]
-                                }
-                            },
-                            "Action": "kms:*",
-                            "Resource": "*"
-                        },
-                        {
-                            "Sid": "Allow use of the key",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "AWS": {
-                                    "Fn::GetAtt": [
-                                        "OpsAutomatorLambdaRole",
-                                        "Arn"
-                                    ]
-                                }
-                            },
-                            "Action": [
-                                "kms:Encrypt",
-                                "kms:Decrypt",
-                                "kms:ReEncrypt*",
-                                "kms:GenerateDataKey*",
-                                "kms:DescribeKey"
-                            ],
-                            "Resource": "*"
-                        }
-                    ]
-                }
-            },
-            "Condition": "EncryptResourceData"
-        },
-        "ResourceEncryptionKeyAlias": {
-            "Type": "AWS::KMS::Alias",
-            "Properties": {
-                "AliasName": {
-                    "Fn::Sub": "alias/${AWS::StackName}-ResourceEncryptionKey"
-                },
-                "TargetKeyId": {
-                    "Ref": "ResourceEncryptionKey"
-                }
-            },
-            "Condition": "EncryptResourceData"
         }
     },
     "Outputs": {
-        "OpsAutomatorLambdaFunctionStandard": {
-            "Value": {
-                "Ref": "OpsAutomatorLambdaFunctionStandard"
-            },
-            "Description": "Name of Ops Automator lambda function"
-        },
         "LogGroup": {
             "Value": {
-                "Ref": "OpsAutomatorLogGroup"
+                "Ref": "SchedulerLogGroup"
             },
-            "Description": "Name of the CloudWatch loggroup for Ops Automator stack"
+            "Description": "Name of the CloudWatch loggroup for the scheduler"
         },
         "ConfigurationBucketName": {
             "Value": {
                 "Ref": "Configuration"
             },
-            "Description": "Name of bucket with generated CloudFormation templates for managing tasks and creating cross account roles and backups"
-        },
-        "ReportingBucketName": {
-            "Value": {
-                "Ref": "Reporting"
-            },
-            "Description": "Name of bucket for output reports of Ops Automator tasks"
+            "Description": "Name of bucket with generated CloufFormation templates for managing tasks and creating cross account roles and backups"
         },
         "IssueSNSTopic": {
             "Value": {
-                "Ref": "OpsAutomatorIssuesTopic"
+                "Ref": "SchedulerSnsTopic"
             },
-            "Description": "Topic to subscribe to for notifications of errors and warnings"
-        },
-        "NotificationsSNSTopic": {
-            "Value": {
-                "Ref": "OpsAutomatorNotificationsTopic"
-            },
-            "Description": "Topic to subscribe to for notifications of started and ended tasks"
-        },
-        "StackId": {
-            "Value": {
-                "Ref": "AWS::StackId"
-            },
-            "Description": "StackID"
-        },
-        "EventsForwardRoleParam": {
-            "Value": {
-                "Fn::GetAtt": [
-                    "OpsAutomatorEventsForwardRole",
-                    "Arn"
-                ]
-            },
-            "Description": "Role for forwarding events from other regions"
-        },
-        "Repository": {
-            "Value": {
-                "Fn::If": [
-                    "UseEcs",
-                    {
-                        "Fn::Sub": [
-                            "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${repository}",
-                            {
-                                "repository": {
-                                    "Ref": "OpsAutomatorEcsRepository"
-                                }
-                            }
-                        ]
-                    },
-                    ""
-                ]
-            }
+            "Description": "Topic to subribe to for notifications of errors and warnings"
+
         }
     }
 }
