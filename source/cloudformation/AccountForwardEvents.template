@@ -1,0 +1,608 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Ops Automator Event Forwarder (version %version%). Forwards events to Ops Automator stack \"%ops-automator-stack%\" for account %ops-automator-account% in region %ops-automator-region%.",
+  "Parameters": {
+    "ForwardEc2StateEvents": {
+      "Type": "String",
+      "AllowedValues": [
+        "Yes",
+        "No"
+      ],
+      "Default": "Yes",
+      "Description": "Forwards events when EC2 Instances are Started, Stopped or Terminated"
+    },
+    "ForwardEc2TagEvents": {
+      "Type": "String",
+      "AllowedValues": [
+        "Yes",
+        "No"
+      ],
+      "Default": "Yes",
+      "Description": "Forwards events when tags of EC2 Instances, Volumes, Snapshots and AMI's are changed."
+    },
+    "ForwardEbsEvents": {
+      "Type": "String",
+      "AllowedValues": [
+        "Yes",
+        "No"
+      ],
+      "Default": "Yes",
+      "Description": "Forwards events when EBS Snapshots are Created, Copied in, or Shared to this account."
+    },
+    "ForwardRdsStateEvents": {
+      "Type": "String",
+      "AllowedValues": [
+        "Yes",
+        "No"
+      ],
+      "Default": "Yes",
+      "Description": "Forwards CloudTrail events when RDS Instances and Clusters are Created, Started, Restored, Stopped, Deleted. CloudTrail must be enabled in this account."
+    },
+    "ForwardRdsTagEvents": {
+      "Type": "String",
+      "AllowedValues": [
+        "Yes",
+        "No"
+      ],
+      "Default": "Yes",
+      "Description": "Forwards events when tags of RDS instances are changed."
+    }
+  },
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Forwarded events to Ops Automator stack %ops-automator-stack% for account %ops-automator-account% in region %ops-automator-region%"
+          },
+          "Parameters": [
+            "ForwardEc2StateEvents",
+            "ForwardEbsEvents",
+            "ForwardEc2TagEvents",
+            "ForwardRdsStateEvents",
+            "ForwardRdsTagEvents"
+          ]
+        }
+      ],
+      "ParameterLabels": {
+        "ForwardEc2StateEvents": {
+          "default": "EC2 State events"
+        },
+        "ForwardEbsEvents": {
+          "default": "EBS Snapshot Events"
+        },
+        "ForwardEc2TagEvents": {
+          "default": "EC2 Tag Change events"
+        },
+        "ForwardRdsStateEvents": {
+          "default": "RDS State Events"
+        },
+        "ForwardRdsTagEvents": {
+          "default": "RDS Tag Change Events"
+        }
+      }
+    }
+  },
+  "Conditions": {
+    "NotInOpsAutomatorAccountCondition": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            "%ops-automator-account%",
+            {
+              "Ref": "AWS::AccountId"
+            }
+          ]
+        }
+      ]
+    },
+    "NotInOpsAutomatorRegionCondition": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            "%ops-automator-region%",
+            {
+              "Ref": "AWS::Region"
+            }
+          ]
+        }
+      ]
+    },
+    "ForwardToOpsAutomatorCondition": {
+      "Fn::Or": [
+        {
+          "Condition": "NotInOpsAutomatorRegionCondition"
+        },
+        {
+          "Condition": "NotInOpsAutomatorAccountCondition"
+        }
+      ]
+    },
+    "ForwardEc2StateEventsCondition": {
+      "Fn::And": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ForwardEc2StateEvents"
+            },
+            "Yes"
+          ]
+        },
+        {
+          "Condition": "ForwardToOpsAutomatorCondition"
+        }
+      ]
+    },
+    "ForwardEc2TagEventsCondition": {
+      "Fn::And": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ForwardEc2TagEvents"
+            },
+            "Yes"
+          ]
+        },
+        {
+          "Condition": "ForwardToOpsAutomatorCondition"
+        }
+      ]
+    },
+    "ForwardEbsEventsCondition": {
+      "Fn::And": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ForwardEbsEvents"
+            },
+            "Yes"
+          ]
+        },
+        {
+          "Condition": "ForwardToOpsAutomatorCondition"
+        }
+      ]
+    },
+    "ForwardRdsEventsCondition": {
+      "Fn::And": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ForwardRdsStateEvents"
+            },
+            "Yes"
+          ]
+        },
+        {
+          "Condition": "ForwardToOpsAutomatorCondition"
+        }
+      ]
+    },
+    "ForwardRdsTagEventsCondition": {
+      "Fn::And": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ForwardRdsTagEvents"
+            },
+            "Yes"
+          ]
+        },
+        {
+          "Condition": "ForwardToOpsAutomatorCondition"
+        }
+      ]
+    },
+    "AnyTagEventsCondition": {
+      "Fn::Or": [
+        {
+          "Condition": "ForwardRdsTagEventsCondition"
+        },
+        {
+          "Condition": "ForwardEc2TagEventsCondition"
+        }
+      ]
+    },
+    "ForwardAnyTagEventsCondition": {
+      "Fn::And": [
+        {
+          "Condition": "AnyTagEventsCondition"
+        },
+        {
+          "Condition": "ForwardToOpsAutomatorCondition"
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "EventsForwardFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Metadata": {
+        "cfn-lint": {
+          "config": {
+            "ignore_checks": [ "E3031" ]
+          }
+        }
+      },
+      "Properties": {
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "",
+              [
+              ]
+            ]
+          }
+        },
+        "Description": {
+          "Fn::Sub": "Ops Automator event forward function, forwards events to Ops Automator stack %ops-automator-stack% for account %ops-automator-account%, region %ops-automator-region%, created by stack ${AWS::StackName}"
+        },
+        "Environment": {
+          "Variables": {
+            "OPS_AUTOMATOR_REGION": "%ops-automator-region%",
+            "OPS_AUTOMATOR_ACCOUNT": "%ops-automator-account%",
+            "OPS_AUTOMATOR_TOPIC_ARN": "%ops-automator-topic-arn%"
+          }
+        },
+        "Handler": "index.lambda_handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::If": [
+            "NotInOpsAutomatorAccountCondition",
+            {
+              "Fn::GetAtt": [
+                "EventForwardLambdaRole",
+                "Arn"
+              ]
+            },
+            "%event-forward-role%"
+          ]
+        },
+        "Runtime": "python2.7",
+        "Timeout": 60
+      },
+      "Condition": "ForwardToOpsAutomatorCondition"
+    },
+    "FunctionResourcePermissionEc2Events": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "EventsForwardFunction",
+            "Arn"
+          ]
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "Ec2EventForwardToRule",
+            "Arn"
+          ]
+        }
+      },
+      "Condition": "ForwardEc2StateEventsCondition"
+    },
+    "FunctionResourcePermissionEbsSnapshotEvents": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "EventsForwardFunction",
+            "Arn"
+          ]
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "EbsSnapshotEventForwardToRule",
+            "Arn"
+          ]
+        }
+      },
+      "Condition": "ForwardEbsEventsCondition"
+    },
+    "FunctionResourcePermissionCloudTrailRdsEvents": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "EventsForwardFunction",
+            "Arn"
+          ]
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "CloudTrailRdsEventForwardRule",
+            "Arn"
+          ]
+        }
+      },
+      "Condition": "ForwardRdsEventsCondition"
+    },
+    "FunctionResourcePermissionTagChangeEvents": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "EventsForwardFunction",
+            "Arn"
+          ]
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "TaggingChangeEventForwardRule",
+            "Arn"
+          ]
+        }
+      },
+      "Condition": "ForwardAnyTagEventsCondition"
+    },
+    "EventForwardLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "EventForwardLambdaRolePolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sns:Publish"
+                  ],
+                  "Resource": "%ops-automator-topic-arn%"
+                }
+              ]
+            }
+          }
+        ],
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ],
+        "Path": "/"
+      },
+      "Condition": "NotInOpsAutomatorAccountCondition"
+    },
+    "Ec2EventForwardToRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": {
+          "Fn::Sub": "Ops Automator event forward rule, forwards EC2 events to account %ops-automator-account% in region %ops-automator-region%, created by stack ${AWS::StackName}"
+        },
+        "EventPattern": {
+          "source": [
+            "aws.ec2"
+          ],
+          "detail-type": [
+            "EC2 Instance State-change Notification"
+          ],
+          "detail": {
+            "state": [
+              "running",
+              "stopped",
+              "terminated"
+            ]
+          }
+        },
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "EventsForwardFunction",
+                "Arn"
+              ]
+            },
+            "Id": "OpsAutomatorEventsForwardFunction"
+          }
+        ]
+      },
+      "Condition": "ForwardEc2StateEventsCondition"
+    },
+    "EbsSnapshotEventForwardToRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": {
+          "Fn::Sub": "Ops Automator event forward rule, forwards selected EBS Snapshot events to account %ops-automator-account% in region %ops-automator-region%, created by stack ${AWS::StackName}"
+        },
+        "EventPattern": {
+          "source": [
+            "aws.ec2"
+          ],
+          "detail-type": [
+            "EBS Snapshot Notification"
+          ],
+          "detail": {
+            "event": [
+              "copySnapshot",
+              "createSnapshot",
+              "shareSnapshot"
+            ],
+            "result": [
+              "succeeded"
+            ]
+          }
+        },
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "EventsForwardFunction",
+                "Arn"
+              ]
+            },
+            "Id": "OpsAutomatorEventsForwardFunction"
+          }
+        ]
+      },
+      "Condition": "ForwardEbsEventsCondition"
+    },
+    "CloudTrailRdsEventForwardRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": {
+          "Fn::Sub": "Ops Automator event forward rule, forwards selected RDS CloudTrail events to account %ops-automator-account% in region %ops-automator-region%, created by stack ${AWS::StackName}"
+        },
+        "EventPattern": {
+          "source": [
+            "aws.rds"
+          ],
+          "detail-type": [
+            "AWS API Call via CloudTrail"
+          ],
+          "detail": {
+            "eventSource": [
+              "rds.amazonaws.com"
+            ],
+            "eventName": [
+              "CreateDBCluster",
+              "CreateDBInstance",
+              "DeleteDBCluster",
+              "DeleteDBInstance",
+              "RestoreDBClusterSnapshot",
+              "RestoreDBInstanceFromDBSnapshot",
+              "StartDBCluster",
+              "StartDBInstance",
+              "StopDBCluster",
+              "StopDBInstance"
+            ]
+          }
+        },
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "EventsForwardFunction",
+                "Arn"
+              ]
+            },
+            "Id": "OpsAutomatorEventsForwardFunction"
+          }
+        ]
+      },
+      "Condition": "ForwardRdsEventsCondition"
+    },
+    "TaggingChangeEventForwardRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": {
+          "Fn::Sub": "Ops Automator event forward rule, forwards selected selected tagging events to account %ops-automator-account% in region %ops-automator-region%, created by stack ${AWS::StackName}"
+        },
+        "EventPattern": {
+          "detail-type": [
+            "Tag Change on Resource"
+          ],
+          "source": [
+            "aws.tag"
+          ],
+          "detail": {
+            "service": {
+              "Fn::Split": [
+                ",",
+                {
+                  "Fn::Join": [
+                    ",",
+                    [
+                      {
+                        "Fn::If": [
+                          "ForwardEc2TagEventsCondition",
+                          "ec2",
+                          {
+                            "Ref": "AWS::NoValue"
+                          }
+                        ]
+                      },
+                      {
+                        "Fn::If": [
+                          "ForwardRdsTagEventsCondition",
+                          "rds",
+                          {
+                            "Ref": "AWS::NoValue"
+                          }
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              ]
+            },
+            "resource-type": {
+              "Fn::Split": [
+                ",",
+                {
+                  "Fn::Join": [
+                    ",",
+                    [
+                      {
+                        "Fn::If": [
+                          "ForwardEc2TagEventsCondition",
+                          "instance,volume,image,snapshot",
+                          {
+                            "Ref": "AWS::NoValue"
+                          }
+                        ]
+                      },
+                      {
+                        "Fn::If": [
+                          "ForwardRdsTagEventsCondition",
+                          "db,cluster",
+                          {
+                            "Ref": "AWS::NoValue"
+                          }
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "EventsForwardFunction",
+                "Arn"
+              ]
+            },
+            "Id": "OpsAutomatorEventsForwardFunction"
+          }
+        ]
+      },
+      "Condition": "ForwardAnyTagEventsCondition"
+    }
+  },
+  "Outputs": {
+    "SnsEventTopic": {
+      "Value": {
+        "Fn::If": [
+          "ForwardToOpsAutomatorCondition",
+          "%ops-automator-topic-arn%",
+          ""
+        ]
+      },
+      "Description": "SNS topic used for forwarding events, if empty the events are not forwarded as this forward events stack is deployed in the Ops Automator account/region"
+    }
+  }
+}
+
+

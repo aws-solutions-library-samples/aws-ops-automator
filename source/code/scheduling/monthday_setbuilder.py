@@ -37,7 +37,7 @@ class MonthdaySetBuilder(SetBuilder):
                             min_value=1,
                             max_value=self._lastday,
                             offset=1,
-                            ignorecase=False,
+                            ignore_case=False,
                             wrap=False,
                             last_item_wildcard=MonthdaySetBuilder.WILDCARD_LAST_WEEKDAY)
 
@@ -50,9 +50,9 @@ class MonthdaySetBuilder(SetBuilder):
     def _parse_unknown(self, item):
         return [] if item in [str(d) for d in range(self.last, 32)] else None
 
-    def _seperator_characters(self):
+    def _separator_characters(self):
         # adding W to separator characters, it should not be formatted
-        return SetBuilder._seperator_characters(self) + self.WILDCARD_WEEKDAY
+        return SetBuilder._separator_characters(self) + self.WILDCARD_WEEKDAY
 
     def _get_weekday(self, day_str):
         # returns working day nearest to day in month, string is in format dayW

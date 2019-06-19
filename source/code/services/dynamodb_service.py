@@ -11,21 +11,28 @@
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
 
+import boto_retry
 from services.aws_service import AwsService
 
 TABLES = "Tables"
 LIMITS = "Limits"
 TABLE = "Table"
+BACKUP = "Backup"
+BACKUPS = "Backups"
 TAGS_OF_RESOURCE = "TagsOfResource"
 
 CUSTOM_RESULT_PATHS = {
-    TABLES: "TableNames[*].{TableName:@}"
+    TABLES: "TableNames[*].{TableName:@}",
+    BACKUP: "BackupDescription",
+    BACKUPS: "BackupSummaries"
 }
 
 RESOURCE_NAMES = [
     TABLES,
     LIMITS,
-    TABLE
+    TABLE,
+    BACKUP,
+    BACKUPS
 ]
 
 RESOURCES_WITH_TAGS = [
@@ -36,7 +43,9 @@ RESOURCES_WITH_TAGS = [
 NEXT_TOKEN_ARGUMENT = "ExclusiveStartTableName"
 NEXT_TOKEN_RESULT = "LastEvaluatedTableName"
 
-MAPPED_PARAMETERS = {"MaxResults": "Limit"}
+MAPPED_PARAMETERS = {
+    "MaxResults": "Limit"
+}
 
 
 class DynamodbService(AwsService):
@@ -63,7 +72,7 @@ class DynamodbService(AwsService):
 
     @staticmethod
     def is_regional():
-        return False
+        return True
 
     def describe_resources_function_name(self, resource_name):
         """
@@ -73,28 +82,32 @@ class DynamodbService(AwsService):
         """
         s = AwsService.describe_resources_function_name(self, resource_name)
 
-        return s.replace("describe_", "list_") if resource_name in [TAGS_OF_RESOURCE, TABLES] else s
+        return s.replace("describe_", "list_") if resource_name in [TAGS_OF_RESOURCE, TABLES, BACKUPS] else s
 
-    def _get_tags_for_resource(self, client, resource, resource_name):
+    def _get_tags_for_resource(self, client, resource):
         """
         Returns the tags for specific resources that require additional boto calls to retrieve their tags.
         :param client: Client that can be used to make the boto call to retrieve the tags
         :param resource: The resource for which to retrieve the tags
-        :param resource_name: Name of the resource type
         :return: Tags
         """
 
-        if resource_name == TABLE:
-            arn = resource["TableArn"]
-        else:
-            arn = "arn:aws:dynamodb:{}:{}:table/{}".format(client.meta.region_name, self.aws_account,
-                                                           resource["TableName"])
-        return client.list_tags_of_resource(ResourceArn=arn).get("Tags")
+        arn = "arn:aws:dynamodb:{}:{}:table/{}".format(client.meta.region_name, self.aws_account,
+                                                       resource["TableName"])
 
-    def _get_tag_resource(self, resource_name):
+        if self._service_retry_strategy is not None:
+
+            if getattr(self._service_client, "list_tags_of_resource" + boto_retry.DEFAULT_SUFFIX, None) is None:
+                boto_retry.make_method_with_retries(boto_client_or_resource=self._service_client,
+                                                    name="list_tags_of_resource",
+                                                    service_retry_strategy=self._service_retry_strategy)
+            return client.list_tags_of_resource_with_retries(ResourceArn=arn).get("Tags", [])
+
+        return client.list_tags_of_resource(ResourceArn=arn).get("Tags", [])
+
+    def _get_tag_resource(self):
         """
         Returns the name of the resource to retrieve the tags for the resource of type specified by resource name
-        :param resource_name: Type name of the resource
         :return: Name of the resource that will be used to retrieve the tags
         """
         return TAGS_OF_RESOURCE

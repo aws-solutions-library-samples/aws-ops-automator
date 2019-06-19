@@ -14,22 +14,24 @@
 import json
 
 import actions
-import handlers.task_tracking_table as tracking
 from actions import *
+from actions.action_base import ActionBase
 from boto_retry import get_client_with_retries
-from util import safe_json
 
-INFO_INDEX_UPDATE = "Index {} throughput will be updated, current read/write {}/{}, new throughput will be {}/{}"
-INFO_TABLE_UPDATE = "Table {} throughput will be updated, current read/write {}/{}, new throughput will be {}/{}"
+INF_UPDATE_TABLE = "Updating throughput for table and indexes with arguments {}"
+INF_INDEX_UPDATE = "Index {} throughput will be updated, current read/write {}/{}, new throughput will be {}/{}"
+INF_TABLE_UPDATE = "Table {} throughput will be updated, current read/write {}/{}, new throughput will be {}/{}"
 
 WARN_GSI_DOES_NOT_EXIST = "Global Secondary Index {} does not exist for table {}"
 
 PARAM_GROUP_GSI = "Global Secondary Index {}"
 
 PARAM_DESC_GSI_NAME = "Name of secondary global index (leave blank or set to None if not used)"
-PARAM_DESC_READ_UNITS = "Read units for table"
+PARAM_DESC_READ_UNITS = "Provisioned read units for the table"
+PARAM_DESC_INDEX_READ_UNITS = "Provisioned read units for the index"
 PARAM_DESC_TABLE_NAME = "Name of the DynamoDB table"
-PARAM_DESC_WRITE_UNITS = "Write units for table"
+PARAM_DESC_WRITE_UNITS = "Provisioned write units for the table"
+PARAM_DESC_INDEX_WRITE_UNITS = "Provisioned write units for the index"
 
 PARAM_GSI_NAME = "GlobalSecondaryIndexName{}"
 PARAM_GSI_READ_UNITS = "GlobalSecondaryIndexRead{}"
@@ -45,22 +47,25 @@ PARAM_TABLE_READ_UNITS = "TableReadUnits"
 PARAM_TABLE_WRITE_UNITS = "TableWriteUnits"
 
 
-class DynamodbSetCapacityAction:
+class DynamodbSetCapacityAction(ActionBase):
     properties = {
 
-        ACTION_TITLE: "DynamoDB set capacity",
-        ACTION_VERSION: "1.0",
-        ACTION_DESCRIPION: "Sets the read and write capacity for a DynamoDB table and it's global secondary indexes",
+        ACTION_TITLE: "DynamoDB Set Capacity",
+        ACTION_VERSION: "1.2",
+        ACTION_DESCRIPTION: "Sets the read and write capacity for a DynamoDB table and it's global secondary indexes",
         ACTION_AUTHOR: "AWS",
         ACTION_ID: "66010073-a4fb-414a-87d9-2b33f6a20108",
 
         ACTION_SERVICE: "time",
         ACTION_RESOURCES: "",
         ACTION_AGGREGATION: ACTION_AGGREGATION_RESOURCE,
-        ACTION_MEMORY: 128,
         ACTION_CROSS_ACCOUNT: True,
         ACTION_INTERNAL: False,
         ACTION_MULTI_REGION: True,
+
+        ACTION_COMPLETION_TIMEOUT_MINUTES: 60,
+
+        ACTION_MIN_INTERVAL_MIN: 15,
 
         ACTION_PARAMETERS: {
 
@@ -75,14 +80,14 @@ class DynamodbSetCapacityAction:
             },
             PARAM_TABLE_READ_UNITS: {
                 PARAM_LABEL: PARAM_LABEL_GSI_READ_UNITS,
-                PARAM_DESCRIPTION: PARAM_DESC_READ_UNITS,
+                PARAM_DESCRIPTION: PARAM_DESC_INDEX_READ_UNITS,
                 PARAM_TYPE: int,
                 PARAM_MIN_VALUE: 1,
                 PARAM_REQUIRED: True
             },
             PARAM_TABLE_WRITE_UNITS: {
                 PARAM_LABEL: PARAM_LABEL_GSI_WRITE_UNITS,
-                PARAM_DESCRIPTION: PARAM_DESC_WRITE_UNITS,
+                PARAM_DESCRIPTION: PARAM_DESC_INDEX_WRITE_UNITS,
                 PARAM_TYPE: int,
                 PARAM_MIN_VALUE: 1,
                 PARAM_REQUIRED: True
@@ -105,7 +110,6 @@ class DynamodbSetCapacityAction:
     }
 
     for i in range(1, 6):
-
         properties[ACTION_PARAMETERS][PARAM_GSI_NAME.format(i)] = {
             PARAM_LABEL: PARAM_LABEL_GSI_NAME,
             PARAM_DESCRIPTION: PARAM_DESC_GSI_NAME,
@@ -141,93 +145,52 @@ class DynamodbSetCapacityAction:
             ],
         }, )
 
-    def __init__(self, arguments):
-        self.arguments = arguments
-        self.logger = self.arguments[actions.ACTION_PARAM_LOGGER]
-        self.context = self.arguments[actions.ACTION_PARAM_CONTEXT]
-        self.session = self.arguments[actions.ACTION_PARAM_SESSION]
-        self.session = self.arguments[actions.ACTION_PARAM_SESSION]
-        self.dryrun = self.arguments.get(actions.ACTION_PARAM_DRYRUN, False)
-        self.debug = self.arguments.get(actions.ACTION_PARAM_DEBUG, False)
-
-        self.account = self.arguments[actions.ACTION_PARAM_RESOURCES]["AwsAccount"]
-        self.region = self.arguments[actions.ACTION_PARAM_RESOURCES]["Region"]
-        self.tablename = self.arguments[PARAM_TABLE_NAME]
-
-        self.read_units_update = self.arguments[PARAM_TABLE_READ_UNITS]
-        self.write_units_update = self.arguments[PARAM_TABLE_WRITE_UNITS]
-
-        self.client = get_client_with_retries("dynamodb", ["describe_table", "update_table"], context=self.context,
-                                              region=self.region, session=self.session)
-        self.result = {}
-
     @staticmethod
-    def get_table_resource(item):
-        tablename = item[tracking.TASK_TR_PARAMETERS][PARAM_TABLE_NAME]
-        region = item[tracking.TASK_TR_RESOURCES]["Region"]
-        account = item[tracking.TASK_TR_PARAMETERS]["AwsAccount"]
-        return account, region, tablename
+    def action_logging_subject(arguments, parameters):
+        account = arguments[actions.ACTION_PARAM_RESOURCES]["AwsAccount"]
+        region = arguments[actions.ACTION_PARAM_RESOURCES]["Region"]
+        table = parameters[PARAM_TABLE_NAME]
+        return "{}-{}-{}-{}".format(account, region, table, log_stream_date())
 
     @staticmethod
     def action_concurrency_key(arguments):
-        """
-        Returns key for concurrency control of the scheduler. As the CopySnapshot API call only allows 5 concurrent copies
-        per account to a destination region this method returns a key containing the name of the api call, the account and
-        the destination account.
-        :param arguments: Task arguments
-        :return: Concurrency key
-        """
+
         tablename = arguments[PARAM_TABLE_NAME]
         region = arguments[ACTION_PARAM_RESOURCES]["Region"]
         account = arguments[ACTION_PARAM_RESOURCES]["AwsAccount"]
         return "ec2:UpdateTable:{}:{}:{}".format(account, region, tablename)
-
-    def is_completed(self, _, start_result):
-        """
-        Tests if the copy snapshot action has been completed. This method uses the id of the copied snapshot and test if it
-        does exist and is complete in the destination region. As long as this is not the case the method must return None
-        :param _: not used
-        :param start_result: output of initial execution
-        :return:  Result of copy action, None of not completed yet
-        """
-
-        start_data = json.loads(start_result)
-        if "current" in start_data:
-            return start_data["current"]
-
-        resp = self.client.describe_table_with_retries(TableName=self.tablename)
-        if resp.get("Table", {}).get("TableStatus", "") == "ACTIVE":
-            return safe_json(resp["Table"])
-        else:
-            return None
 
     def _get_throughput_update(self, resp):
 
         def get_gsi_throughput_updates():
             result = {}
             for i in range(1, 6):
-                gsi_name = self.arguments[PARAM_GSI_NAME.format(i)]
+                gsi_name = self.get(PARAM_GSI_NAME.format(i), None)
                 if gsi_name in ["", None, "None"]:
                     continue
-                result[gsi_name] = self.arguments[PARAM_GSI_READ_UNITS.format(i)], self.arguments[PARAM_GSI_WRITE_UNITS.format(i)]
+                result[gsi_name] = self.get(PARAM_GSI_READ_UNITS.format(i)), self.get(PARAM_GSI_WRITE_UNITS.format(i))
             return result
 
         update_args = {}
+
         table_provisioned_throughput = resp["Table"]["ProvisionedThroughput"]
-        current_read_units = table_provisioned_throughput["ReadCapacityUnits"]
-        current_write_units = table_provisioned_throughput["WriteCapacityUnits"]
+        actual_read_units = int(table_provisioned_throughput["ReadCapacityUnits"])
+        actual_write_units = int(table_provisioned_throughput["WriteCapacityUnits"])
 
-        if current_read_units != self.read_units_update or current_write_units != self.write_units_update:
+        expected_read_units = int(self._table_read_units_)
+        expected_write_units = int(self._table_write_units_)
 
+        if actual_read_units != expected_read_units or actual_write_units != expected_write_units:
             update_args["ProvisionedThroughput"] = {
-                "ReadCapacityUnits": self.read_units_update,
-                "WriteCapacityUnits": self.write_units_update
+                "ReadCapacityUnits": expected_read_units,
+                "WriteCapacityUnits": expected_write_units
             }
 
-            self.logger.info(INFO_TABLE_UPDATE, self.tablename, current_read_units, current_write_units, self.read_units_update,
-                             self.write_units_update)
+            self._logger_.info(INF_TABLE_UPDATE, self._table_name_, actual_read_units, actual_write_units,
+                               expected_read_units,
+                               expected_write_units)
 
-        global_secundary_indexes = {g["IndexName"]: g for g in resp["Table"].get("GlobalSecondaryIndexes", [])}
+        global_secondary_indexes = {g["IndexName"]: g for g in resp["Table"].get("GlobalSecondaryIndexes", [])}
 
         metrics_gsi_read_current = 0
         metrics_gsi_write_current = 0
@@ -236,13 +199,18 @@ class DynamodbSetCapacityAction:
 
         gsi_updates = get_gsi_throughput_updates()
         for index_name in gsi_updates:
-            if index_name in global_secundary_indexes:
-                current_gsi_read_units = global_secundary_indexes[index_name]["ProvisionedThroughput"]["ReadCapacityUnits"]
-                current_gsi_write_units = global_secundary_indexes[index_name]["ProvisionedThroughput"]["WriteCapacityUnits"]
-                update_read_units = gsi_updates[index_name][0]
-                update_write_units = gsi_updates[index_name][1]
+            if index_name in global_secondary_indexes:
+
+                index_throughput = global_secondary_indexes[index_name]["ProvisionedThroughput"]
+                current_gsi_read_units = int(index_throughput["ReadCapacityUnits"])
+                current_gsi_write_units = int(index_throughput["WriteCapacityUnits"])
+
+                update_read_units = int(gsi_updates[index_name][0])
+                update_write_units = int(gsi_updates[index_name][1])
+
                 metrics_gsi_read_current += current_gsi_read_units
                 metrics_gsi_write_current += current_gsi_write_units
+
                 metrics_gsi_read_new += update_read_units
                 metrics_gsi_write_new += update_write_units
 
@@ -261,18 +229,18 @@ class DynamodbSetCapacityAction:
                         }
                     })
 
-                    self.logger.info(INFO_INDEX_UPDATE, index_name, current_read_units, current_write_units, update_read_units,
-                                     update_write_units)
+                    self._logger_.info(INF_INDEX_UPDATE, index_name, current_gsi_read_units, current_gsi_write_units, update_read_units,
+                                       update_write_units)
 
             else:
-                self.logger.warning(WARN_GSI_DOES_NOT_EXIST, index_name, self.tablename)
+                self._logger_.warning(WARN_GSI_DOES_NOT_EXIST, index_name, self._table_name_)
 
         self.result[actions.METRICS_DATA] = build_action_metrics(
             action=self,
-            OldReadUnits=current_read_units,
-            OldWriteUnits=current_write_units,
-            NewReadUnits=self.read_units_update,
-            NewWriteUnits=self.write_units_update,
+            OldReadUnits=actual_read_units,
+            OldWriteUnits=actual_write_units,
+            NewReadUnits=expected_read_units,
+            NewWriteUnits=expected_write_units,
             OldGsiReadUnits=metrics_gsi_read_current,
             OldGsiWriteUnits=metrics_gsi_write_current,
             NewGsiReadUnits=metrics_gsi_read_new,
@@ -280,21 +248,48 @@ class DynamodbSetCapacityAction:
 
         return update_args
 
-    def execute(self, _):
+    def __init__(self, action_arguments, action_parameters):
 
-        self.logger.info("{}, version {}", str(self.__class__).split(".")[-1], self.properties[ACTION_VERSION])
-        self.logger.debug("Implementation {}", __name__)
+        self._table_read_units_ = None
+        self._table_write_units_ = None
+        self._table_name_ = None
 
-        get_resp = self.client.describe_table_with_retries(TableName=self.tablename)
+        ActionBase.__init__(self, action_arguments, action_parameters)
+
+        self.client = get_client_with_retries("dynamodb", ["describe_table", "update_table"], context=self._context_,
+                                              region=self._region_, session=self._session_, logger=self._logger_)
+        self.result = {}
+
+    def is_completed(self, start_data):
+
+        if "update" not in start_data:
+            return start_data["current"]
+
+        resp = self.client.describe_table_with_retries(TableName=self._table_name_)
+        table = resp.get("Table", {})
+        if table.get("TableStatus", "") != "ACTIVE":
+            return None
+        for i in table.get("GlobalSecondaryIndexes", []):
+            if i.get("IndexStatus") != "ACTIVE":
+                return None
+
+        return resp["Table"]
+
+    def execute(self):
+
+        self._logger_.info("{}, version {}", str(self.__class__).split(".")[-1], self.properties[ACTION_VERSION])
+        self._logger_.debug("Implementation {}", __name__)
+
+        get_resp = self.client.describe_table_with_retries(TableName=self._table_name_)
         update_args = self._get_throughput_update(get_resp)
-        self.result["current"] = get_resp
+        self.result["current"] = get_resp["Table"]
         if len(update_args) > 0:
-            update_args["TableName"] = self.tablename
-            self.logger.info("Updating throughput for table and indexes with arguments {}", json.dumps(update_args, indent=2))
+            update_args["TableName"] = self._table_name_
+            self._logger_.info(INF_UPDATE_TABLE, json.dumps(update_args, indent=2))
             update_resp = self.client.update_table_with_retries(**update_args)
-            self.result["update"] = update_resp
+            self.result["update"] = update_resp["TableDescription"]
         else:
-            self.logger.info("Throughput for table {} and indexes already at requested capacity", self.tablename)
 
-        return safe_json(self.result)
+            self._logger_.info("Throughput for table {} and indexes already at requested capacity", self._table_name_)
 
+        return self.result

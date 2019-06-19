@@ -13,7 +13,6 @@
 
 from services.aws_service import AwsService
 
-
 ACCEPTED_PORTFOLIO_SHARES = "AcceptedPortfolioShares"
 CONSTRAINT = "Constraint"
 CONSTRAINTS_FOR_PORTFOLIO = "ConstraintsForPortfolio"
@@ -139,19 +138,14 @@ class ServiceCatalogService(AwsService):
 
         return s
 
-    def _transform_returned_resource(self, client, resource, resource_name, tags, tags_as_dict, use_tuple, **kwargs):
+    def _transform_returned_resource(self, client, resource, use_cached_tags=False):
         """
         This method takes the resource from the boto "describe" method and transforms them into the requested
         output format of the service class describe function
         :param client: boto client for the service that can be used to retrieve additional attributes, eg tags
         :param resource: The resource returned from the boto call
-        :param resource_name: Tha name of the resource type
-        :param tags: Set true true if the tags must be retrieved for this resource
-        :param tags_as_dict: Set to true to convert the tags into Python dictionaries
-        :param use_tuple: Set to true to return the resources as un-mutable named tuples instead of dictionaries
-        :param kwargs: Additional service specific arguments for the transformation
         :return: The transformed resources
         """
 
         temp = {i: resource[i] for i in resource if i not in ["ResponseMetadata", "nextToken"]}
-        return AwsService._transform_returned_resource(self, client, temp, resource_name, tags, tags_as_dict, use_tuple)
+        return AwsService._transform_returned_resource(self, client, temp)

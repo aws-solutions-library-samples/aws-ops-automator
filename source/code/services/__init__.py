@@ -14,13 +14,19 @@
 
 import importlib
 import inspect
+import os
 import sys
+import uuid
 from os import listdir
 from os.path import isfile, join
 
-from util import pascal_to_snake_case
+import boto3
+import botocore.exceptions
 
-ERR_NO_MODULE_FOR_SERVICE = "Can not load module {} for service {}, available services are {}"
+from helpers import pascal_to_snake_case
+
+ERR_ASSUME_ROLE_FOR_ARN = "Can not assume role {}, {}"
+ERR_NO_MODULE_FOR_SERVICE = "Can not load module {} for service {}, available services are {}, ex"
 ERR_UNEXPECTED_SERVICE_CLASS_IN_MODULE = "Unable to load class {0}Service for service {0} from module {1}, " \
                                          "action class found in module was {2}"
 
@@ -30,6 +36,8 @@ SERVICES_PATH = "./" + SERVICES
 
 SERVICE = "Service"
 SERVICE_CLASS = "{}" + SERVICE
+
+ENV_ROLE_ARN = "ROLE_ARN"
 
 __services = {}
 
@@ -73,8 +81,8 @@ def get_module_for_service(service_name):
     module_name = SERVICE_MODULE_NAME.format(pascal_to_snake_case(class_name))
     try:
         return _get_module(module_name)
-    except:
-        raise ImportError(ERR_NO_MODULE_FOR_SERVICE.format(module_name, name, ", ".join(all_services())))
+    except Exception as ex:
+        raise ImportError(ERR_NO_MODULE_FOR_SERVICE.format(module_name, name, ", ".join(all_services())), ex)
 
 
 def all_services():
@@ -136,7 +144,7 @@ def resources_for_service(service_name):
     return resource_names
 
 
-def get_resource_describe_permissions(service_name, *resource_names):
+def get_resource_describe_permissions(service_name, resource_names):
     """
     Returns a list of permissions needed to retrieve resources from a service
     :param service_name: Name of the service
@@ -145,8 +153,51 @@ def get_resource_describe_permissions(service_name, *resource_names):
     """
     service = create_service(service_name)
     if len([r for r in resource_names if r != ""]) == 0:
-        resource_names = resources_for_service(service_name)
-    permissions = set()
+        resource_names = []
+    permissions = []
     for res in resource_names:
-        permissions.update(set(service.required_describe_resource_permissions(res)))
-    return permissions
+        permissions += service.required_describe_resource_permissions(res)
+    return set(permissions)
+
+
+def account_from_role_arn(role_arn):
+    """
+    Extracts an account number from a role arn, raises a ValueException if the arn does not match a valid arn format
+    :param role_arn: The arn
+    :return: The extracted account number
+    """
+    role_elements = role_arn.split(":")
+    if len(role_elements) < 5:
+        raise ValueError("Role \"%s\" is not a valid role arn", role_arn)
+    return role_elements[4]
+
+
+def get_session(role_arn=None, sts_client=None, logger=None):
+    if role_arn not in [None, ""]:
+        sts = sts_client if sts_client is not None else boto3.client("sts")
+        account = account_from_role_arn(role_arn)
+        try:
+            token = sts.assume_role(RoleArn=role_arn, RoleSessionName="{}-{}".format(account, str(uuid.uuid4())))
+        except botocore.exceptions.ClientError as ex:
+            if logger is not None:
+                logger.error(ERR_ASSUME_ROLE_FOR_ARN, role_arn, ex)
+            raise ex
+        credentials = token["Credentials"]
+        return boto3.Session(aws_access_key_id=credentials["AccessKeyId"],
+                             aws_secret_access_key=credentials["SecretAccessKey"],
+                             aws_session_token=credentials["SessionToken"])
+    else:
+        role = os.getenv(ENV_ROLE_ARN)
+        if role is not None:
+            return get_session(role, sts_client)
+        return boto3.Session()
+
+
+def get_aws_account(sts=None):
+    """
+    Returns the current AWS account
+    :param sts: Optional sts reused sts client
+    :return:
+    """
+    client = sts if sts is not None else get_session().client("sts")
+    return client.get_caller_identity()["Account"]

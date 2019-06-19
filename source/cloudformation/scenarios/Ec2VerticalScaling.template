@@ -1,0 +1,590 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Ops Automator Vertical Scaling Scenario",
+    "Mappings": {
+        "Settings": {
+            "Intervals": {
+                "5": "0/5 * * * ?",
+                "10": "0/10 * * * ?",
+                "15": "0/15 * * * ?",
+                "20": "0/20 * * * ?",
+                "30": "0/30 * * * ?",
+                "60": "0 0 * * ?"
+            },
+            "TagName": {
+                "Default": "Scaling"
+            }
+        },
+        "Tasks": {
+            "InstanceMetrics": {
+                "Name": "instance-metrics"
+            },
+            "ReplaceInstances": {
+                "Name": "replace-instance",
+                "TryNextInRange": "True"
+            },
+            "ResizeInstances": {
+                "Name": "resize-instance",
+                "TryNextInRange": "True"
+            },
+            "Common": {
+                "TaskNotifications": "False",
+                "TaskMetrics": "False"
+            }
+        }
+    },
+    "Parameters": {
+        "ParamOpsAutomatorStack": {
+            "Description": "Name of an existing Ops Automator stack for which the vertical scaling tasks will be configured.",
+            "Type": "String",
+            "Default": "%ops-automator-stack%",
+            "AllowedPattern": "^[a-zA-Z]{1}[a-zA-Z0-9\\-]{1,128}$",
+            "ConstraintDescription": "Must be a valid stack name. A stack name can contain only alphanumeric characters and hyphens. It must start with an alphabetic character and cannot be longer than 128 characters."
+        },
+        "ParamScalingInterval": {
+            "Description": "Resizing/replacing interval in minutes",
+            "Type": "String",
+            "Default": "5",
+            "AllowedValues": [
+                "5",
+                "10",
+                "15",
+                "20",
+                "30",
+                "60"
+            ]
+        },
+        "ParamScalingMethod": {
+            "Description": "Select the Resizing / replacing method: Resize: To resize and keep the instance (stateful). During the resize operation the instance will be temporary stopped. Replace: To replace the instance with a new instance (stateless). After the new instance has been created using the same AMI and settings, the replace instance will be terminated. No data will be copied from the volumes of the replaced instance.",
+            "Type": "String",
+            "Default": "Replace",
+            "AllowedValues": [
+                "Replace",
+                "Resize"
+            ]
+        },
+        "ParamCpuHigh": {
+            "Description": "If average CPU utilization is above this percentage during the past scaling interval, instance will scale to larger type (until the largest type in the range is reached).",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "99",
+            "Default": "90",
+            "AllowedValues": [
+                "60",
+                "65",
+                "70",
+                "75",
+                "80",
+                "85",
+                "90"
+            ]
+        },
+        "ParamCpuLow": {
+            "Description": "If average CPU utilization is below this percentage during the past scaling interval, instance will scale to smaller type (until the smallest type in the range is reached).",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "99",
+            "Default": "10",
+            "AllowedValues": [
+                "5",
+                "10",
+                "15",
+                "20",
+                "25",
+                "30",
+                "35",
+                "40"
+            ]
+        },
+        "ParamScalingRange": {
+            "Description": "Ordered (small to high) list of Ec2 instance types that defines range in which instances can be scaled.",
+            "Type": "CommaDelimitedList",
+            "Default": "t2.micro,t2.small,t2.medium,t2.large"
+        },
+        "ParamAssumedType": {
+            "Description": "This is the type that will be used if the current EC2 instance type is not in the range of instance types specified. This value should match one of the values in the list of Instance types",
+            "Type": "String",
+            "Default": "t2.small"
+        },
+        "ParamAccounts": {
+            "Description": "List of other accounts in which to scale instances. Note: Ec2TagCpuInstance, Ec2ReplaceInstance and Ec2ResizeInstance actions must be enabled in the cross-account role in these accounts.",
+            "Type": "CommaDelimitedList"
+        },
+        "ParamThisAccount": {
+            "Description": "Yes: If you want to scale instances in  1) This account (or) 2) This account and other accounts No: If you do not want to scale instances in this account (only in other accounts)",
+            "Type": "String",
+            "Default": "Yes",
+            "AllowedValues": [
+                "Yes",
+                "No"
+            ]
+        },
+        "ParamRegions": {
+            "Description": "List of other regions in which to scale instances. Note: In all regions/account in which the instances are scaled, the event forwarder stack must be deployed. If left blank, only instances in the region in which Ops Automator stack is deployed, will be scaled.",
+            "Type": "CommaDelimitedList"
+        },
+        "ParamDebug": {
+            "Description": "Enables or disables detailed to CloudWatch log streams",
+            "Type": "String",
+            "Default": "No",
+            "AllowedValues": [
+                "Yes",
+                "No"
+            ]
+        },
+        "ParamInstanceTag": {
+            "Description": "List of tags to set on instance after scaling up or down in format tagname=tagvalue",
+            "Type": "String",
+            "Default": "LastScalingAction=Instance scaled from type {org-instance-type} to type {new-instance-type} at {iso-datetime} by task {task} in Ops Automator stack {stack}"
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "Ops Automator Stack"
+                    },
+                    "Parameters": [
+                        "ParamOpsAutomatorStack"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Vertical Scaling options"
+                    },
+                    "Parameters": [
+                        "ParamScalingInterval",
+                        "ParamScalingMethod",
+                        "ParamScalingRange",
+                        "ParamAssumedType",
+                        "ParamCpuHigh",
+                        "ParamCpuLow",
+                        "ParamInstanceTag"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Scaling accounts and regions"
+                    },
+                    "Parameters": [
+                        "ParamThisAccount",
+                        "ParamAccounts",
+                        "ParamRegions"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "ParamOpsAutomatorStack": {
+                    "default": "Ops Automator stack"
+                },
+                "ParamScalingMethod": {
+                    "default": "Scaling method"
+                },
+                "ParamScalingInterval": {
+                    "default": "Scaling Interval (minutes)"
+                },
+                "ParamCpuHigh": {
+                    "default": "CPU high utilization threshold"
+                },
+                "ParamCpuLow": {
+                    "default": "Cpu low utilization threshold"
+                },
+                "ParamAccounts": {
+                    "default": "Account list"
+                },
+                "ParamThisAccount": {
+                    "default": "Scale in this account"
+                },
+                "ParamRegions": {
+                    "default": "Region list"
+                },
+                "ParamScalingRange": {
+                    "default": "Instance types"
+                },
+                "ParamAssumedType": {
+                    "default": "Assumed instance type"
+                },
+                "ParamDebug": {
+                    "default": "Detailed logging"
+                },
+                "ParamInstanceTag": {
+                    "default": "Instance tags"
+                }
+            }
+        },
+        "cfn-lint": {
+            "config": {
+                "ignore_checks": [ "E3031", "E2015" ]
+            }
+        }
+    },
+    "Conditions": {
+        "ResizeModeCondition": {
+            "Fn::Equals": [
+                {
+                    "Ref": "ParamScalingMethod"
+                },
+                "Resize"
+            ]
+        },
+        "ReplaceModeCondition": {
+            "Fn::Equals": [
+                {
+                    "Ref": "ParamScalingMethod"
+                },
+                "Replace"
+            ]
+        }
+    },
+    "Resources": {
+        "InstanceMetricsTask": {
+            "Type": "Custom::TaskConfig",
+            "Properties": {
+                "Interval": {
+                    "Fn::FindInMap": [
+                        "Settings",
+                        "Intervals",
+                        {
+                            "Ref": "ParamScalingInterval"
+                        }
+                    ]
+                },
+                "ThisAccount": {
+                    "Ref": "ParamThisAccount"
+                },
+                "TagFilter": {
+                    "Fn::Join": [
+                        "=",
+                        [
+                            {
+                                "Fn::FindInMap": [
+                                    "Settings",
+                                    "TagName",
+                                    "Default"
+                                ]
+                            },
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            {
+                                "Fn::FindInMap": [
+                                    "Tasks",
+                                    "InstanceMetrics",
+                                    "Name"
+                                ]
+                            }
+                        ]
+                    ]
+                },
+                "Parameters": {
+                    "CpuHigh": {
+                        "Ref": "ParamCpuHigh"
+                    },
+                    "CpuHighTags": {
+                        "Fn::Sub": "Scaling-${AWS::StackName}=UP,ScalingTimestamp-${AWS::StackName}={datetime}"
+                    },
+                    "CpuLow": {
+                        "Ref": "ParamCpuLow"
+                    },
+                    "CpuLowTags": {
+                        "Fn::Sub": "Scaling-${AWS::StackName}=DOWN,ScalingTimestamp-${AWS::StackName}={datetime}"
+                    }
+                },
+                "Enabled": "True",
+                "Regions": {
+                    "Ref": "ParamRegions"
+                },
+                "Accounts": {
+                    "Ref": "ParamAccounts"
+                },
+                "Action": "Ec2TagCpuInstance",
+                "Timeout": "180",
+                "Debug": {
+                    "Ref": "ParamDebug"
+                },
+                "TaskNotifications": {
+                    "Fn::FindInMap": [
+                        "Tasks",
+                        "Common",
+                        "TaskNotifications"
+                    ]
+                },
+                "Description": {
+                    "Fn::Sub": [
+                        "Collects CPU Utilization metrics and tags instances in vertical scaling stack ${stack}",
+                        {
+                            "stack": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                },
+                "TaskMetrics": {
+                    "Fn::FindInMap": [
+                        "Tasks",
+                        "Common",
+                        "TaskMetrics"
+                    ]
+                },
+                "ServiceToken": {
+                    "Fn::Sub": [
+                        "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${stack}-OpsAutomator-Standard",
+                        {
+                            "stack": {
+                                "Ref": "ParamOpsAutomatorStack"
+                            }
+                        }
+                    ]
+                },
+                "Timezone": "UTC"
+            }
+        },
+        "ReplaceInstancesTask": {
+            "Type": "Custom::TaskConfig",
+            "Metadata": {
+                "cfn-lint": {
+                  "config": {
+                    "ignore_checks": [ "E1029" ]
+                  }
+                }
+            },
+            "Properties": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            {
+                                "Fn::FindInMap": [
+                                    "Tasks",
+                                    "ReplaceInstances",
+                                    "Name"
+                                ]
+                            }
+                        ]
+                    ]
+                },
+                "ThisAccount": {
+                    "Ref": "ParamThisAccount"
+                },
+                "Parameters": {
+                    "ReplaceMode": "ReplaceByStep",
+                    "CopiedInstanceTags": "!Scaling-${AWS::StackName}=*",
+                    "TagFilterScaleDown": {
+                        "Fn::Sub": "Scaling-${AWS::StackName}=DOWN"
+                    },
+                    "TagFilterScaleUp": {
+                        "Fn::Sub": "Scaling-${AWS::StackName}=UP"
+                    },
+                    "ScalingRange": {
+                        "Ref": "ParamScalingRange"
+                    },
+                    "AssumedType": {
+                        "Ref": "ParamAssumedType"
+                    },
+                    "TryNextInRange": {
+                        "Fn::FindInMap": [
+                            "Tasks",
+                            "ReplaceInstances",
+                            "TryNextInRange"
+                        ]
+                    },
+                    "NewInstanceTags": {
+                        "Ref": "ParamInstanceTag"
+                    }
+                },
+                "Enabled": "True",
+                "TagFilter": {
+                    "Fn::Sub": [
+                        "(Scaling-${stack}=UP)|(Scaling-${stack}=DOWN)",
+                        {
+                            "stack": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                },
+                "Accounts": {
+                    "Ref": "ParamAccounts"
+                },
+                "Regions": {
+                    "Ref": "ParamRegions"
+                },
+                "Action": "Ec2ReplaceInstance",
+                "Timeout": "180",
+                "Debug": {
+                    "Ref": "ParamDebug"
+                },
+                "Events": {
+                    "ec2.aws.tag": {
+                        "TagChangeOnResource": {
+                            "ChangedInstanceTags": "True"
+                        }
+                    }
+                },
+                "TaskNotifications": {
+                    "Fn::FindInMap": [
+                        "Tasks",
+                        "Common",
+                        "TaskNotifications"
+                    ]
+                },
+                "Description": {
+                    "Fn::Sub": [
+                        "Replaces instances in vertical scaling stack ${stack}",
+                        {
+                            "stack": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                },
+                "TaskMetrics": {
+                    "Fn::FindInMap": [
+                        "Tasks",
+                        "Common",
+                        "TaskMetrics"
+                    ]
+                },
+                "ServiceToken": {
+                    "Fn::Sub": [
+                        "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${stack}-OpsAutomator-Standard",
+                        {
+                            "stack": {
+                                "Ref": "ParamOpsAutomatorStack"
+                            }
+                        }
+                    ]
+                }
+            },
+            "Condition": "ReplaceModeCondition"
+        },
+        "ResizeInstancesTask": {
+            "Type": "Custom::TaskConfig",
+            "Properties": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            {
+                                "Fn::FindInMap": [
+                                    "Tasks",
+                                    "ResizeInstances",
+                                    "Name"
+                                ]
+                            }
+                        ]
+                    ]
+                },
+                "ThisAccount": {
+                    "Ref": "ParamThisAccount"
+                },
+                "Parameters": {
+                    "ReplaceMode": "ReplaceByStep",
+                    "TagFilterScaleDown": {
+                        "Fn::Sub": "Scaling-${AWS::StackName}=DOWN"
+                    },
+                    "TagFilterScaleUp": {
+                        "Fn::Sub": "Scaling-${AWS::StackName}=UP&"
+                    },
+                    "ScalingRange": {
+                        "Ref": "ParamScalingRange"
+                    },
+                    "AssumedType": {
+                        "Ref": "ParamAssumedType"
+                    },
+                    "TryNextInRange": {
+                        "Fn::FindInMap": [
+                            "Tasks",
+                            "ReplaceInstances",
+                            "TryNextInRange"
+                        ]
+                    },
+                    "ResizedInstanceTags": {
+                        "Ref": "ParamInstanceTag"
+                    }
+                },
+                "Enabled": "True",
+                "TagFilter": {
+                    "Fn::Sub": [
+                        "(Scaling-${stack}=UP)|(Scaling-${stack}=DOWN)",
+                        {
+                            "stack": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                },
+                "Regions": {
+                    "Ref": "ParamRegions"
+                },
+                "Accounts": {
+                    "Ref": "ParamAccounts"
+                },
+                "Action": "Ec2ResizeInstance",
+                "Timeout": "180",
+                "Debug": {
+                    "Ref": "ParamDebug"
+                },
+                "Events": {
+                    "ec2.aws.tag": {
+                        "TagChangeOnResource": {
+                            "ChangedInstanceTags": "True"
+                        }
+                    }
+                },
+                "TaskNotifications": {
+                    "Fn::FindInMap": [
+                        "Tasks",
+                        "Common",
+                        "TaskNotifications"
+                    ]
+                },
+                "Description": {
+                    "Fn::Sub": [
+                        "Resizing instances in vertical scaling stack ${stack}",
+                        {
+                            "stack": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                },
+                "TaskMetrics": {
+                    "Fn::FindInMap": [
+                        "Tasks",
+                        "Common",
+                        "TaskMetrics"
+                    ]
+                },
+                "ServiceToken": {
+                    "Fn::Sub": [
+                        "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${stack}-OpsAutomator-Standard",
+                        {
+                            "stack": {
+                                "Ref": "ParamOpsAutomatorStack"
+                            }
+                        }
+                    ]
+                }
+            },
+            "Condition": "ResizeModeCondition"
+        }
+    }
+}

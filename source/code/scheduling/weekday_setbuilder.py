@@ -23,19 +23,19 @@ class WeekdaySetBuilder(SetBuilder):
     WEEKDAY_NUMBER_CHAR = "#"
     LAST_DAY_WILDCARD = "L"
 
-    def __init__(self, wrap=True, year=None, month=None, day=None, ignorecase=True):
+    def __init__(self, wrap=True, year=None, month=None, day=None, ignore_case=True):
         """
 
         :param wrap: Set to True to allow wrapping at last day of the week
         :param year: Year of week to build sets for, only required for date aware '#' and 'L' features in expressions
         :param month: Month of week to build sets for, only required for date aware '#' and 'L' features in expressions
         :param day:  Day in week to build sets for, only required for date aware '#' and 'L' features in expressions
-        :param ignorecase: Set to True to ignore case when mapping day names to set values
+        :param ignore_case: Set to True to ignore case when mapping day names to set values
         """
         SetBuilder.__init__(self,
                             names=calendar.day_abbr,
                             wrap=wrap,
-                            ignorecase=ignorecase,
+                            ignore_case=ignore_case,
                             significant_name_characters=3,
                             last_item_wildcard=WeekdaySetBuilder.LAST_DAY_WILDCARD)
         self._year = year
@@ -49,9 +49,9 @@ class WeekdaySetBuilder(SetBuilder):
                                      self._parse_name_last_weekday,  # nameL
                                      self._parse_value_last_weekday]  # valueL
 
-    def _seperator_characters(self):
+    def _separator_characters(self):
         # Add last day wildcard as it needs for formatting before parsing
-        return SetBuilder._seperator_characters(
+        return SetBuilder._separator_characters(
             self) + WeekdaySetBuilder.WEEKDAY_NUMBER_CHAR + self.LAST_DAY_WILDCARD
 
     # noinspection PyMethodParameters
@@ -77,15 +77,15 @@ class WeekdaySetBuilder(SetBuilder):
     @_requires_date_attributes
     def _parse_name_number(self, name_number_str):
         # weekday_name#occurence
-        return self._get_occurence_item(number_str=name_number_str, fn=self._get_value_by_name)
+        return self._get_occurrence_item(number_str=name_number_str, fn=self._get_value_by_name)
 
     # noinspection PyArgumentList,PyArgumentList
     @_requires_date_attributes
     def _parse_value_number(self, value_number_str):
         # weekday value# occurrence
-        return self._get_occurence_item(number_str=value_number_str, fn=self._get_value_by_str)
+        return self._get_occurrence_item(number_str=value_number_str, fn=self._get_value_by_str)
 
-    def _get_occurence_item(self, number_str, fn):
+    def _get_occurrence_item(self, number_str, fn):
         # gets the nth occurrence of a weekday retrieved by function fn
 
         # check for separator
@@ -106,14 +106,14 @@ class WeekdaySetBuilder(SetBuilder):
                 return None
 
             # gets the first occurrence of that weekday in the month
-            day_for_number_weekday = self._get_day_for_first_occurence_month(weekday)
+            day_for_number_weekday = self._get_day_for_first_occurrence_month(weekday)
 
-            # return if the nth occurrence was on the day specified in the constructor of the builder
-            return [weekday] if self._day == day_for_number_weekday + ((number - 1) * 7) else []
+            monthday = day_for_number_weekday + ((number-1) * 7)
+            return [weekday] if self._day == monthday else []
 
         return None
 
-    def _get_day_for_first_occurence_month(self, weekday):
+    def _get_day_for_first_occurrence_month(self, weekday):
         # calculated the first occurrence of a weekday in a month
         day = 1
         if weekday != self._first_weekday_in_month:
@@ -137,7 +137,7 @@ class WeekdaySetBuilder(SetBuilder):
         if last_weekday_str.endswith(WeekdaySetBuilder.LAST_DAY_WILDCARD):
             weekday = fn(last_weekday_str[:-1])
             if weekday is not None:
-                day_for_number_weekday = self._get_day_for_first_occurence_month(weekday)
+                day_for_number_weekday = self._get_day_for_first_occurrence_month(weekday)
                 while day_for_number_weekday + 7 <= self._days_in_month:
                     day_for_number_weekday += 7
                 return [weekday] if day_for_number_weekday == self._day else []

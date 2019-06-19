@@ -11,10 +11,11 @@
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
 
-from services.aws_service import AwsService
-from util.named_tuple_builder import as_namedtuple
 
-BUCKET_ACCELLERATE_CONFIGURATION = "BucketAccelerateConfiguration"
+from helpers import as_namedtuple
+from services.aws_service import AwsService
+
+BUCKET_ACCELERATE_CONFIGURATION = "BucketAccelerateConfiguration"
 BUCKET_ACL = "BucketAcl"
 BUCKET_ANALYTICS_CONFIGURATION = "BucketAnalyticsConfiguration"
 BUCKET_CORS = "BucketCors"
@@ -25,7 +26,7 @@ BUCKET_LOCATION = "BucketLocation"
 BUCKET_LOGGING = "BucketLogging"
 BUCKET_METRIC_CONFIGURATION = "BucketMetricsConfiguration"
 BUCKET_NOTIFICATION = "BucketNotification"
-BUCKET_NOTIFICATION_CONFIGUTATION = "BucketNotificationConfiguration"
+BUCKET_NOTIFICATION_CONFIGURATION = "BucketNotificationConfiguration"
 BUCKET_POLICY = "BucketPolicy"
 BUCKET_REPLICATION = "BucketReplication"
 BUCKET_REQUEST_PAYMENT = "BucketRequestPayment"
@@ -46,7 +47,7 @@ CUSTOM_RESULT_PATHS = {
     MULTIPART_UPLOADS: "Uploads",
     OBJECT_VERSIONS: "[[Versions][].{Versions:@},[DeleteMarkers][].{DeleteMarkers:@}][]",
     OBJECTS: "Contents",
-    BUCKET_ACCELLERATE_CONFIGURATION: '{"Status": Status}',
+    BUCKET_ACCELERATE_CONFIGURATION: '{"Status": Status}',
     BUCKET_ACL: "",
     BUCKET_ANALYTICS_CONFIGURATION: "",
     BUCKET_CORS: "CORSRules",
@@ -57,7 +58,7 @@ CUSTOM_RESULT_PATHS = {
     BUCKET_LOGGING: "",
     BUCKET_METRIC_CONFIGURATION: "MetricsConfiguration",
     BUCKET_NOTIFICATION: "",
-    BUCKET_NOTIFICATION_CONFIGUTATION: "",
+    BUCKET_NOTIFICATION_CONFIGURATION: "",
     BUCKET_POLICY: '{ "Policy" : Policy }',
     BUCKET_REPLICATION: "ReplicationConfiguration",
     BUCKET_REQUEST_PAYMENT: '{"Payer" : Payer}',
@@ -76,7 +77,7 @@ RESOURCE_NAMES = [
     OBJECT_VERSIONS,
     OBJECTS,
     PARTS,
-    BUCKET_ACCELLERATE_CONFIGURATION,
+    BUCKET_ACCELERATE_CONFIGURATION,
     BUCKET_ACL,
     BUCKET_ANALYTICS_CONFIGURATION,
     BUCKET_CORS,
@@ -87,7 +88,7 @@ RESOURCE_NAMES = [
     BUCKET_LOGGING,
     BUCKET_METRIC_CONFIGURATION,
     BUCKET_NOTIFICATION,
-    BUCKET_NOTIFICATION_CONFIGUTATION,
+    BUCKET_NOTIFICATION_CONFIGURATION,
     BUCKET_POLICY,
     BUCKET_REPLICATION,
     BUCKET_REQUEST_PAYMENT,
@@ -105,10 +106,25 @@ RESOURCES_WITH_TAGS = [
     BUCKETS
 ]
 
-CONTINUATION_DATA = {MULTIPART_UPLOADS: ["KeyMarker", "NextKeyMarker", "MaxUploads"],
-                     OBJECT_VERSIONS: ["KeyMarker", "NextKeyMarker", "MaxKeys"],
-                     OBJECTS: ["ContinuationToken", "NextContinuationToken", "MaxKeys"],
-                     PARTS: ["PartNumberMarker", "NextPartNUmberMarker", "MaxParts"]}
+CONTINUATION_DATA = {
+    MULTIPART_UPLOADS: [
+        "KeyMarker",
+        "NextKeyMarker",
+        "MaxUploads"
+    ],
+    OBJECT_VERSIONS: [
+        "KeyMarker",
+        "NextKeyMarker",
+        "MaxKeys"],
+    OBJECTS: [
+        "ContinuationToken",
+        "NextContinuationToken",
+        "MaxKeys"],
+    PARTS: [
+        "PartNumberMarker",
+        "NextPartNUmberMarker",
+        "MaxParts"]
+}
 
 
 class S3Service(AwsService):
@@ -165,10 +181,10 @@ class S3Service(AwsService):
         else:
             return AwsService._next_token_result_name(self, resources)
 
-    def _transform_returned_resource(self, client, resource, resource_name, tags, tags_as_dict, use_tuple, **kwargs):
+    def _transform_returned_resource(self, client, resource, use_cached_tags=False):
         name = ""
         data = ""
-        if resource_name == OBJECT_VERSIONS:
+        if self._resource_name == OBJECT_VERSIONS:
             if "Versions" in resource:
                 name = "Versions"
                 data = resource["Versions"]
@@ -176,22 +192,22 @@ class S3Service(AwsService):
                 name = "DeleteMarkers"
                 data = resource["DeleteMarkers"]
         else:
-            name = resource_name
+            name = self._resource_name
             data = resource
 
-        if resource_name == OBJECTS:
-            data["Bucket"] = kwargs.get("Bucket")
+        if self._resource_name == OBJECTS:
+            data["Bucket"] = self._describe_args.get("Bucket")
 
-        if tags:
-            resource["Tags"] = self._get_tags_for_resource(client, resource, resource_name)
+        if self._tags:
+            resource["Tags"] = self._get_tags_for_resource(client, resource)
 
         if "ResponseMetadata" in resource:
             resource.pop("ResponseMetadata")
 
-        if tags_as_dict:
+        if self._tags_as_dict:
             self._convert_tags_to_dictionaries(data)
-        if use_tuple:
-            return as_namedtuple(name, data, deep=True, namefunc=self._tuple_name_func, exludes=self._tuple_excludes)
+        if self._describe_args.get("use_tuple", False):
+            return as_namedtuple(name, data, deep=True, name_func=self._tuple_name_func, excludes=self._tuple_excludes)
         else:
             return resource
 
@@ -211,35 +227,26 @@ class S3Service(AwsService):
 
         return s
 
-    def _get_tags_for_resource(self, client, resource, resource_name):
-        """
-        Returns the tags for specific resources that require additional boto calls to retrieve their tags.
-        :param client: Client that can be used to make the boto call to retrieve the tags
-        :param resource: The resource for which to retrieve the tags
-        :param resource_name: Name of the resource type
-        :return: Tags
-        """
-        if resource_name == OBJECTS:
-            return client.get_object_tagging(VersionId=resource["ETag"],
-                                             Bucket=resource["Bucket"],
-                                             Key=resource["Key"]).get("TagSet", [])
+    @staticmethod
+    def use_cached_tags(resource, tags_to_retrieve):
+        return resource == BUCKETS and tags_to_retrieve > 10
 
-        # noinspection PyBroadException
-        try:
-            return client.get_bucket_tagging(Bucket=resource["Name"]).get("TagSet", [])
-        except Exception:
-            return []
+    def _get_tags_for_resource(self, client, resource):
+        if self._use_cached_tags:
+            arn = "arn:aws:s3:::{}".format(resource["Name"])
+            return self.cached_tags(resource_name="").get(arn)
+        else:
+            return AwsService._get_tags_for_resource(self, client, resource)
 
-    def _get_tag_resource(self, resource_name):
+    def _get_tag_resource(self):
         """
         Returns the name of the resource to retrieve the tags for the resource of type specified by resource name
-        :param resource_name: Type name of the resource
         :return: Name of the resource that will be used to retrieve the tags
         """
-        if resource_name == BUCKETS:
+        if self._resource_name == BUCKETS:
             return BUCKET_TAGGING
 
-        if resource_name == OBJECTS:
+        if self._resource_name == OBJECTS:
             return OBJECT_TAGGING
 
         return None

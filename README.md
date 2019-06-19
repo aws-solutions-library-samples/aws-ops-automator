@@ -20,20 +20,15 @@ Ops Automator helps you to develop your own operation automations tasks in a con
 * Scaling
 * AWS API retries
 * Completion handling for long running tasks
-* Concurrency handling for relevant processes like snapshot copying
+* Concurrency handling via queue throttling
 
 Ops Automator lets you focus on implementing the actual logic of the action. Actions are developed in Python and can be added easily to the Ops Automator solution. Ops Automator has the ability to generate CloudFormation scripts for configuring tasks, based on metadata of the action that are part of the deployment.
 
 Development of actions is described in the Ops Automator Action Developers guide.
 
-### Examples of actions customers could build:
-* Cross-Account Trusted Advisor reporting
-* Automated AMI creation and retention
-* Automated vertical instance scaling based on CloudWatch and/or Trusted Advisor Data
-* Automated EC2 SSM Command deployments
-* S3 Bucket Synchronization
-* Responding to change events in your infrastructure with automated runbooks
-* Integration with an IoT environment to perform actions on real world events   
+## Setup
+
+[TO BE COMPLETED]
 
 ***
 

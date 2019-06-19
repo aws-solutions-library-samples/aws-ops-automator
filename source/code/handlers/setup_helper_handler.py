@@ -11,9 +11,9 @@
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
 
+
 import json
 import os
-import traceback
 from copy import copy
 from datetime import datetime
 from hashlib import sha256
@@ -21,52 +21,62 @@ from hashlib import sha256
 import boto3
 
 import actions
+import builders
 import configuration
 import handlers
 from boto_retry import add_retry_methods_to_resource, get_client_with_retries
+from builders import build_events_forward_template
+from builders.action_template_builder import ActionTemplateBuilder
+from builders.cross_account_role_builder import CrossAccountRoleBuilder
 from configuration.task_configuration import TaskConfiguration
-from services.aws_service import AwsService
-from util import safe_dict, safe_json
-from util.action_template_builder import ActionTemplateBuilder
-from util.cross_account_role_builder import CrossAccountRoleBuilder
-from util.custom_resource import CustomResource
-from util.logger import Logger
-from util.metrics import send_metrics_data, allow_send_metrics
+from handlers.custom_resource import CustomResource
+from helpers import full_stack, safe_dict, safe_json
+from metrics.anonymous_metrics import allow_send_metrics, send_metrics_data
+from outputs.queued_logger import QueuedLogger
 
-ALL_ACTIONS_TEMPLATE_NAME = "AllAutomationActions"
-
+ERR_HANDLING_SETUP_REQUEST = "{} {}"
 ERR_BUILDING_TEMPLATES = "Error building templates ({})\n{}"
-ERR_DELETE_TEMPLATE_ = "Unable to delete template {} ({})"
-ERR_DELETING_ACTION_TEMPLATE = "Deleting templates for action \"{}\""
+ERR_DELETE_CONFIG_ITEM = "Unable to delete configuration object {} from bucket {}, ({})"
+
 ERR_DELETING_STACK = "Error deleting  {}, ({})"
 
 INF_CREATE_ACTION_TEMPLATE = "Creating template for action \"{}\", name is \"{}\""
-INF_CREATE_ALL_ACTIONS_CROSS_ROLES_TEMPLAE = "Creating cross role template for all actions, name is \"{}\""
-INF_CREATECROSS_ROLE_TEMPLATE = "Creating cross role template for action \"{}\", name is \"{}\""
-INF_DELETE_ALL_ACTIONS_TEMPLATE = "Deleting cross account role template \"{}\""
+INF_CREATE_ALL_ACTIONS_CROSS_ROLES_TEMPLATE = "Creating cross role template for all actions, name is \"{}\""
+INF_CREATE_EVENT_FORWARD_TEMPLATE = "Creating events forward template \"{}\""
+INF_DELETE_ALL_ACTIONS_TEMPLATE = "Configuration objects"
+INF_DELETE_LOG_RETENTION_POLICY = "Deleting log retention policy for Lambda CloudWatch loggroup {}"
 INF_DELETED_STACKS = "Stacks to delete: {}"
 INF_DELETING_STACKS = "Deleting external task configuration stacks"
 INF_GENERATING_TEMPLATES = "Generating templates in bucket {}"
 INF_NO_STACKS = "No stacks to delete"
-INF_STACK = "Deleting stack"
 INF_SET_LOG_RETENTION_POLICY = "Setting log retention policy for Lambda CloudWatch loggroup {} to {} days"
-INF_DELETE_LOG_RETENTION_POLICY = "Deleting log retention policy for Lambda CloudWatch loggroup {}"
+INF_STACK = "Deleting stack"
+INF_DELETING_ACTION_TEMPLATE = "Deleting templates for action \"{}\""
+INF_SCENARIO_TEMPLATE = "Creating scenario template template {} in bucket {}"
 
-WARN_CREATE_TASK_ROLES_FOLDER = "Can not create folder {} in bucket {}, (){}"
+TEMPLATE_DESC_ALL_ACTIONS = "Cross account role for all available automation actions for Ops Automator stack \"{}\" in account {}"
+TEMPLATE_DESC_ALL_ACTIONS_PARAMETERS = "Cross account role for selected automation actions for Ops Automator " \
+                                       "stack \"{}\" in account {}"
 
-TEMPLATE_DESC_ALL_ACTIONS = "Cross account role for all available automation actions for Automation stack \"{}\" in account {}"
-TEMPLATE_DESC_CROSS_ACCOUNT_ACTION = "Cross account role for automation action \"{}\" for Automation stack \"{}\" in account {}"
+S3_KEY_TASK_CONFIG = "TaskConfiguration/"
+S3_KEY_ACTION_CONFIGURATION_TEMPLATE = S3_KEY_TASK_CONFIG + "{}.template"
+S3_KEY_ACTIONS_HTML_PAGE = S3_KEY_TASK_CONFIG + "ActionsConfiguration.html"
+S3_KEY_ACCOUNT_CONFIG = "AccountsConfiguration/"
+S3_KEY_ACCOUNT_CONFIG_WITH_PARAMS = S3_KEY_ACCOUNT_CONFIG + "AccountRoleConfiguration.template"
+S3_KEY_ACCOUNT_CONFIG_CREATE_ALL = S3_KEY_ACCOUNT_CONFIG + "AccountRoleCreateAllActions.template"
 
-S3_CONFIGURATION_TEMPLATE = "Configuration/{}.template"
-S3_ROLES_TEMPLATE = "Roles/{}.template"
+FORWARD_EVENTS_TEMPLATE = "AccountForwardEvents.template"
+S3_KEY_ACCOUNT_EVENTS_FORWARD_TEMPLATE = S3_KEY_ACCOUNT_CONFIG + FORWARD_EVENTS_TEMPLATE
+
+S3_KEY_SCENARIO_TEMPLATE_BUCKET = S3_KEY_TASK_CONFIG + "ScenarioTemplates"
+S3_KEY_SCENARIO_TEMPLATE_KEY = S3_KEY_SCENARIO_TEMPLATE_BUCKET + "/{}"
+
+S3_KEY_CUSTOM_RESOURCE_BUILDER = S3_KEY_TASK_CONFIG + "Scripts/BuildTaskCustomResource.py"
 
 LOG_STREAM = "{}-{:0>4d}{:0>2d}{:0>2d}"
 
 
 class SetupHelperHandler(CustomResource):
-    """
-    Handling events from SchedulerSetup helper custom resource
-    """
 
     def __init__(self, event, context):
         """
@@ -76,28 +86,37 @@ class SetupHelperHandler(CustomResource):
         """
         CustomResource.__init__(self, event, context)
 
-        # get "clean" set of arguments
         self.arguments = copy(self.resource_properties)
         self.arguments = {a: self.resource_properties[a] for a in self.resource_properties if a not in ["ServiceToken",
                                                                                                         "Timeout"]}
 
         self.configuration_bucket = os.getenv(configuration.ENV_CONFIG_BUCKET, None)
-        self.scheduler_role_arn = self.arguments.get("SchedulerRole")
+        self.automator_role_arn = self.arguments.get("OpsAutomatorLambdaRole")
+        self.events_forward_role = self.arguments.get("EventForwardLambdaRole")
+        self.ops_automator_topic_arn = self.arguments.get("OpsAutomatorTopicArn")
+        self.use_ecs = TaskConfiguration.as_boolean(self.arguments.get("UseEcs", False))
+        self.optimize_cross_account_template = TaskConfiguration.as_boolean(
+            (self.arguments.get("OptimizeCrossAccountTemplate", False)))
+
+        self.account = os.getenv(handlers.ENV_OPS_AUTOMATOR_ACCOUNT)
+
+        self.stack_version = self.arguments["StackVersion"]
 
         # setup logging
         dt = datetime.utcnow()
         classname = self.__class__.__name__
         logstream = LOG_STREAM.format(classname, dt.year, dt.month, dt.day)
-        self._logger = Logger(logstream=logstream, context=context, buffersize=10)
+        self._logger = QueuedLogger(logstream=logstream, context=context, buffersize=50)
 
-    @staticmethod
-    def is_handling_request(event):
+    @classmethod
+    def is_handling_request(cls, event, _):
         """
         Test if the event is handled by this handler
+        :param _:
         :param event: Event to test
-        :return: True if the event is an event from cloudformation SchedulerSetupHelper custom resource
+        :return: True if the event is an event from cloudformationOpsAutomatorSetupHelper custom resource
         """
-        return event.get("StackId") is not None and event.get("ResourceType") == "Custom::SchedulerSetupHelper"
+        return event.get("StackId") is not None and event.get("ResourceType") == "Custom::OpsAutomatorSetupHelper"
 
     def handle_request(self):
         """
@@ -106,7 +125,6 @@ class SetupHelperHandler(CustomResource):
         """
 
         start = datetime.now()
-        self._logger.info("Handler {}", self.__class__.__name__)
 
         self._logger.info("Cloudformation request is {}", safe_json(self._event, indent=2))
 
@@ -119,7 +137,7 @@ class SetupHelperHandler(CustomResource):
                 "running-time": (datetime.now() - start).total_seconds()
             })
         except Exception as ex:
-            self._logger.error("{} {}", ex, traceback.format_exc())
+            self._logger.error(ERR_HANDLING_SETUP_REQUEST, ex, full_stack())
             raise ex
 
         finally:
@@ -127,46 +145,68 @@ class SetupHelperHandler(CustomResource):
 
     def _set_lambda_logs_retention_period(self):
         """
-        Aligns retention period for default Lambda logstreams with settings 
+        Aligns retention period for default Lambda log streams with settings
         :return: 
         """
 
         if self._context is None:
             return
 
-        loggroup = self._context.log_group_name
-        log_client = get_client_with_retries("logs", ["delete_retention_policy", "put_retention_policy"], context=self.context)
-        retention_days = self.arguments.get("LogRetentionDays")
-        if retention_days is None:
-            self._logger.info(INF_DELETE_LOG_RETENTION_POLICY, loggroup)
-            log_client.delete_retention_policy_with_retries(self._context.log_group_name)
-        else:
-            self._logger.info(INF_SET_LOG_RETENTION_POLICY, loggroup, retention_days)
-            log_client.put_retention_policy_with_retries(logGroupName=loggroup, retentionInDays=int(retention_days))
+        log_client = get_client_with_retries("logs",
+                                             methods=[
+                                                 "delete_retention_policy",
+                                                 "put_retention_policy",
+                                                 "create_log_group",
+                                                 "describe_log_groups"
+                                             ],
+                                             context=self.context)
 
-    def _create_task_roles_folder(self):
-        try:
-            s3_client = get_client_with_retries("s3", ["put_object"], context=self.context)
-            if self.configuration_bucket:
-                s3_client.put_object_with_retries(Bucket=self.configuration_bucket, Body="", Key=configuration.TASK_ROLES_FOLDER)
-        except Exception as ex:
-            self._logger.warning(WARN_CREATE_TASK_ROLES_FOLDER, configuration.TASK_ROLES_FOLDER, self.configuration_bucket, str(ex))
+        retention_days = self.arguments.get("LogRetentionDays")
+
+        base_name = self._context.log_group_name[0:-len("Standard")]
+
+        log_groups = [
+            base_name + size for size in [
+                "Standard",
+                "Medium",
+                "Large",
+                "XLarge",
+                "XXLarge",
+                "XXXLarge"
+            ]
+        ]
+
+        existing_groups = [l["logGroupName"] for l in
+                           log_client.describe_log_groups_with_retries(logGroupNamePrefix=base_name).get("logGroups", [])]
+
+        for group in log_groups:
+            exists = group in existing_groups
+            self._logger.info("Setting retention for log group {}", group)
+            if retention_days is None:
+                if not exists:
+                    continue
+                self._logger.info(INF_DELETE_LOG_RETENTION_POLICY, group)
+                log_client.delete_retention_policy_with_retries(logGroupName=group)
+            else:
+                if not exists:
+                    log_client.create_log_group(logGroupName=group)
+                self._logger.info(INF_SET_LOG_RETENTION_POLICY, group, retention_days)
+                log_client.put_retention_policy_with_retries(logGroupName=group, retentionInDays=int(retention_days))
 
     def _setup(self):
         """
-        SchedulerSetupHelper setup actions
+        OpsAutomatorSetupHelper setup actions
         :return: 
         """
         self._set_lambda_logs_retention_period()
         if self.configuration_bucket:
             self.generate_templates()
-        self._create_task_roles_folder()
 
     def _send_create_metrics(self):
 
         metrics_data = {
             "Type": "stack",
-            "Version": self.arguments["StackVersion"],
+            "Version": self.stack_version,
             "StackHash": sha256(self.stack_id).hexdigest(),
             "Data": {
                 "Status": "stack_create",
@@ -174,13 +214,13 @@ class SetupHelperHandler(CustomResource):
             }
         }
 
-        send_metrics_data(metrics=metrics_data, logger=self._logger)
+        send_metrics_data(metrics_data=metrics_data, logger=self._logger)
 
     def _send_delete_metrics(self):
 
         metrics_data = {
             "Type": "stack",
-            "Version": self.arguments["StackVersion"],
+            "Version": self.stack_version,
             "StackHash": sha256(self.stack_id).hexdigest(),
             "Data": {
                 "Status": "stack_delete",
@@ -188,7 +228,7 @@ class SetupHelperHandler(CustomResource):
             }
         }
 
-        send_metrics_data(metrics=metrics_data, logger=self._logger)
+        send_metrics_data(metrics_data=metrics_data, logger=self._logger)
 
     def _create_request(self):
         """
@@ -272,68 +312,130 @@ class SetupHelperHandler(CustomResource):
         """
 
         def generate_configuration_template(s3, builder, action):
-            configuration_template = S3_CONFIGURATION_TEMPLATE.format(action)
+            configuration_template = S3_KEY_ACTION_CONFIGURATION_TEMPLATE.format(action)
             self._logger.info(INF_CREATE_ACTION_TEMPLATE, action, configuration_template)
             template = json.dumps(builder.build_template(action), indent=3)
             s3.put_object_with_retries(Body=template, Bucket=self.configuration_bucket, Key=configuration_template)
 
-        def generate_action_cross_account_role_template(s3, builder, action, template_description):
-            role_template = S3_ROLES_TEMPLATE.format(action)
-            self._logger.info(INF_CREATECROSS_ROLE_TEMPLATE, action, role_template)
-            template = json.dumps(builder.build_template(role_actions=[action], description=template_description), indent=3)
-            s3.put_object_with_retries(Body=template, Bucket=self.configuration_bucket, Key=role_template)
+        def generate_all_actions_cross_account_role_template_parameterized(s3, builder, all_act, template_description):
+            self._logger.info(INF_CREATE_ALL_ACTIONS_CROSS_ROLES_TEMPLATE, S3_KEY_ACCOUNT_CONFIG_WITH_PARAMS)
 
-        def generate_all_actions_cross_cross_account_role_template(s3, builder, allactions, template_description):
-            role_template = S3_ROLES_TEMPLATE.format(ALL_ACTIONS_TEMPLATE_NAME)
-            self._logger.info(INF_CREATE_ALL_ACTIONS_CROSS_ROLES_TEMPLAE, role_template)
-            template = json.dumps(builder.build_template(role_actions=allactions, description=template_description), indent=3)
-            s3.put_object_with_retries(Body=template, Bucket=self.configuration_bucket, Key=role_template)
+            template = builder.build_template(action_list=all_act, description=template_description, with_conditional_params=True)
+            if self.optimize_cross_account_template:
+                template = CrossAccountRoleBuilder.compress_template(template)
+            template_json = json.dumps(template, indent=3)
+            s3.put_object_with_retries(Body=template_json, Bucket=self.configuration_bucket, Key=S3_KEY_ACCOUNT_CONFIG_WITH_PARAMS)
+
+        # noinspection PyUnusedLocal
+        def generate_all_actions_cross_account_role_template(s3, builder, all_act, template_description):
+            self._logger.info(INF_CREATE_ALL_ACTIONS_CROSS_ROLES_TEMPLATE, S3_KEY_ACCOUNT_CONFIG_CREATE_ALL)
+            template = json.dumps(
+                builder.build_template(action_list=all_act, description=template_description, with_conditional_params=False),
+                indent=3)
+            s3.put_object_with_retries(Body=template, Bucket=self.configuration_bucket, Key=S3_KEY_ACCOUNT_CONFIG_CREATE_ALL)
+
+        def generate_forward_events_template(s3):
+            self._logger.info(INF_CREATE_EVENT_FORWARD_TEMPLATE, S3_KEY_ACCOUNT_EVENTS_FORWARD_TEMPLATE)
+            template = build_events_forward_template(template_filename="./cloudformation/{}".format(FORWARD_EVENTS_TEMPLATE),
+                                                     script_filename="./forward-events.py",
+                                                     stack=self.stack_name,
+                                                     event_role_arn=self.events_forward_role,
+                                                     ops_automator_topic_arn=self.ops_automator_topic_arn,
+                                                     version=self.stack_version)
+
+            s3.put_object_with_retries(Body=template, Bucket=self.configuration_bucket, Key=S3_KEY_ACCOUNT_EVENTS_FORWARD_TEMPLATE)
+
+        def generate_scenario_templates(s3):
+            self._logger.info("Creating task scenarios templates")
+
+            for template_name, template in list(builders.build_scenario_templates(templates_dir="./cloudformation/scenarios",
+                                                                                  stack=self.stack_name)):
+                self._logger.info(INF_SCENARIO_TEMPLATE, template_name, S3_KEY_SCENARIO_TEMPLATE_BUCKET)
+                s3.put_object_with_retries(Body=template,
+                                           Bucket=self.configuration_bucket,
+                                           Key=S3_KEY_SCENARIO_TEMPLATE_KEY.format(template_name))
+
+        def generate_custom_resource_builder(s3):
+            self._logger.info("Create custom resource builder script {}", S3_KEY_CUSTOM_RESOURCE_BUILDER)
+
+            with open("./build_task_custom_resource.py", "rt") as f:
+                script_text = "".join(f.readlines())
+                script_text = script_text.replace("%stack%", self.stack_name)
+                script_text = script_text.replace("%account%", self.account)
+                script_text = script_text.replace("%region%", self.region)
+                script_text = script_text.replace("%config_table%", os.getenv("CONFIG_TABLE"))
+
+            s3.put_object_with_retries(Body=script_text, Bucket=self.configuration_bucket, Key=S3_KEY_CUSTOM_RESOURCE_BUILDER)
+
+        def generate_actions_html_page(s3):
+            self._logger.info("Generating Actions HTML page {}", S3_KEY_ACTIONS_HTML_PAGE)
+            html = builders.generate_html_actions_page(html_file="./builders/actions.html", region=self.region)
+            s3.put_object_with_retries(Body=html, Bucket=self.configuration_bucket, Key=S3_KEY_ACTIONS_HTML_PAGE,
+                                       ContentType="text/html")
 
         self._logger.info(INF_GENERATING_TEMPLATES, self.configuration_bucket)
         try:
-            account = AwsService.get_aws_account()
             stack = os.getenv(handlers.ENV_STACK_NAME, "")
             s3_client = get_client_with_retries("s3", ["put_object"], context=self.context)
-            config_template_builder = ActionTemplateBuilder(self.context, "arn:aws:region:account:function:debug-only")
-            role_template_builder = CrossAccountRoleBuilder(self.scheduler_role_arn)
+            config_template_builder = ActionTemplateBuilder(self.context,
+                                                            service_token_arn="arn:aws:region:account:function:used-for-debug-only",
+                                                            ops_automator_role=self.automator_role_arn,
+                                                            use_ecs=self.use_ecs)
+            role_template_builder = CrossAccountRoleBuilder(self.automator_role_arn, stack)
 
             all_actions = []
             for action_name in actions.all_actions():
                 action_properties = actions.get_action_properties(action_name)
                 if not action_properties.get(actions.ACTION_INTERNAL, False):
                     generate_configuration_template(s3_client, config_template_builder, action_name)
-                    description = TEMPLATE_DESC_CROSS_ACCOUNT_ACTION.format(action_name, stack, account)
-                    generate_action_cross_account_role_template(s3_client, role_template_builder, action_name, description)
+                    # Enable to generate a template for every individual action
+                    # description = TEMPLATE_DESC_CROSS_ACCOUNT_ACTION.format(action_name, stack, account)
+                    # generate_action_cross_account_role_template(s3_client, role_template_builder, action_name, description)
                     all_actions.append(action_name)
+
             if len(all_actions) > 0:
-                description = TEMPLATE_DESC_ALL_ACTIONS.format(stack, account)
-                generate_all_actions_cross_cross_account_role_template(s3_client, role_template_builder, all_actions, description)
+                description = TEMPLATE_DESC_ALL_ACTIONS_PARAMETERS.format(stack, self.account)
+                generate_all_actions_cross_account_role_template_parameterized(s3_client, role_template_builder, all_actions,
+                                                                               description)
+            # enable to generate a template with all actions enabled
+            #     description = TEMPLATE_DESC_ALL_ACTIONS.format(stack, account)
+            #     generate_all_actions_cross_account_role_template(s3_client, role_template_builder, all_actions, description)
+
+            for action_name in actions.all_actions():
+                action_properties = actions.get_action_properties(action_name)
+                if action_properties.get(actions.ACTION_EVENTS, None) is not None:
+                    generate_forward_events_template(s3_client)
+                    break
+
+            generate_actions_html_page(s3_client)
+
+            generate_scenario_templates(s3_client)
+
+            generate_custom_resource_builder(s3_client)
 
         except Exception as ex:
-            self._logger.error(ERR_BUILDING_TEMPLATES, str(ex), traceback.format_exc())
+            self._logger.error(ERR_BUILDING_TEMPLATES, str(ex), full_stack())
 
     def delete_templates(self):
-        """
-        Deletes cross-account role and configuration templates
-        :return: 
-        """
+
         s3_client = get_client_with_retries("s3", ["delete_object"], context=self.context)
         s3_key = ""
         try:
             for action_name in actions.all_actions():
                 action_properties = actions.get_action_properties(action_name)
                 if not action_properties.get(actions.ACTION_INTERNAL, False):
-                    self._logger.info(ERR_DELETING_ACTION_TEMPLATE, action_name)
-                    s3_key = S3_CONFIGURATION_TEMPLATE.format(action_name)
-                    s3_client.delete_object_with_retries(Bucket=self.configuration_bucket, Key=s3_key)
-                    s3_key = S3_ROLES_TEMPLATE.format(action_name)
+                    self._logger.info(INF_DELETING_ACTION_TEMPLATE, action_name)
+                    s3_key = S3_KEY_ACTION_CONFIGURATION_TEMPLATE.format(action_name)
                     s3_client.delete_object_with_retries(Bucket=self.configuration_bucket, Key=s3_key)
         except Exception as ex:
-            self._logger.error(ERR_DELETE_TEMPLATE_, s3_key, str(ex))
+            self._logger.error(ERR_DELETE_CONFIG_ITEM, s3_key, self.configuration_bucket, str(ex))
 
-        try:
-            self._logger.info(INF_DELETE_ALL_ACTIONS_TEMPLATE, s3_key)
-            s3_key = S3_ROLES_TEMPLATE.format(ALL_ACTIONS_TEMPLATE_NAME)
-            s3_client.delete_object_with_retries(Bucket=self.configuration_bucket, Key=s3_key)
-        except Exception as ex:
-            self._logger.error(ERR_DELETE_TEMPLATE_, s3_key, str(ex))
+            self._logger.info(INF_DELETE_ALL_ACTIONS_TEMPLATE)
+            for key in [S3_KEY_ACTIONS_HTML_PAGE,
+                        S3_KEY_ACCOUNT_CONFIG_WITH_PARAMS,
+                        S3_KEY_ACCOUNT_CONFIG_CREATE_ALL,
+                        S3_KEY_ACCOUNT_EVENTS_FORWARD_TEMPLATE]:
+                try:
+                    s3_client.delete_object_with_retries(Bucket=self.configuration_bucket, Key=key)
+                except Exception as ex:
+                    self._logger.error(ERR_DELETE_CONFIG_ITEM, key, self.configuration_bucket, str(ex))

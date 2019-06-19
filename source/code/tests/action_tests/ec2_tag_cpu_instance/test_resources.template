@@ -1,0 +1,113 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Ec2TagLoadInstancesTestResourceStack",
+  "Outputs": {
+    "InstanceNoCPULoad": {
+      "Description": "Instance Id",
+      "Value": {
+        "Ref": "TestInstanceNoCPULoad"
+      }
+    },
+    "InstanceCPULoad": {
+      "Description": "Instance Id with CPU load",
+      "Value": {
+        "Ref": "TestInstanceCPULoad"
+      }
+    }
+  },
+  "Parameters": {
+    "InstanceAmi": {
+      "Description": "AMI ID for instances.",
+      "Type": "String"
+    },
+    "InstanceType": {
+      "Description": "AMI Instance Type (t2.micro, m1.large, etc.)",
+      "Type": "String"
+    },
+    "TaskListTagName": {
+      "Description": "Name of the task list tag.",
+      "Type": "String"
+    },
+    "TaskListTagValueNoCPULoad": {
+      "Description": "Value of the task list tag.",
+      "Type": "String"
+    },
+    "TaskListTagValueCPULoad": {
+      "Description": "Value of the task list tag.",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "TestInstanceNoCPULoad": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "InstanceAmi"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Ec2TagLoadInstanceTestInstanceNoLoad"
+          },
+          {
+            "Key": {
+              "Ref": "TaskListTagName"
+            },
+            "Value": {
+              "Ref": "TaskListTagValueNoCPULoad"
+            }
+          }
+        ],
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "TestInstanceCPULoad": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "InstanceAmi"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Sub": "#!/bin/bash\nyes > /dev/null &\nyes > /dev/null &\nyes > /dev/null &\nyes > /dev/null &\n"
+          }
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Ec2TagLoadInstanceTestInstanceLoad"
+          },
+          {
+            "Key": {
+              "Ref": "TaskListTagName"
+            },
+            "Value": {
+              "Ref": "TaskListTagValueCPULoad"
+            }
+          }
+        ],
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    }
+  }
+}

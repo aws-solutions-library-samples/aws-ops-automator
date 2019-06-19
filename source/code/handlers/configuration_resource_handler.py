@@ -14,13 +14,17 @@
 from copy import copy
 from datetime import datetime
 
-from util import safe_dict, safe_json
-
 from configuration import CONFIG_TASK_NAME
+from configuration.task_admin_api import create_task, delete_task, update_task
 from configuration.task_configuration import TaskConfiguration
-from configuration.task_config_admin_api import create_task, delete_task, update_task
-from util.custom_resource import CustomResource
-from util.logger import Logger
+from handlers.custom_resource import CustomResource
+from helpers import safe_dict, safe_json
+from outputs import raise_exception
+from outputs.queued_logger import QueuedLogger
+
+ERR_DELETING_TASK = "Error deleting task {}, {}"
+ERR_UPDATING_TASK = "Error updating task {}, {}"
+ERR_CREATING_TASK_ = "Error creating task {}, {}"
 
 ERR_NO_TASK_NAME_RESOURCE_PROPERTY = "Name of Task must be specified in Name property"
 
@@ -38,16 +42,15 @@ class ConfigurationResourceHandler(CustomResource):
         dt = datetime.utcnow()
         classname = self.__class__.__name__
         logstream = LOG_STREAM.format(classname, dt.year, dt.month, dt.day)
-        self._logger = Logger(logstream=logstream, context=context, buffersize=20)
+        self._logger = QueuedLogger(logstream=logstream, context=context, buffersize=20)
 
-    @staticmethod
-    def is_handling_request(event):
+    @classmethod
+    def is_handling_request(cls, event, _):
         return event.get("StackId") is not None and event.get("ResourceType") == "Custom::TaskConfig"
 
     def handle_request(self):
 
         start = datetime.now()
-        self._logger.info("Handler {}", self.__class__.__name__)
 
         self._logger.info("Cloudformation request is {}", safe_json(self._event, indent=2))
 
@@ -65,29 +68,30 @@ class ConfigurationResourceHandler(CustomResource):
 
     def _create_request(self):
 
+        name = self.resource_properties[CONFIG_TASK_NAME]
         try:
-            name = self.resource_properties[CONFIG_TASK_NAME]
             self._logger.info("Creating new Task resource with name {}", name)
             self.physical_resource_id = name
-            create_task(**self.arguments)
+            self.task = create_task(**self.arguments)
             self._logger.info("Created new resource with physical resource id {}", self.physical_resource_id)
             return True
 
         except Exception as ex:
             self.response["Reason"] = str(ex)
+            self._logger.error(ERR_CREATING_TASK_, name, ex)
             return False
 
     def _update_request(self):
 
+        self._logger.info("Updating Task resource")
+        name = self.resource_properties.get(CONFIG_TASK_NAME)
         try:
-            self._logger.info("Updating Task resource")
-            name = self.resource_properties.get(CONFIG_TASK_NAME)
             if name is None:
-                raise Exception(ERR_NO_TASK_NAME_RESOURCE_PROPERTY)
+                raise_exception(ERR_NO_TASK_NAME_RESOURCE_PROPERTY)
 
             if name != self.physical_resource_id:
                 self._logger.info("Name change for resource with physical resource id {}, new value is {}",
-                                  self.physical_resource_id)
+                                  name, self.physical_resource_id)
                 self.arguments[CONFIG_TASK_NAME] = name
                 create_task(**self.arguments)
                 self.physical_resource_id = name
@@ -99,13 +103,14 @@ class ConfigurationResourceHandler(CustomResource):
 
         except Exception as ex:
             self.response["Reason"] = str(ex)
+            self._logger.error(ERR_UPDATING_TASK, name, ex)
             return False
 
     def _delete_request(self):
 
+        self._logger.info("Deleting Task resource")
+        name = self.resource_properties.get(CONFIG_TASK_NAME)
         try:
-            self._logger.info("Deleting Task resource")
-            name = self.resource_properties.get(CONFIG_TASK_NAME)
             self._logger.info("Task name is {}, physical resource id is {}", name, self.physical_resource_id)
             # as the task can be part of a different stack than the scheduler that owns the configuration table the table could
             # be deleted by that stack, so first check if the table still exists
@@ -118,4 +123,5 @@ class ConfigurationResourceHandler(CustomResource):
 
         except Exception as ex:
             self.response["Reason"] = str(ex)
+            self._logger.error(ERR_DELETING_TASK, name, ex)
             return False
