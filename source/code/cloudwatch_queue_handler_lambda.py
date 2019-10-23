@@ -77,7 +77,7 @@ class LogHandler(object):
     def _create_log_stream(self, log_stream):
         self._max_cwl_api_calls.check()
         try:
-            print("Creating log stream {}".format(log_stream))
+            print(("Creating log stream {}".format(log_stream)))
             self._log_client.create_log_stream(logGroupName=self.log_group, logStreamName=log_stream)
             self._stream_tokens[log_stream] = "0"
         except Exception as e:
@@ -138,12 +138,12 @@ class LogHandler(object):
                             try:
                                 token = ex.message.split(":")[-1].strip()
                                 self._stream_tokens[log_stream] = ex.message.split(":")[-1].strip()
-                                print("Token for existing stream {} is {}".format(log_stream, token))
+                                print(("Token for existing stream {} is {}".format(log_stream, token)))
                             except:
                                 self._stream_tokens[log_stream] = None
                         else:
                             # other exceptions retry
-                            print("Error logstream {}, {}".format(log_stream, str(ex)))
+                            print(("Error logstream {}, {}".format(log_stream, str(ex))))
                             time.sleep(1)
                             retries += 1
                             if retries > 10:
@@ -153,7 +153,7 @@ class LogHandler(object):
                 msg = "Can not write the following entries to log stream {} in group {}, {}".format(self.log_group, log_stream, ex)
                 print(msg)
                 for entry in self._buffer[log_stream]:
-                    print(str(entry))
+                    print((str(entry)))
 
         self._buffer.clear()
         self._buffer_size = 0
@@ -173,7 +173,7 @@ def lambda_handler(event, context):
             }
         )
 
-    print("CloudWatch Queue handler version {}".format(VERSION))
+    print(("CloudWatch Queue handler version {}".format(VERSION)))
     if event != {}:
         keys = [r.get("dynamodb", {}).get("Keys", {}).get("Name", {}).get("S", "") for r in event.get("Records", [])]
         if not any([n == CLOUDWATCH_LOGS_KEY for n in keys]):
@@ -189,22 +189,21 @@ def lambda_handler(event, context):
 
     # as this lambda is called once per seconf wait until queued messages for that second are there
     time.sleep(1)
-    print("Reading from logging queue {}".format(queue))
+    print(("Reading from logging queue {}".format(queue)))
 
     while True:
         if context is not None:
             remaining = context.get_remaining_time_in_millis() / 1000
             if remaining < MIN_REMAINING_EXEC_TIME_SEC:
-                print("{} seconds left, triggering follow up execution to process remaining entries from queue".format(
-                    MIN_REMAINING_EXEC_TIME_SEC))
+                print(("{} seconds left, triggering follow up execution to process remaining entries from queue".format(
+                    MIN_REMAINING_EXEC_TIME_SEC)))
                 trigger_next_execution()
                 break
         else:
             remaining = MIN_REMAINING_EXEC_TIME_SEC
 
         resp = sqs.receive_message(QueueUrl=queue, AttributeNames=[], MessageAttributeNames=["All"], MaxNumberOfMessages=10,
-                                   VisibilityTimeout=remaining, WaitTimeSeconds=15)
-
+                                   VisibilityTimeout=int(remaining), WaitTimeSeconds=15)
         log_messages = resp.get('Messages', [])
         if len(log_messages) == 0:
             break
@@ -219,18 +218,18 @@ def lambda_handler(event, context):
                     log_messages_written[stream_name] = 1
                 log_handler.add_message(stream_name, timestamp, log_message["Body"], number)
             except Exception as ex:
-                print("Invalid log message {}, {}".format(log_message, ex))
+                print(("Invalid log message {}, {}".format(log_message, ex)))
         try:
             log_handler.flush()
             sqs.delete_message_batch(QueueUrl=queue,
                                      Entries=[{"Id": log_message["MessageId"], "ReceiptHandle": log_message["ReceiptHandle"]} for
                                               log_message in log_messages])
         except Exception as ex:
-            print("Error writing messages to CloudWatch Logs , {}".format(ex))
+            print(("Error writing messages to CloudWatch Logs , {}".format(ex)))
             raise ex
 
     for s in log_messages_written:
-        print("{} entries written to log stream {}".format(log_messages_written[s], s))
+        print(("{} entries written to log stream {}".format(log_messages_written[s], s)))
 
     return {s: log_messages_written[s] for s in log_messages_written}
 

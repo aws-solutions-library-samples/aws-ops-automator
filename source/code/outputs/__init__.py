@@ -1,22 +1,23 @@
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
+
 import inspect
 import sys
 
 
 def get_error_constant_name(scope, message, prefix):
     for g in [n for n in scope if n.startswith(prefix)]:
-        if isinstance(scope[g], basestring) and scope[g] == message:
+        if isinstance(scope[g], str) and scope[g] == message:
             return g
     return None
 

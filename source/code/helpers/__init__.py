@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import collections
 import decimal
@@ -88,7 +88,7 @@ def as_namedtuple(name, d, deep=True, name_func=None, excludes=None):
 
     if deep:
         # deep copy to avoid modifications on input dictionaries
-        for key in d.keys():
+        for key in list(d.keys()):
             key_name = name_func(key)
             if is_dict(d[key]) and key not in excludes:
                 dest[key_name] = as_namedtuple(key, d[key], deep=True, name_func=name_func, excludes=excludes)
@@ -97,9 +97,9 @@ def as_namedtuple(name, d, deep=True, name_func=None, excludes=None):
             else:
                 dest[key_name] = d[key]
     else:
-        dest = {name_func(key): d[key] for key in d.keys()}
+        dest = {name_func(key): d[key] for key in list(d.keys())}
 
-    return collections.namedtuple(name_func(name), dest.keys())(*dest.values())
+    return collections.namedtuple(name_func(name), list(dest.keys()))(*list(dest.values()))
 
 
 def full_stack():
@@ -121,7 +121,7 @@ class CustomEncoder(json.JSONEncoder):
 
     def default(self, o):
         if types.FunctionType == type(o):
-            return o.func_name
+            return o.__name__
         # sets become lists
         if isinstance(o, set):
             return list(o)
@@ -134,5 +134,9 @@ class CustomEncoder(json.JSONEncoder):
             return str(o)
         if isinstance(o, Exception):
             return str(o)
-
+        if isinstance(o, set):
+            return str(o, 'utf-8')
+        if isinstance(o, bytes):
+            return str(o, 'utf-8')
+        
         return json.JSONEncoder.default(self, o)

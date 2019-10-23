@@ -1,16 +1,15 @@
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
-
 
 from datetime import timedelta
 
@@ -416,7 +415,7 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
     def all_volume_tags(self):
         if self._all_volume_tags is None:
             self._all_volume_tags = {}
-            volumes = self.volumes.keys()
+            volumes = list(self.volumes.keys())
             describe_tags_args = {
                 "DryRun": self._dryrun_,
                 "Filters": [
@@ -641,7 +640,7 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
                     raise Exception(ERR_SETTING_INSTANCE_TAGS.format(self.instance_id, ex))
 
         snapshot_ids = [volume.get("create_snapshot", {}).get("SnapshotId") for volume in
-                        snapshot_create_data.get("volumes", {}).values()]
+                        list(snapshot_create_data.get("volumes", {}).values())]
 
         self._logger_.info(INFO_CHECKING_SNAPSHOT_STATUS, ",".join(snapshot_ids))
 
@@ -751,7 +750,7 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
 
         if self.volume_tag_filter is not None:
             volume_data = ec2.describe(services.ec2_service.VOLUMES,
-                                       VolumeIds=self.volumes.keys(),
+                                       VolumeIds=list(self.volumes.keys()),
                                        tags=True,
                                        region=self._region_)
             volume_tags = {k["VolumeId"]: k.get("Tags", {}) for k in list(volume_data)}
@@ -784,9 +783,9 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
 
         self.result[METRICS_DATA] = build_action_metrics(
             action=self,
-            CreatedSnapshots=len(self.result.get("volumes", {}).values()),
+            CreatedSnapshots=len(list(self.result.get("volumes", {}).values())),
             SnapshotsSizeTotal=sum(
                 [volume.get("create_snapshot", {}).get("VolumeSize") for volume in
-                 self.result.get("volumes", {}).values()]))
+                 list(self.result.get("volumes", {}).values())]))
 
         return self.result

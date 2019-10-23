@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import calendar
 import unittest
@@ -45,19 +45,19 @@ class TestMonthdaySetBuilder(unittest.TestCase):
 
                     # everything before last week should be empty set
                     if tested_on_day <= (days_in_month - 7):
-                        self.assertEquals(tested_by_name, set())
-                        self.assertEquals(tested_by_value, set())
+                        self.assertEqual(tested_by_name, set())
+                        self.assertEqual(tested_by_value, set())
                     else:
                         # in last week the set should contain the day
-                        self.assertEquals(tested_by_name, {weekday})
-                        self.assertEquals(tested_by_value, {weekday})
+                        self.assertEqual(tested_by_name, {weekday})
+                        self.assertEqual(tested_by_value, {weekday})
 
                         # test if other weekdays on that day return empty set
                         for d in range(0, 6):
                             if d != weekday:
                                 day_num_l = calendar.day_abbr[d] + "L"
                                 day_value_l = str(d) + "L"
-                                self.assertEquals(builder.build(day_num_l), set())
+                                self.assertEqual(builder.build(day_num_l), set())
                                 self.assertEqual(builder.build(day_value_l), set())
 
                     weekday = (weekday + 1) % 7
@@ -73,24 +73,24 @@ class TestMonthdaySetBuilder(unittest.TestCase):
                     builder = WeekdaySetBuilder(year=year, month=month, day=day)
 
                     tested_by_name = builder.build(calendar.day_abbr[weekday] + "#" + str(num))
-                    self.assertEquals(tested_by_name, {weekday})
+                    self.assertEqual(tested_by_name, {weekday})
 
                     tested_by_value = builder.build(str(weekday) + "#" + str(num))
-                    self.assertEquals(tested_by_value, {weekday})
+                    self.assertEqual(tested_by_value, {weekday})
 
                     for other_weekday in range(0, 7):
                         if other_weekday != weekday:
                             tested_by_name = builder.build(calendar.day_abbr[other_weekday] + "#" + str(num))
-                            self.assertEquals(tested_by_name, set())
+                            self.assertEqual(tested_by_name, set())
                             tested_by_value = builder.build(str(other_weekday) + "#" + str(num))
-                            self.assertEquals(tested_by_value, set())
+                            self.assertEqual(tested_by_value, set())
 
                     for other_num in range(1, 6):
                         if num != other_num:
                             tested_by_name = builder.build(calendar.day_abbr[weekday] + "#" + str(other_num))
-                            self.assertEquals(tested_by_name, set())
+                            self.assertEqual(tested_by_name, set())
                             tested_by_value = builder.build(str(weekday) + "#" + str(other_num))
-                            self.assertEquals(tested_by_value, set())
+                            self.assertEqual(tested_by_value, set())
 
                     weekday = (weekday + 1) % 7
 

@@ -1,16 +1,15 @@
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
-
 from collections import OrderedDict
 from decimal import Decimal
 
@@ -677,7 +676,7 @@ class ActionTemplateBuilder(object):
             if action_parameter.get(actions.PARAM_TYPE_AWS, None):
                 parameter_template["Type"] = action_parameter[actions.PARAM_TYPE_AWS]
             else:
-                if parameter_type in [int, long, float, Decimal]:
+                if parameter_type in [int, int, float, Decimal]:
                     parameter_template["Type"] = "Number"
                 elif isinstance([], parameter_type):
                     parameter_template["Type"] = "CommaDelimitedList"
@@ -720,7 +719,7 @@ class ActionTemplateBuilder(object):
                 self._parameter_labels[name] = {"default": action_parameter[actions.PARAM_LABEL]}
 
         # setup all parameters for an action
-        for parameter_name, parameter in self.action_properties.get(actions.ACTION_PARAMETERS, {}).iteritems():
+        for parameter_name, parameter in self.action_properties.get(actions.ACTION_PARAMETERS, {}).items():
             # Parameters cab be marked as hidden, no UI is generated
             if parameter.get(actions.PARAM_HIDDEN, False):
                 continue

@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import copy
 import unittest
@@ -51,10 +51,10 @@ class TestTagFilterExpression(unittest.TestCase):
         self.assertTrue(TagFilterExpression("A=*").is_match({"A": "1,2,3"}))
 
     def test_helper_functions(self):
-        self.assertEquals(TagFilterExpression("A=B&CD=!XYZ").get_filters(), ["A=B", "CD=!XYZ"])
-        self.assertEquals(TagFilterExpression("(A=B&CD=!XYZ)|(A=Z|CD=EFG)").get_filters(), ["A=B", "CD=!XYZ", "A=Z", "CD=EFG"])
-        self.assertEquals(TagFilterExpression("A&*=!XYZ").get_filters(), ["A", "*=!XYZ"])
+        self.assertEqual(TagFilterExpression("A=B&CD=!XYZ").get_filters(), ["A=B", "CD=!XYZ"])
+        self.assertEqual(TagFilterExpression("(A=B&CD=!XYZ)|(A=Z|CD=EFG)").get_filters(), ["A=B", "CD=!XYZ", "A=Z", "CD=EFG"])
+        self.assertEqual(TagFilterExpression("A&*=!XYZ").get_filters(), ["A", "*=!XYZ"])
 
-        self.assertEquals(TagFilterExpression("A=B&CD=!XYZ").get_filter_keys(), {"A", "CD"})
-        self.assertEquals(TagFilterExpression("(A=B&CD=!XYZ)|(A=Z|CD=EFG)").get_filter_keys(), {"A", "CD"})
-        self.assertEquals(TagFilterExpression("A&*=!XYZ").get_filter_keys(), {"A", "*"})
+        self.assertEqual(TagFilterExpression("A=B&CD=!XYZ").get_filter_keys(), {"A", "CD"})
+        self.assertEqual(TagFilterExpression("(A=B&CD=!XYZ)|(A=Z|CD=EFG)").get_filter_keys(), {"A", "CD"})
+        self.assertEqual(TagFilterExpression("A&*=!XYZ").get_filter_keys(), {"A", "*"})

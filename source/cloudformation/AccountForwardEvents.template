@@ -258,7 +258,7 @@
             "%event-forward-role%"
           ]
         },
-        "Runtime": "python2.7",
+        "Runtime": "python3.7",
         "Timeout": 60
       },
       "Condition": "ForwardToOpsAutomatorCondition"

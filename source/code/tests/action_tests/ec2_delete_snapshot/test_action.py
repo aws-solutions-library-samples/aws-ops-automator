@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import inspect
 import unittest
@@ -103,12 +103,12 @@ class TestAction(unittest.TestCase):
 
             self.deleted_snapshots = getattr(self.task_runner.results[0], "result", {})["deleted"][region()]
 
-            self.assertEquals(sorted(self.created_snapshots[0:snapshots_to_create - snapshots_to_keep]),
+            self.assertEqual(sorted(self.created_snapshots[0:snapshots_to_create - snapshots_to_keep]),
                               sorted(self.deleted_snapshots), "Expected snapshots deleted")
             self.logger.test("[X] {} oldest snapshots deleted out of {}", len(self.deleted_snapshots), len(self.created_snapshots))
 
             remaining_snapshots = [s["SnapshotId"] for s in self.ec2.get_snapshots_for_volume(volume_id=self.volume_id)]
-            self.assertEquals(sorted(self.created_snapshots[snapshots_to_create - snapshots_to_keep:]),
+            self.assertEqual(sorted(self.created_snapshots[snapshots_to_create - snapshots_to_keep:]),
                               sorted(remaining_snapshots), "Expected snapshots retained")
             self.logger.test("[X] {} latest snapshots retained out of {}", len(remaining_snapshots), len(self.created_snapshots))
 
@@ -153,7 +153,7 @@ class TestAction(unittest.TestCase):
 
             self.logger.test("Checking deleted snapshot")
             self.assertEqual(1, len(self.deleted_snapshots), "Deleted single snapshot")
-            self.assertEquals(self.deleted_snapshots[0], snapshot_source["SnapshotId"], "Oldest (source) snapshot deleted")
+            self.assertEqual(self.deleted_snapshots[0], snapshot_source["SnapshotId"], "Oldest (source) snapshot deleted")
             self.logger.test("[X] Source snapshot deleted ")
 
             remaining_snapshot = self.ec2.get_snapshot(snapshot_copy["SnapshotId"])

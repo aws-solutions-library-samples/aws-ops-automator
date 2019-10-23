@@ -1,16 +1,15 @@
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
-
 import datetime
 import json
 import random
@@ -54,7 +53,7 @@ class OpsautomatortestService(AwsService):
         def get_number_of_resources(spec):
             assert (spec is not None)
             # dict as json, key is region, value is spec for region
-            if isinstance(spec, basestring):
+            if isinstance(spec, str):
                 # noinspection PyBroadException,PyPep8
                 try:
                     spec = json.loads(spec)
@@ -88,7 +87,7 @@ class OpsautomatortestService(AwsService):
             tags = {}
             tag_str = self._args.get(actions.ops_automator_test_action.PARAM_TEST_SELECT_TAGS, "")
 
-            if isinstance(tag_str, basestring):
+            if isinstance(tag_str, str):
                 for t in tag_str.split(","):
                     t = t.strip()
                     if "=" in t:

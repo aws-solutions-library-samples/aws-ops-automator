@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import base64
 import copy
@@ -649,14 +649,14 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
                     time.sleep(10)
 
-            for t in source_device_tags.values():
+            for t in list(source_device_tags.values()):
                 if len(t) > 0:
                     break
             else:
                 self._logger_.info(INF_NO_VOLUME_TAGS_TO_COPY, self.new_instance_id)
                 return
 
-            all_volume_tags = source_device_tags.values()
+            all_volume_tags = list(source_device_tags.values())
             for t in all_volume_tags:
                 if t != all_volume_tags[0]:
                     all_same_tags = False
@@ -683,7 +683,7 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
             if all_same_tags:
                 volume_ids = [v["VolumeId"] for v in volumes]
-                tags = source_device_tags.values()[0]
+                tags = list(source_device_tags.values())[0]
                 self._logger_.info(INF_COPY_TAGS_SAME, tags, ", ".join(volume_ids),
                                    self.new_instance_id)
                 self.ec2_client.create_tags_with_retries(Resources=volume_ids, Tags=tag_key_value_list(tags))
@@ -996,7 +996,7 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                 if task_is_triggered_by_tag_event():
                     # up or down tags filters should not match new tags as it would re-trigger execution of the task
                     if self.replace_mode == REPLACE_BY_STEP:
-                        for t in tags.keys():
+                        for t in list(tags.keys()):
                             # remove tags that match up or down tag filters
                             if (self.scale_up_tagfilter and t in self.scale_up_tagfilter.get_filter_keys()) or \
                                     (self.scale_down_tagfilter and t in self.scale_down_tagfilter.get_filter_keys()):
@@ -1008,14 +1008,14 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                         if self._tagfilter_ is not None:
                             # check again tag filter if any
                             check_filter = TagFilterExpression(self._tagfilter_)
-                            for t in tags.keys():
+                            for t in list(tags.keys()):
                                 if t in check_filter.get_filter_keys():
                                     self._logger_.info(INF_TAGS_NOT_SET_TYPE.format({t: tags[t]}, self.instance_id))
                                     del tags[t]
                         else:
                             # check if name of the task is not in the new task list
                             tag_list_tag_name = os.getenv(handlers.ENV_AUTOMATOR_TAG_NAME)
-                            for t in tags.keys():
+                            for t in list(tags.keys()):
                                 if t == tag_list_tag_name and self._task_ in tagging.split_task_list(tags[t]):
                                     self._logger_.info(INF_TAGS_NOT_SET_TYPE.format({t: tags[t]}, self.instance_id))
                                     del tags[t]

@@ -1,30 +1,31 @@
 #!/usr/bin/env bash
-echo "Staring to build distribution"
-echo "make build"
-echo "Pipeline type ${1}"
-echo "Version ${VERSION}"
+# 
+# This assumes all of the OS-level configuration has been completed and git repo has already been cloned 
+# 
+# This script should be run from the repo's deployment directory 
+# cd deployment 
+# ./build-s3-dist.sh source-bucket-base-name trademarked-solution-name version-code 
+# 
+# Parameters: 
+#  - source-bucket-base-name: Name for the S3 bucket location where the template will source the Lambda 
+#    code from. The template will append '-[region_name]' to this bucket name. 
+#    For example: ./build-s3-dist.sh solutions my-solution v1.0.0 
+#    The template will then expect the source code to be located in the solutions-[region_name] bucket 
+# 
+#  - trademarked-solution-name: name of the solution for consistency 
+# 
+#  - version-code: version of the solution 
 
-export BUCKET_PREFIX=solutions
-if [ $1 = "mainline" ]; then
-    export BUCKET_PREFIX=solutions-test
-fi
-if [ $1 = "feature" ]; then
-    export BUCKET_PREFIX=solutions-features
-fi
-echo ${VERSION} > ../source/code/version.txt
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then 
+    echo "Please provide the base source bucket name, trademark approved solution name and version where the lambda code will eventually reside." 
+    echo "For example: ./build-s3-dist.sh solutions trademarked-solution-name v1.0.0" 
+    exit 1 
+fi 
 
-echo "Bucket prefix for distribution '${BUCKET_PREFIX}'"
-cd ../source/code
-echo "make bucket=${BUCKET_PREFIX}"
-make bucket=$BUCKET_PREFIX
-
-cd ../../deployment
-echo "mkdir -p dist"
-mkdir -p dist
-cp ops-automator-latest.template dist/ops-automator.template
-cp ops-automator-`cat ../source/code/version.txt`.zip dist/ops-automator-`cat ../source/code/version.txt`.zip
-# adding cloudwatch handler zip
-cp cloudwatch-handler-`cat ../source/code/version.txt`.zip dist/cloudwatch-handler-`cat ../source/code/version.txt`.zip
-# rm instance-scheduler-`cat ../source/code/version.txt`.template
-# rm instance-scheduler-remote-`cat ../source/code/version.txt`.template
+echo "make bucket=$1 solution=$2 version=$3" 
+cd ../source/code 
+ls
+echo $PWD
+make bucket=$1 solution=$2 version=$3 
+cd ../../deployment 
 echo "Completed building distribution"

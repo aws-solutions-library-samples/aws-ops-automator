@@ -1,15 +1,16 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
+############################################################################################################################################################################################################################################
+
 import os
 import random
 import types
@@ -205,7 +206,7 @@ class WaitStrategy(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         """
         Returns next wait period
         :return: Next wait period
@@ -240,7 +241,7 @@ class ConstantWaitStrategy(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         """
         Returns next wait period
         :return: Next wait period
@@ -277,7 +278,7 @@ class LinearWaitStrategy(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         """
         Returns next wait period
         :return: Next wait period
@@ -315,7 +316,7 @@ class MultiplyWaitStrategy(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         """
         Returns next wait period
         :return: Next wait period
@@ -333,8 +334,8 @@ def update_calls(client_or_resource, method_name, retry):
         dt = datetime.fromtimestamp(time())
         full_name = "{}.{}".format(type(client_or_resource).__name__, method_name)
         if boto_stats_output:
-            print(LOG_FORMAT.format(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, str(dt.microsecond)[0:3], full_name,
-                                    retry))
+            print((LOG_FORMAT.format(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, str(dt.microsecond)[0:3], full_name,
+                                    retry)))
         if method_name in statistics:
             statistics[full_name]["calls"] += 1
         else:
@@ -352,8 +353,8 @@ def update_retries(client_or_resource, method_name, failed, retries, timed_out):
 def print_statistics():
     if boto_retry_stats and boto_stats_output:
         for name in sorted(statistics):
-            print(STATS_FORMAT.format(name, statistics[name]["calls"], statistics[name]["failed"], statistics[name]["retries"],
-                                      statistics["timed-out"]))
+            print((STATS_FORMAT.format(name, statistics[name]["calls"], statistics[name]["failed"], statistics[name]["retries"],
+                                      statistics["timed-out"])))
 
 
 def clear_statistics():

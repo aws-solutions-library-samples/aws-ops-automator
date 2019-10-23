@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import time
 from datetime import timedelta
@@ -192,8 +192,9 @@ class Ec2DeleteSnapshotAction(ActionBase):
     def __init__(self, action_arguments, action_parameters):
 
         ActionBase.__init__(self, action_arguments, action_parameters)
-
-        self.snapshots = sorted(self._resources_)
+        
+        #self.snapshots = sorted(self._resources_)
+        self.snapshots = sorted(self._resources_, key=lambda snap: snap["Region"])
         self.retention_days = int(self.get(PARAM_RETENTION_DAYS))
         self.retention_count = int(self.get(PARAM_RETENTION_COUNT))
 
@@ -258,6 +259,7 @@ class Ec2DeleteSnapshotAction(ActionBase):
                 for sn in sorted(self.snapshots, key=lambda snap: snap["Region"]):
                     snapshot_dt = get_start_time(sn)
                     if snapshot_dt < delete_before_dt:
+                        
                         self._logger_.debug(DEBUG_SN_RETENTION_DAYS_DELETE, sn["SnapshotId"], get_start_time(sn),
                                             sn["VolumeId"], self.retention_days)
                         yield sn

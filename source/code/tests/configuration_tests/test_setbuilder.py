@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import string
 import unittest
@@ -26,30 +26,30 @@ class TestSetBuilder(unittest.TestCase):
     def test_name(self):
         # names 1 char
         for i, name in enumerate(names):
-            self.assertEquals(SetBuilder(names=names).build(name), {i})
+            self.assertEqual(SetBuilder(names=names).build(name), {i})
         # names 1 char with offset
         for i, name in enumerate(names):
-            self.assertEquals(SetBuilder(names=names, offset=1).build(name), {i + 1})
+            self.assertEqual(SetBuilder(names=names, offset=1).build(name), {i + 1})
 
         # names 1 char ignore case
         for i, name in enumerate(names):
-            self.assertEquals(SetBuilder(names=names, ignore_case=True).build(name.upper()), {i})
+            self.assertEqual(SetBuilder(names=names, ignore_case=True).build(name.upper()), {i})
 
         # names 3
         for i, name in enumerate(names_cased):
-            self.assertEquals(SetBuilder(names=names_cased).build(name), {i})
+            self.assertEqual(SetBuilder(names=names_cased).build(name), {i})
 
         # names 3, ignore case
         for i, name in enumerate(names):
-            self.assertEquals(SetBuilder(names=names_cased, ignore_case=True).build(name), {i})
+            self.assertEqual(SetBuilder(names=names_cased, ignore_case=True).build(name), {i})
 
         # names 3, 1 significant character
         for i, name in enumerate(names):
-            self.assertEquals(SetBuilder(names=names_cased, significant_name_characters=1).build(name.upper()), {i})
+            self.assertEqual(SetBuilder(names=names_cased, significant_name_characters=1).build(name.upper()), {i})
 
         # names 3, 1 significant character, ignore case
         for i, name in enumerate(names):
-            self.assertEquals(SetBuilder(names=names_cased, significant_name_characters=3).build(name + name), {i})
+            self.assertEqual(SetBuilder(names=names_cased, significant_name_characters=3).build(name + name), {i})
 
         # all items passed in as list of strings
         self.assertEqual(SetBuilder(names=names).build(names), all_items)
@@ -57,32 +57,32 @@ class TestSetBuilder(unittest.TestCase):
     def test_value(self):
         # all by value
         for value in range(0, len(names)):
-            self.assertEquals(SetBuilder(names=names).build(str(value)), {value})
+            self.assertEqual(SetBuilder(names=names).build(str(value)), {value})
 
         # all by value with offset
         for value in range(1, len(names) + 1):
-            self.assertEquals(SetBuilder(names=names, offset=1).build(str(value)), {value})
+            self.assertEqual(SetBuilder(names=names, offset=1).build(str(value)), {value})
 
     def test_min_max(self):
         # builder initialized by min and max values
         for i in range(0, 5):
-            self.assertEquals(SetBuilder(min_value=0, max_value=4).build(str(i)), {i})
+            self.assertEqual(SetBuilder(min_value=0, max_value=4).build(str(i)), {i})
 
     def test_wildcards(self):
         # all items using standard and custom wildcard
-        self.assertEquals(SetBuilder(names).build("*"), all_items)
-        self.assertEquals(SetBuilder(names).build("?"), all_items)
-        self.assertEquals(SetBuilder(names, all_items_wildcards="!").build("!"), all_items)
+        self.assertEqual(SetBuilder(names).build("*"), all_items)
+        self.assertEqual(SetBuilder(names).build("?"), all_items)
+        self.assertEqual(SetBuilder(names, all_items_wildcards="!").build("!"), all_items)
 
         # first item using standard and custom wildcard
-        self.assertEquals(SetBuilder(names).build("^"), {0})
-        self.assertEquals(SetBuilder(names, first_item_wildcard="!").build("!"), {0})
-        self.assertEquals(SetBuilder(names, offset=1).build("^"), {1})
+        self.assertEqual(SetBuilder(names).build("^"), {0})
+        self.assertEqual(SetBuilder(names, first_item_wildcard="!").build("!"), {0})
+        self.assertEqual(SetBuilder(names, offset=1).build("^"), {1})
 
         # last item using standard and custom wildcard
-        self.assertEquals(SetBuilder(names).build("$"), {len(names) - 1})
-        self.assertEquals(SetBuilder(names, last_item_wildcard="!").build("!"), {len(names) - 1})
-        self.assertEquals(SetBuilder(names, offset=1).build("$"), {len(names)})
+        self.assertEqual(SetBuilder(names).build("$"), {len(names) - 1})
+        self.assertEqual(SetBuilder(names, last_item_wildcard="!").build("!"), {len(names) - 1})
+        self.assertEqual(SetBuilder(names, offset=1).build("$"), {len(names)})
 
         # combined first and last wildcard
         self.assertEqual(SetBuilder(names).build("^,$"), {0, len(names) - 1})
@@ -119,8 +119,8 @@ class TestSetBuilder(unittest.TestCase):
 
     def test_increments(self):
         # increments on start name and value
-        self.assertEqual(SetBuilder(names).build(names[0] + "/5"), {i for i in range(0, len(names), 5)})
-        self.assertEqual(SetBuilder(names).build("0/3"), {i for i in range(0, len(names), 3)})
+        self.assertEqual(SetBuilder(names).build(names[0] + "/5"), {i for i in list(range(0, len(names), 5))})
+        self.assertEqual(SetBuilder(names).build("0/3"), {i for i in list(range(0, len(names), 3))})
 
         # increment on ranges
         self.assertEqual(SetBuilder(names).build(names[0] + "-" + names[10] + "/2"), {0, 2, 4, 6, 8, 10})

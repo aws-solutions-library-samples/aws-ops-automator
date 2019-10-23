@@ -1,16 +1,15 @@
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
-
 
 import time
 
@@ -445,7 +444,7 @@ class Ec2ResizeInstanceAction(ActionEc2EventBase):
         def tags_to_delete():
             tags = {}
             tags_on_instance = self.instance.get("Tags", {})
-            for t in tags_on_instance.keys():
+            for t in list(tags_on_instance.keys()):
                 if (self.scale_up_tagfilter and t in self.scale_up_tagfilter.get_filter_keys()) or \
                         (self.scale_down_tagfilter and t in self.scale_down_tagfilter.get_filter_keys()):
                     self._logger_.info(INF_REMOVE_TAG.format({t: tags_on_instance[t]}, self.instance_id))
@@ -476,7 +475,7 @@ class Ec2ResizeInstanceAction(ActionEc2EventBase):
                     # up or down tags filters should not match new tags as it would re-trigger execution of the task
                     if self.resize_mode == RESIZE_BY_STEP:
 
-                        for t in tags.keys():
+                        for t in list(tags.keys()):
                             # remove tags that match up or down tag filters
                             if (self.scale_up_tagfilter and t in self.scale_up_tagfilter.get_filter_keys()) or \
                                     (self.scale_down_tagfilter and t in self.scale_down_tagfilter.get_filter_keys()):

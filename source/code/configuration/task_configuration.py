@@ -1,16 +1,15 @@
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
-
 import copy
 import datetime
 import decimal
@@ -203,7 +202,7 @@ class TaskConfiguration(object):
         if self._logger:
             self._logger.info(msg, *args)
         else:
-            print(msg.format(*args))
+            print((msg.format(*args)))
 
     def config_items(self, include_internal=False):
         """
@@ -268,7 +267,7 @@ class TaskConfiguration(object):
             if isinstance(item, dict):
                 item = {i: remove_empty_strings(item[i]) for i in item}
 
-            if isinstance(item, basestring):
+            if isinstance(item, str):
                 if len(item.strip()) == 0:
                     return None
 
@@ -431,14 +430,14 @@ class TaskConfiguration(object):
         validated_parameters = {}
 
         def verify_numeric_parameter(value, action_param):
-            if type(value) in [int, float, long, complex, decimal]:
+            if type(value) in [int, float, int, complex, decimal]:
                 if actions.PARAM_MIN_VALUE in action_param and value < action_param[actions.PARAM_MIN_VALUE]:
                     raise_value_error(ERR_MIN_VALUE, value, action_param[actions.PARAM_MIN_VALUE], param_name)
                 if actions.PARAM_MAX_VALUE in action_param and value > action_param[actions.PARAM_MAX_VALUE]:
                     raise_value_error(ERR_MAX_VALUE, value, action_param[actions.PARAM_MAX_VALUE], param_name)
 
         def verify_string_parameter(value, action_param):
-            if type(value) in [str, unicode]:
+            if type(value) in [str, str]:
                 if actions.PARAM_MIN_LEN in action_param and len(value) < action_param[actions.PARAM_MIN_LEN]:
                     raise_value_error(ERR_MIN_LEN, value, action_param[actions.PARAM_MIN_LEN], param_name)
                 if actions.PARAM_MAX_LEN in action_param and len(value) > action_param[actions.PARAM_MAX_LEN]:
@@ -791,7 +790,7 @@ class TaskConfiguration(object):
     def get_parameters(self, itm):
 
         def get_param(value):
-            if isinstance(value, str) or isinstance(value, unicode):
+            if isinstance(value, str) or isinstance(value, str):
                 m = re.match(SSM_PARAM_REGEX, value)
                 if m is not None:
                     name = m.groups()[0]
@@ -824,7 +823,7 @@ class TaskConfiguration(object):
                 result_item[i] = temp
                 continue
 
-            if isinstance(result_item[i], str) or isinstance(result_item[i], basestring):
+            if isinstance(result_item[i], str) or isinstance(result_item[i], str):
                 result_item[i] = get_param(result_item[i])
 
         return result_item
@@ -962,7 +961,7 @@ class TaskConfiguration(object):
 
             def clean_dict(d):
                 result_dict = {}
-                for k, v in d.iteritems():
+                for k, v in d.items():
                     vv = remove_empty_attributes(v)
                     if vv is not None:
                         result_dict[k] = vv

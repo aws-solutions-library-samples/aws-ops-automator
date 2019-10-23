@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import copy
 import json
@@ -148,7 +148,7 @@ class TaskTestRunner(object):
                     # actual resource names is name of class + name from class properties
                     logical_resource_names = [class_name + resource_name for resource_name in resources]
 
-                    for res in self.action_stack.stack_resources.values():
+                    for res in list(self.action_stack.stack_resources.values()):
                         # actual name
                         logical_resource_id = res["LogicalResourceId"]
                         # test if this resource is an resource from the action properties
@@ -159,7 +159,7 @@ class TaskTestRunner(object):
                                                     "ResourceType"]
                             }
 
-                            if len(self._action_stack_resources.keys()) == len(resources):
+                            if len(list(self._action_stack_resources.keys())) == len(resources):
                                 return self._action_stack_resources
 
         return self._action_stack_resources

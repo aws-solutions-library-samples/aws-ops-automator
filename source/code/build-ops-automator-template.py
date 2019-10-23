@@ -38,12 +38,13 @@ def build_action_policy_statement(action_name, action_permissions):
     return statements
 
 
-def get_versioned_template(template_filename, version, bucket, prefix):
+def get_versioned_template(template_filename, bucket, solution, version):
+
     with open(template_filename, "rt") as f:
         template_text = "".join(f.readlines())
-        template_text = template_text.replace("%version%", version)
-        template_text = template_text.replace("%prefix%", prefix)
         template_text = template_text.replace("%bucket%", bucket)
+        template_text = template_text.replace("%solution%", solution)
+        template_text = template_text.replace("%version%", version)
         return json.loads(template_text, object_pairs_hook=OrderedDict)
 
 
@@ -177,16 +178,18 @@ def add_action_stack_resources(template, all_actions):
                 action_statement.append(stack_resource_permissions)
 
 
-def main(template_file, version, bucket, prefix):
-    template = get_versioned_template(template_file, version, bucket, prefix)
+def main(template_file, bucket, solution, version):
+
+    template = get_versioned_template(template_file, bucket, solution, version)
+
     all_actions = actions.all_actions()
     add_actions_permissions(template, all_actions)
     add_additional_lambda_functions(template)
     add_action_stack_resources(template, all_actions)
-    print(json.dumps(template, indent=4))
+    print((json.dumps(template, indent=4)))
 
 
 if __name__ == "__main__":
-    main(template_file=sys.argv[1], version=sys.argv[2], bucket=sys.argv[3], prefix=sys.argv[4])
+    main(template_file=sys.argv[1], bucket=sys.argv[2], solution=sys.argv[3], version=sys.argv[4])
 
     exit(0)

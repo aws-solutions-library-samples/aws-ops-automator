@@ -1,16 +1,15 @@
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
-
 import json
 import os
 import threading
@@ -99,7 +98,7 @@ class ExecutionHandler(object):
         self.execution_log_stream = self._event.get(handlers.TASK_TR_EXECUTION_LOGSTREAM)
         self.assumed_role = self._event.get(handlers.TASK_TR_ASSUMED_ROLE, None)
         self.events = self._event.get(handlers.TASK_TR_EVENTS, {})
-        if isinstance(self.events, basestring):
+        if isinstance(self.events, str):
             self.events = json.loads(self._event.get(handlers.TASK_TR_EVENTS, "{}").replace("u'", '"').replace("'", '"'))
 
         self._action_resources = None
@@ -137,7 +136,7 @@ class ExecutionHandler(object):
                                                                                    self.action_parameters)
                         self.execution_log_stream = "{}-{}".format(self._event[handlers.TASK_TR_NAME], action_subject)
                     except Exception as ex:
-                        print(ERR_BUILDING_SUBJECT_FOR_LOG_STREAM, str(self._action_class), ex)
+                        print((ERR_BUILDING_SUBJECT_FOR_LOG_STREAM, str(self._action_class), ex))
                         action_subject = "unknown-"
                         self.execution_log_stream = LOG_STREAM.format(self._event[handlers.TASK_TR_NAME], action_subject,
                                                                       actions.log_stream_datetime(),
@@ -217,7 +216,7 @@ class ExecutionHandler(object):
                             }
 
                         # test if we've found the number of resources that we declared, in that case no need to read more
-                        if len(self._stack_resources.keys()) == len(resources):
+                        if len(list(self._stack_resources.keys())) == len(resources):
                             return self._stack_resources
 
                     # continuation if > 100 resources in stack
@@ -278,7 +277,7 @@ class ExecutionHandler(object):
         try:
             self._logger.debug("Start executing task")
             action_result = self._action_instance.execute()
-            if isinstance(action_result, basestring):
+            if isinstance(action_result, str):
                 action_result = json.loads(action_result)
         finally:
             if self._timer is not None:

@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import copy
 import os
@@ -106,7 +106,7 @@ def build_tags_from_template(tags_str,
             tag_vars["ssm:{}".format(p["Name"])] = p["Value"].split(",") if p["Type"] == "StringList" else p["Value"]
 
     # variables as strings
-    for v in tag_vars.keys():
+    for v in list(tag_vars.keys()):
         if tag_vars[v] is None:
             value = ""
         elif isinstance(tag_vars[v], list):
@@ -145,7 +145,7 @@ def build_tags_from_template(tags_str,
         clean_tag_set(tags)
 
     if not include_deleted_tags:
-        for t in tags.keys():
+        for t in list(tags.keys()):
             if tags[t] == TAG_DELETE:
                 del tags[t]
     return tags

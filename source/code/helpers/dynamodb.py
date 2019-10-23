@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 from datetime import datetime
 from decimal import Decimal
@@ -16,7 +16,7 @@ from decimal import Decimal
 
 def unpack_record(record):
     def get_data(item):
-        data_type = item.keys()[0]
+        data_type = list(item.keys())[0]
         data = item[data_type]
         if data_type == "M":
             return {i: get_data(data[i]) for i in data}
@@ -47,12 +47,12 @@ def build_record(item):
 
 def as_dynamo_safe_types(data):
     def check_attributes(d):
-        for attr in d.keys():
+        for attr in list(d.keys()):
             if isinstance(d[attr], datetime):
                 d[attr] = d[attr].isoformat()
                 continue
 
-            if isinstance(d[attr], basestring) and d[attr].strip() == "":
+            if isinstance(d[attr], str) and d[attr].strip() == "":
                 del d[attr]
                 continue
 

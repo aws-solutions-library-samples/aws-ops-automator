@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import decimal
 import json
@@ -37,7 +37,7 @@ class CustomCfnJsonEncoder(json.JSONEncoder):
 if __name__ == '__main__':
 
     if len(sys.argv) < 2:
-        print("Syntax is {} taskname [optional profile name]".format(os.path.basename(sys.argv[0])))
+        print(("Syntax is {} taskname [optional profile name]".format(os.path.basename(sys.argv[0]))))
 
     stack_name = "%stack%"
     table_name = "%config_table%"
@@ -56,18 +56,18 @@ if __name__ == '__main__':
         }).get("Item")
 
     if config_item is None:
-        print("Task {} not found in table {}".format(task_name, table_name))
+        print(("Task {} not found in table {}".format(task_name, table_name)))
         exit(1)
 
     config_item.update({"Name": task_name, "ServiceToken": service_token})
     if "StackId" in config_item:
         del config_item["StackId"]
 
-    for p in config_item.keys():
+    for p in list(config_item.keys()):
         if config_item[p] is None:
             del config_item[p]
 
-    for p in config_item.get("Parameters",{}).keys():
+    for p in list(config_item.get("Parameters",{}).keys()):
         if config_item["Parameters"][p] is None:
             del config_item["Parameters"][p]
 

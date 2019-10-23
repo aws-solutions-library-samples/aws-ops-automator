@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import inspect
 import unittest
@@ -44,7 +44,7 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def get_methods(cls):
-        return [x for x, y in cls.__dict__.items() if type(y) == FunctionType and x.startswith("test_")]
+        return [x for x, y in list(cls.__dict__.items()) if type(y) == FunctionType and x.startswith("test_")]
 
     @classmethod
     def setUpClass(cls):
@@ -104,12 +104,12 @@ class TestAction(unittest.TestCase):
 
         table_read_units_new, table_write_units_new, index_read_units_new, index_write_units_new = self.get_provisioned_throughput()
 
-        self.assertEquals(table_read_units * 2, table_read_units_new, "Table read units set")
-        self.assertEquals(table_write_units * 2, table_write_units_new, "Table write units set")
+        self.assertEqual(table_read_units * 2, table_read_units_new, "Table read units set")
+        self.assertEqual(table_write_units * 2, table_write_units_new, "Table write units set")
         self.logger.test("[X] Table throughput capacity set")
 
-        self.assertEquals(index_read_units * 2, index_read_units_new, "Index read units set")
-        self.assertEquals(index_write_units * 2, index_write_units_new, "Index write units set")
+        self.assertEqual(index_read_units * 2, index_read_units_new, "Index read units set")
+        self.assertEqual(index_write_units * 2, index_write_units_new, "Index write units set")
         self.logger.test("[X] Index throughput capacity set")
 
     def test_set_capacity_table(self):
@@ -132,12 +132,12 @@ class TestAction(unittest.TestCase):
 
         table_read_units_new, table_write_units_new, index_read_units_new, index_write_units_new = self.get_provisioned_throughput()
 
-        self.assertEquals(table_read_units * 2, table_read_units_new, "Table read units set")
-        self.assertEquals(table_write_units * 2, table_write_units_new, "Table write units set")
+        self.assertEqual(table_read_units * 2, table_read_units_new, "Table read units set")
+        self.assertEqual(table_write_units * 2, table_write_units_new, "Table write units set")
         self.logger.test("[X] Table throughput capacity set")
 
-        self.assertEquals(index_read_units, index_read_units_new, "Index read units retained")
-        self.assertEquals(index_write_units, index_write_units_new, "Index write units retained")
+        self.assertEqual(index_read_units, index_read_units_new, "Index read units retained")
+        self.assertEqual(index_write_units, index_write_units_new, "Index write units retained")
         self.logger.test("[X] Index throughput capacity retained")
 
     def test_set_capacity_index(self):
@@ -162,12 +162,12 @@ class TestAction(unittest.TestCase):
 
         table_read_units_new, table_write_units_new, index_read_units_new, index_write_units_new = self.get_provisioned_throughput()
 
-        self.assertEquals(table_read_units, table_read_units_new, "Table read units retained")
-        self.assertEquals(table_write_units, table_write_units_new, "Table write units retained")
+        self.assertEqual(table_read_units, table_read_units_new, "Table read units retained")
+        self.assertEqual(table_write_units, table_write_units_new, "Table write units retained")
         self.logger.test("[X] Table throughput capacity retained")
 
-        self.assertEquals(index_read_units * 2, index_read_units_new, "Index read units set")
-        self.assertEquals(index_write_units * 2, index_write_units_new, "Index write units set")
+        self.assertEqual(index_read_units * 2, index_read_units_new, "Index read units set")
+        self.assertEqual(index_write_units * 2, index_write_units_new, "Index write units set")
         self.logger.test("[X] Index throughput capacity set")
 
     def test_set_capacity_already_at_capacity(self):
@@ -192,12 +192,12 @@ class TestAction(unittest.TestCase):
 
         table_read_units_new, table_write_units_new, index_read_units_new, index_write_units_new = self.get_provisioned_throughput()
 
-        self.assertEquals(table_read_units, table_read_units_new, "Table read units retained")
-        self.assertEquals(table_write_units, table_write_units_new, "Table write units retained")
+        self.assertEqual(table_read_units, table_read_units_new, "Table read units retained")
+        self.assertEqual(table_write_units, table_write_units_new, "Table write units retained")
         self.logger.test("[X] Table throughput capacity retained")
 
-        self.assertEquals(index_read_units, index_read_units_new, "Index read units set")
-        self.assertEquals(index_write_units, index_write_units_new, "Index write units set")
+        self.assertEqual(index_read_units, index_read_units_new, "Index read units set")
+        self.assertEqual(index_write_units, index_write_units_new, "Index write units set")
         self.logger.test("[X] Index throughput capacity retained")
 
     def get_provisioned_throughput(self):

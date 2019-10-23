@@ -1,14 +1,14 @@
-######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
 ######################################################################################################################
 import json
 import os
@@ -116,8 +116,8 @@ class QueuedLogger(object):
         self._cached_size += len(s) + LOG_ENTRY_ADDITIONAL
 
         if handlers.running_local(self._context) and str(os.getenv(ENV_SUPPRESS_LOG_STDOUT, False)).lower() != "true":
-            print("> " + log_msg)
-        self._buffer.append((long(t * 1000), log_msg, self._num))
+            print(("> " + log_msg))
+        self._buffer.append((int(t * 1000), log_msg, self._num))
 
         if len(self._buffer) >= self._buffer_size:
             self.flush()
@@ -274,7 +274,7 @@ class QueuedLogger(object):
                 did_write_to_queue = True
 
         except Exception as ex:
-            print("Error writing to queue {}, {}".format(queue_url, ex))
+            print(("Error writing to queue {}, {}".format(queue_url, ex)))
             for entry in self._buffer:
                 print (entry)
         finally:
@@ -285,4 +285,4 @@ class QueuedLogger(object):
                     trigger_process_queued_entries_execution()
                 self._buffer = []
             except Exception as ex:
-                print("Error triggering logging {}", ex)
+                print(("Error triggering logging {}", ex))
