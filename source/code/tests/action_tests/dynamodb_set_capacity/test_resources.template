@@ -26,6 +26,20 @@
   "Resources": {
     "CreateDynamDBBackupTestTable": {
       "Type": "AWS::DynamoDB::Table",
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+                "id": "W73",
+                "reason": "This template is only for test cases"
+            },
+            {
+                "id": "W74",
+                "reason": "This template is only for test cases"
+            }
+          ]
+        }
+      },
       "Properties": {
         "AttributeDefinitions": [
           {

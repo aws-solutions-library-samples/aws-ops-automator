@@ -29,6 +29,16 @@
     },
     "Resources": {
         "InstanceRole": {
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W11",
+                            "reason": "Unit test template - not deployed with solution"
+                        }
+                    ]
+                }
+            },
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "AssumeRolePolicyDocument": {
@@ -87,6 +97,16 @@
             }
         },
         "LoadBalancer": {
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W26",
+                            "reason": "Unit test template - not deployed with solution"
+                        }
+                    ]
+                }
+            },
             "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
             "Properties": {
                 "AvailabilityZones": {

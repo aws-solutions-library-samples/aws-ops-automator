@@ -156,4 +156,8 @@ def ecs_handler(args):
                 handlers.HANDLER_EVENT_TASK_DT: datetime.now().isoformat()
             }
 
-        return lambda_handler(event=event, context=EcsTaskContext(timeout_seconds=task_item.get(handlers.TASK_TIMEOUT, 3600)))
+        timeout = task_item.get(handlers.TASK_TIMEOUT, 3600)
+        if not timeout:
+            timeout = 3600
+
+        return lambda_handler(event=event, context=EcsTaskContext(timeout_seconds=timeout))

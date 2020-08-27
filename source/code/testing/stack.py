@@ -13,6 +13,7 @@
 import time
 
 import boto3
+from botocore.exceptions import ClientError
 
 import services
 import services.cloudformation_service
@@ -135,8 +136,8 @@ class Stack(object):
             stacks = resp.get("Stacks", [])
             # double check for deleted stacks in case a stack id was used
             return any([s["StackStatus"] != "DELETE_COMPLETE" for s in stacks])
-        except Exception as ex:
-            if ex.message.endswith("does not exist"):
+        except ClientError as ex:
+            if str(ex).endswith("does not exist"):
                 return False
             raise ex
 

@@ -13,6 +13,7 @@
 import inspect
 import unittest
 from datetime import timedelta
+import sys
 
 import actions.ec2_delete_snapshot_action as delete_snapshot_action
 from testing.console_logger import ConsoleLogger
@@ -42,7 +43,10 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-
+        if not sys.warnoptions:
+            import warnings
+            warnings.simplefilter("ignore")
+            
         cls.logger = ConsoleLogger()
 
         cls.resource_stack = get_resource_stack(TESTED_ACTION,

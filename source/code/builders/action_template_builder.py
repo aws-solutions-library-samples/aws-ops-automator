@@ -54,7 +54,8 @@ PARAM_LABEL_TIMEOUT = "Timeout"
 PARAM_LABEL_COMPLETION_MEMORY = "Completion test memory"
 PARAM_LABEL_EXECUTION_MEMORY = "Execution memory"
 PARAM_LABEL_SELECT_MEMORY = "Resource selection memory"
-PARAM_LABEL_ECS_MEMORY = "Reserved memory"
+PARAM_LABEL_ECS_SELECT_MEMORY = "Selection reserved memory"
+PARAM_LABEL_ECS_EXEC_MEMORY = "Execution reserved memory"
 PARAM_LABEL_SCOPE = "Resource selection scope for {} event"
 
 PARAM_DESCRIPTION_EVENT_SCOPE = \
@@ -412,7 +413,7 @@ class ActionTemplateBuilder(object):
                                    config_ecs_memory_param=configuration.CONFIG_ECS_SELECT_MEMORY,
                                    description=PARAM_DESCRIPTION_SELECT_SIZE,
                                    label=PARAM_LABEL_SELECT_MEMORY,
-                                   ecs_memory_label=PARAM_LABEL_ECS_MEMORY,
+                                   ecs_memory_label=PARAM_LABEL_ECS_SELECT_MEMORY,
                                    ecs_description=PARAM_DESCRIPTION_ECS_SELECT_MEMORY)
 
             build_memory_parameter(size_group=memory_group,
@@ -421,7 +422,7 @@ class ActionTemplateBuilder(object):
                                    config_ecs_memory_param=configuration.CONFIG_ECS_EXECUTE_MEMORY,
                                    description=PARAM_DESCRIPTION_EXECUTE_SIZE,
                                    label=PARAM_LABEL_EXECUTION_MEMORY,
-                                   ecs_memory_label=PARAM_LABEL_ECS_MEMORY,
+                                   ecs_memory_label=PARAM_LABEL_ECS_EXEC_MEMORY,
                                    ecs_description=PARAM_DESCRIPTION_ECS_EXECUTE_MEMORY)
 
             if self.has_completion_logic:
@@ -431,7 +432,7 @@ class ActionTemplateBuilder(object):
                                        config_ecs_memory_param=configuration.CONFIG_ECS_COMPLETION_MEMORY,
                                        description=PARAM_DESCRIPTION_COMPLETION_SIZE,
                                        label=PARAM_LABEL_COMPLETION_MEMORY,
-                                       ecs_memory_label=PARAM_LABEL_ECS_MEMORY,
+                                       ecs_memory_label=PARAM_LABEL_COMPLETION_MEMORY,
                                        ecs_description=PARAM_DESCRIPTION_ECS_COMPLETION_MEMORY)
 
             if len(memory_group["Parameters"]) > 0:

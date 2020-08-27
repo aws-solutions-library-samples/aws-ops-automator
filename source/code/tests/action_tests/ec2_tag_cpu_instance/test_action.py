@@ -14,6 +14,7 @@ import inspect
 import time
 import unittest
 from datetime import timedelta
+import sys
 
 import actions.ec2_tag_cpu_instance_action as lt
 import pytz
@@ -48,6 +49,9 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if not sys.warnoptions:
+            import warnings
+            warnings.simplefilter("ignore")
 
         cls.logger = ConsoleLogger()
 

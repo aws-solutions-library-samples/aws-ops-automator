@@ -39,12 +39,13 @@ def build_action_policy_statement(action_name, action_permissions):
 
 
 def get_versioned_template(template_filename, bucket, solution, version):
-
+    versionhyphen = version.replace(".", "-")
     with open(template_filename, "rt") as f:
         template_text = "".join(f.readlines())
         template_text = template_text.replace("%bucket%", bucket)
         template_text = template_text.replace("%solution%", solution)
         template_text = template_text.replace("%version%", version)
+        template_text = template_text.replace("%versionhyphen%", versionhyphen)
         return json.loads(template_text, object_pairs_hook=OrderedDict)
 
 
@@ -106,7 +107,7 @@ def add_actions_permissions(template, all_actions):
         # with possible additional permissions to retrieve tags
         action_permissions += list(action_select_resources_permissions(action_properties))
 
-        if len(action_permissions) is not 0:
+        if len(action_permissions) != 0:
             required_actions.update(action_permissions)
             # if using these lines individual statemens are built for every action
             # statements = build_action_policy_statement(action_name, action_permissions)
@@ -172,7 +173,7 @@ def add_action_stack_resources(template, all_actions):
             for resource_name in action_resources_to_add:
                 template_resources[resource_name] = action_resources_to_add[resource_name]
 
-            if len(stack_resource_permissions) is not 0:
+            if len(stack_resource_permissions) != 0:
                 # statements = build_action_policy_statement(action_name, stack_resource_permissions)
                 stack_resource_permissions["Sid"] = re.sub("[^0-9A-Za-z]", "", action_name + "Resources")
                 action_statement.append(stack_resource_permissions)

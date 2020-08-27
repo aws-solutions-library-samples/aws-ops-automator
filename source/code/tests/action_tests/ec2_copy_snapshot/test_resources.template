@@ -38,6 +38,20 @@
   },
   "Resources": {
     "Volume0": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W37",
+              "reason": "Unit test template. Not part of the solution"
+            },
+            {
+              "id": "F1",
+              "reason": "Unit test template. Not part of the solution"
+            }
+          ]
+        }
+      },
       "Type": "AWS::EC2::Volume",
       "Properties": {
         "Size": 10,
@@ -62,6 +76,16 @@
       }
     },
     "Volume1": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id" : "W37",
+              "reason": "Unit test template. Not part of the solution"
+            }
+          ]
+        }
+      },
       "Type": "AWS::EC2::Volume",
       "Properties": {
         "Size": 4,
@@ -87,6 +111,16 @@
       }
     },
     "Volume2": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "F19",
+              "reason": "Unit test template. Not part of the solution"
+            }
+          ]
+        }
+      },
       "Type": "AWS::EC2::Volume",
       "Properties": {
         "Size": 4,
@@ -118,6 +152,16 @@
       }
     },
     "EncryptionKey0": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id" : "F19",
+              "reason": "Unit test template. Not part of the solution"
+            }
+          ]
+        }
+      },
       "Type": "AWS::KMS::Key",
       "Properties": {
         "Enabled": "True",

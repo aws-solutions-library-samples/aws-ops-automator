@@ -1,15 +1,17 @@
-###################################################################################################################### 
-#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
-#                                                                                                                    # 
-#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
-#  with the License. A copy of the License is located at                                                             # 
-#                                                                                                                    # 
-#      http://www.apache.org/licenses/                                                                               # 
-#                                                                                                                    # 
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
-#  and limitations under the License.                                                                                # 
-######################################################################################################################
+################################################################################
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.     # 
+#                                                                              # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not  #
+#  use this file except in compliance with the License. A copy of the License  #
+#  is located at                                                               # 
+#                                                                              # 
+#      http://www.apache.org/licenses/                                         # 
+#                                                                              # 
+#  or in the "license" file accompanying this file. This file is distributed   #
+#  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express  #
+#  or implied. See the License for the specific language governing permissions # 
+#  and limitations under the License.                                          # 
+################################################################################
 
 s3bucket=s3://$(bucket)/
 
@@ -22,21 +24,26 @@ ecsdir=../ecs
 ecs=$(wildcard $(ecsdir)/*)
 
 # destination directory to deploy to
-deployment=../../deployment
+deployment=../..
+# deployment=../../deployment
 
 global_assets_dir=$(deployment)/global-s3-assets
 regional_assets_dir=$(deployment)/regional-s3-assets
 
 zip = $(regional_assets_dir)/ops-automator.zip 
 cw_zip = $(regional_assets_dir)/cloudwatch-handler.zip
-templates=$(wildcard ../../deployment/*.template)
+templates=$(wildcard ../../*.template)
 # build targets
 build: lambda cloudwatchhandler cfn docker
 
-######################################################################################################################
-# lambda code                                                                                                        #
-######################################################################################################################
+#######################################################################
+# lambda code                                                         #
+#######################################################################
 lambda:$(py) main.py version.txt
+	#==================================================================
+	# make lambda
+	#==================================================================
+
 	mkdir -p $(deployment)
 	mkdir -p $(regional_assets_dir)
 
@@ -64,10 +71,14 @@ lambda:$(py) main.py version.txt
 	zip $(zip) ../cloudformation/scenarios/*.template
 	zip $(zip) builders/actions.html
 
-######################################################################################################################
-# cloudwatch handler code                                                                                            #
-######################################################################################################################
+#######################################################################
+# cloudwatch handler code                                             #
+#######################################################################
 cloudwatchhandler: cloudwatch_queue_handler_lambda.py version.txt
+	#==================================================================
+	# make cloudwatchhandler
+	#==================================================================
+
 	mkdir -p $(deployment)
 
 	# delete old zip files
@@ -82,10 +93,14 @@ cloudwatchhandler: cloudwatch_queue_handler_lambda.py version.txt
 	mv cloudwatch_queue_handler_lambda.py.org cloudwatch_queue_handler_lambda.py
 
 
-######################################################################################################################
-# cloudformation templates                                                                                           #
-######################################################################################################################
-    cfn:version.txt $(templates)
+#######################################################################
+# cloudformation templates                                            #
+#######################################################################
+cfn: version.txt $(templates)
+	#==================================================================
+	# make cfn
+	#==================================================================
+
 	mkdir -p $(deployment)
 	mkdir -p $(global_assets_dir)
 
@@ -95,10 +110,14 @@ cloudwatchhandler: cloudwatch_queue_handler_lambda.py version.txt
 	# build main ops automator template
 	python ./build-ops-automator-template.py ../cloudformation/ops-automator.template  $(bucket) $(solution) $(version) > $(global_assets_dir)/ops-automator.template
 
-######################################################################################################################
-# docker / ECS                                                                                                       #
-######################################################################################################################
+#######################################################################
+# docker / ECS                                                        #
+#######################################################################
 docker: $(ecs)
+	#==================================================================
+	# make docker
+	#==================================================================
+
 	mkdir -p $(deployment)
 	mkdir -p $(deployment)/ecs
 
@@ -109,36 +128,12 @@ docker: $(ecs)
 	sed s/%version%/$(version)/g $(ecsdir)/ops-automator-ecs-runner.py > $(deployment)/ecs/ops-automator-ecs-runner.py
 
 	# docker and readme file
-	cp $(ecsdir)/Dockerfile $(deployment)/ecs/Dockerfile
-	cp $(ecsdir)/README.md $(deployment)/ecs/README.md
-
-	# version ecs cluster template
-	sed s/%version%/$(version)/g ../cloudformation/ops-automator-ecs-cluster.template > $(deployment)/ops-automator-ecs-cluster.template
+	sed s/%version%/$(version)/g $(ecsdir)/Dockerfile > $(deployment)/ecs/Dockerfile.orig
+	cp $(deployment)/dist/code/requirements.txt $(deployment)/ecs
 
 	# build shell script for creating and pushing docker image
 	python build-docker-script.py $(ecsdir)/build-and-deploy-image.sh $(bucket) $(version) $(prefix)  > $(deployment)/ecs/build-and-deploy-image.sh
 
-
-######################################################################################################################
-# Deploy to S3                                                                                                       #
-######################################################################################################################
-deploy: build
-	# ops automator versioned copy
-	aws s3 cp $(deployment)/ops-automator.template $(s3bucket)$(prefix)  --acl public-read
-	# ops automator lambda code zip file
-	aws s3 cp $(deployment)/ops-automator.zip $(s3bucket)$(prefix)  --acl public-read
-	# cloudwatch queue handler
-	aws s3 cp $(deployment)/cloudwatch-handler.zip $(s3bucket)$(prefix)  --acl public-read
-
-	# ecs related files
-	aws s3 cp --recursive $(deployment)/ecs $(s3bucket)$(prefix)ecs
-
-	# extra copy of script to build docker image
-	aws s3 cp $(deployment)/ops-automator-latest.template $(s3bucket) --acl public-read
-	# extra copy of script to build docker image
-	aws s3 cp $(deployment)/ecs/build-and-deploy-image.sh $(s3bucket) --acl public-read
-	# extra copy of ecs-cluster template
-	aws s3 cp $(deployment)/ops-automator-ecs-cluster.template $(s3bucket) --acl public-read
-
-	# update build number after deployment
-	# python update-build-number.py version.txt
+	chmod +x $(deployment)/ecs/*.sh
+	cp -R $(deployment)/ecs $(global_assets_dir)
+	

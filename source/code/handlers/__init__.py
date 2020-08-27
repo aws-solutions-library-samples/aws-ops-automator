@@ -98,9 +98,6 @@ ENV_SERVICE_LIMIT_CONCURRENT_RDS_SNAPSHOT_COPY = "SERVICE_LIMIT_CONCURRENT_RDS_S
 ENV_SERVICE_LIMIT_CONCURRENT_IMAGE_COPY = "SERVICE_LIMIT_CONCURRENT_IMAGE_COPY"
 # ops automator role
 ENV_OPS_AUTOMATOR_ROLE_ARN = "OPS_AUTOMATOR_ROLE_ARN"
-# key use to encrypt resource data in DynamoDB and S3
-ENV_RESOURCE_ENCRYPTION_KEY = "RESOURCE_ENCRYPTION_KEY"
-
 # Default tag for resource tasks
 DEFAULT_SCHEDULER_TAG = "OpsAutomatorTaskList"
 
@@ -127,7 +124,6 @@ TASK_TR_CREATED_TS = "CreatedTs"
 TASK_TR_DEBUG = "Debug"
 TASK_TR_DRYRUN = "Dryrun"
 TASK_TR_DT = "TaskDatetime"
-TASK_TR_ENCRYPTED_RESOURCES = "EncryptedResources"
 TASK_TR_ERROR = "Error"
 TASK_TR_EVENTS = "Events"
 TASK_TR_EXECUTE_SIZE = "ExecuteSize"
@@ -496,16 +492,27 @@ def run_as_ecs_job(args, ecs_memory_size, context=None, logger=None):
         "cluster": os.getenv(ENV_ECS_CLUSTER),
         "taskDefinition": os.getenv(ENV_ECS_TASK),
         "startedBy": "{}:{}".format(stack_name, args[TASK_NAME])[0:35],
+        "launchType": "FARGATE",
+        "networkConfiguration": {
+            "awsvpcConfiguration": {
+                "subnets": runner_args['subnets'].split(','),
+                "securityGroups": runner_args['securitygroups'].split(','),
+                "assignPublicIp": runner_args['assignpublicip']
+            }
+        },
         "overrides": {
             "containerOverrides": [
                 {
                     "name": "ops-automator",
-                    "command": ["python", "ops-automator-ecs-runner.py", safe_json(runner_args)],
-                    "memoryReservation": int(ecs_memory_size if ecs_memory_size is not None else ECS_DEFAULT_MEMORY_RESERVATION)
+                    "command": ["python3", "ops-automator-ecs-runner.py", safe_json(runner_args)],
+                    "memoryReservation": int(ecs_memory_size if ecs_memory_size is not None else ECS_DEFAULT_MEMORY_RESERVATION),
+                    "memory": 2048,
+                    "cpu": 1024
                 }
-            ],
-        },
+            ]
+        }
     }
+    log_to_debug(logger, str(ecs_params))
 
     for wait_until_next_retry in boto_retry.LinearWaitStrategy(start=5, incr=5, max_wait=30, random_factor=0.50):
 
@@ -536,10 +543,7 @@ def run_as_ecs_job(args, ecs_memory_size, context=None, logger=None):
 def get_item_resource_data(item, context):
     global _kms_client
     resource_data = item.get(TASK_TR_RESOURCES, "{}")
-    if item.get(TASK_TR_ENCRYPTED_RESOURCES):
-        if _kms_client is None:
-            _kms_client = boto_retry.get_client_with_retries("kms", ["decrypt"], context=context)
-        resource_data = _kms_client.decrypt(CiphertextBlob=base64.b64decode(resource_data))["Plaintext"]
+
     return resource_data if type(resource_data) in [dict, list] else json.loads(resource_data)
 
 

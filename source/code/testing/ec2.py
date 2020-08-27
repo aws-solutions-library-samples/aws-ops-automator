@@ -12,6 +12,7 @@
 ######################################################################################################################
 import re as regex
 import time
+from functools import cmp_to_key
 
 import boto3
 import boto3.exceptions
@@ -36,6 +37,10 @@ class Ec2(object):
 
     @property
     def latest_aws_linux_image(self):
+        def compare_date(a,b):
+            return int(
+                (dateutil.parser.parse(a["CreationDate"]) - dateutil.parser.parse(b["CreationDate"])).total_seconds()
+                )
         if self._latest_aws_image is None:
             # noinspection PyPep8
             images = sorted(list(
@@ -56,8 +61,7 @@ class Ec2(object):
                                               }
                                           ],
                                           ExecutableUsers=["all"])),
-                cmp=lambda a, b: int(
-                    (dateutil.parser.parse(a["CreationDate"]) - dateutil.parser.parse(b["CreationDate"])).total_seconds()),
+                key=cmp_to_key(compare_date),
                 reverse=True)
             assert (len(images) > 0)
             self._latest_aws_image = images[0]
@@ -65,6 +69,10 @@ class Ec2(object):
 
     @property
     def latest_aws_windows_core_image(self):
+        def compare_date(a,b):
+            return int(
+                (dateutil.parser.parse(a["CreationDate"]) - dateutil.parser.parse(b["CreationDate"])).total_seconds()
+                )
         if self._latest_aws_image is None:
             # noinspection PyPep8
             images = sorted(list(
@@ -85,8 +93,7 @@ class Ec2(object):
                                               }
                                           ],
                                           ExecutableUsers=["all"])),
-                cmp=lambda a, b: int(
-                    (dateutil.parser.parse(a["CreationDate"]) - dateutil.parser.parse(b["CreationDate"])).total_seconds()),
+                key=cmp_to_key(compare_date),
                 reverse=True)
             assert (len(images) > 0)
             self._latest_aws_image = images[0]

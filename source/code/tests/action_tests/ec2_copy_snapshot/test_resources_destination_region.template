@@ -20,6 +20,16 @@
   },
   "Resources": {
     "EncryptionKey0": {
+      "Metadata": {
+          "cfn_nag": {
+              "rules_to_suppress": [
+                  {
+                      "id": "F19",
+                      "reason": "Template for unit test only"
+                  }
+              ]
+          }
+      },
       "Type": "AWS::KMS::Key",
       "Properties": {
         "Enabled": "True",

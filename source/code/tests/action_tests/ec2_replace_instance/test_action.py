@@ -14,6 +14,7 @@ import inspect
 import time
 import unittest
 from types import FunctionType
+import sys
 
 import jmespath
 
@@ -81,6 +82,9 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if not sys.warnoptions:
+            import warnings
+            warnings.simplefilter("ignore")
 
         cls.ec2 = Ec2(region())
         cls.elb = Elb(region())

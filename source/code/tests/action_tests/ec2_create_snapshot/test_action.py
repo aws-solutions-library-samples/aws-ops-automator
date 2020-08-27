@@ -14,6 +14,7 @@ import inspect
 import re
 import unittest
 from types import FunctionType
+import sys
 
 import actions
 import actions.ec2_create_snapshot_action as create_snapshot_action
@@ -50,6 +51,9 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if not sys.warnoptions:
+            import warnings
+            warnings.simplefilter("ignore")
 
         cls.logger = ConsoleLogger()
 

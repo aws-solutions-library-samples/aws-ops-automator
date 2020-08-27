@@ -434,6 +434,9 @@ class ScheduleHandler(object):
 
                     else:
                         ecs_args = {
+                            "subnets": os.getenv('AWSVPC_SUBNETS'),
+                            "securitygroups": os.getenv('AWSVPC_SECURITYGROUPS'),
+                            "assignpublicip": os.getenv('AWSVPC_ASSIGNPUBLICIP'),
                             handlers.HANDLER_EVENT_ACTION: handlers.HANDLER_ACTION_SELECT_RESOURCES,
                             handlers.TASK_NAME: task[handlers.TASK_NAME],
                             handlers.HANDLER_EVENT_SUB_TASK: sub_task
@@ -447,6 +450,9 @@ class ScheduleHandler(object):
                 else:
                     if task[handlers.TASK_SELECT_SIZE] == actions.ACTION_USE_ECS:
                         ecs_args = {
+                            "subnets": os.getenv('AWSVPC_SUBNETS'),
+                            "securitygroups": os.getenv('AWSVPC_SECURITYGROUPS'),
+                            "assignpublicip": os.getenv('AWSVPC_ASSIGNPUBLICIP'),
                             handlers.HANDLER_EVENT_ACTION: handlers.HANDLER_ACTION_SELECT_RESOURCES,
                             handlers.TASK_NAME: task[handlers.TASK_NAME],
                             handlers.HANDLER_EVENT_SUB_TASK: sub_task

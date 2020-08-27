@@ -44,12 +44,9 @@
                 "XXXLarge": "3008",
                 "ECS": ""
             },
-            "EcsCluster": {
-                "ClusterName": ""
-            },
             "Resources": {
                 "ResourceToS3SizeKB": 16,
-                "EncryptResourceData": "False"
+                "EncryptResourceData": "True"
             },
             "ServiceLimits": {
                 "MaxConcurrentEbsSnapshotCopies": 5,
@@ -60,6 +57,11 @@
                 "MaxPutCallsPerStream": 5,
                 "MaxDescribeCalls": 5,
                 "MaxApiCalls": 40
+            },
+            "VpcCidrs": {
+                "vpc": "10.0.0.0/16",
+                "pubsubnet1": "10.0.0.0/24",
+                "pubsubnet2": "10.0.1.0/24"
             }
         },
         "EnabledDisabled": {
@@ -167,6 +169,32 @@
             ],
             "Default": "Yes",
             "Description": "Activate or deactivate scheduling of task."
+        },
+        "VpcId": {
+            "Type": "String",
+            "Description": "Optional - VPC Id of existing VPC. Leave blank to have a new VPC created",
+            "Default": "",
+            "AllowedPattern": "^(?:vpc-[0-9a-f]{8,17}|)$",
+            "ConstraintDescription": "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
+        },
+        "SubnetIds": {
+            "Type": "CommaDelimitedList",
+            "Description": "Optional - Comma separated list of two (2) existing VPC Subnet Ids where ECS instances will run.  Required if setting VPC.",
+            "Default": ""
+        },
+        "VpcAvailabilityZones": {
+            "Type": "CommaDelimitedList",
+            "Description": "Optional - Comma-delimited list of VPC availability zones in which to create subnets.  Required if setting VPC.",
+            "Default": ""
+        },
+        "ECSFargate": {
+            "Type": "String",
+            "Description": "Should Ops Automator use Fargate to run tasks?",
+            "AllowedValues": [
+                "Yes",
+                "No"
+            ],
+            "Default": "No"
         }
     },
     "Metadata": {
@@ -194,6 +222,17 @@
                         "LogRetentionDays",
                         "ConfigBackupDays"
                     ]
+                },
+                {
+                    "Label": {
+                        "default": "ECS/Fargate Parameters"
+                    },
+                    "Parameters": [
+                        "ECSFargate",
+                        "VpcId",
+                        "SubnetIds",
+                        "VpcAvailabilityZones"
+                    ]
                 }
             ],
             "ParameterLabels": {
@@ -220,6 +259,18 @@
                 },
                 "UseCloudWatchMetrics": {
                     "default": "Enable CloudWatch Metrics"
+                },
+                "VpcId": {
+                    "default": "Cluster VPC"
+                },
+                "SubnetIds": {
+                    "default": "Cluster Subnets"
+                },
+                "VpcAvailabilityZones": {
+                    "default": "Cluster Availability zones"
+                },
+                "ECSFargate": {
+                    "default": "ECS/Fargate"
                 }
             }
         }
@@ -307,22 +358,6 @@
                     ]
                 },
                 "True"
-            ]
-        },
-        "UseEcs": {
-            "Fn::Not": [
-                {
-                    "Fn::Equals": [
-                        {
-                            "Fn::FindInMap": [
-                                "Settings",
-                                "EcsCluster",
-                                "ClusterName"
-                            ]
-                        },
-                        ""
-                    ]
-                }
             ]
         },
         "CloudWatchPutLimit800": {
@@ -460,11 +495,49 @@
                     ]
                 }
             ]
+        },
+        "UseEcs": {
+            "Fn::Not": [
+                { "Fn::Equals": [ { "Ref": "ECSFargate" }, "No" ] }
+            ]
+        },
+        "CreateVpcResources": {
+            "Fn::And": [
+                { "Fn::Equals": [ { "Ref": "VpcId" }, "" ] },
+                { "Condition": "UseEcs" }
+            ]
+        },
+        "UseSpecifiedVpcAvailabilityZones": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Fn::Join": [
+                                "",
+                                {
+                                    "Ref": "VpcAvailabilityZones"
+                                }
+                            ]
+                        },
+                        ""
+                    ]
+                }
+            ]
         }
     },
     "Resources": {
         "OpsAutomatorEventsForwardRole": {
             "Type": "AWS::IAM::Role",
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W11",
+                            "reason": "logs:*LogStream actions requires * resource."
+                        }
+                    ]
+                }
+            },
             "Properties": {
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
@@ -492,13 +565,31 @@
                                     "Resource": {
                                         "Ref": "OpsAutomatorEventsTopic"
                                     }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogGroup",
+                                        "logs:CreateLogStream",
+                                        "logs:PutLogEvents"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Sid": "KMS",
+                                    "Effect": "Allow",
+                                    "Resource": { "Fn::GetAtt": [ "ResourceEncryptionKey", "Arn" ] },
+                                    "Action": [
+                                      "kms:Encrypt",
+                                      "kms:Decrypt",
+                                      "kms:ReEncrypt*",
+                                      "kms:GenerateDataKey*",
+                                      "kms:DescribeKey"
+                                    ]
                                 }
                             ]
                         }
                     }
-                ],
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
                 ],
                 "Path": "/"
             }
@@ -592,13 +683,31 @@
                                     "Resource": [
                                         "*"
                                     ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogGroup",
+                                        "logs:CreateLogStream",
+                                        "logs:PutLogEvents"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Sid": "KMS",
+                                    "Effect": "Allow",
+                                    "Resource": { "Fn::GetAtt": [ "ResourceEncryptionKey", "Arn" ] },
+                                    "Action": [
+                                      "kms:Encrypt",
+                                      "kms:Decrypt",
+                                      "kms:ReEncrypt*",
+                                      "kms:GenerateDataKey*",
+                                      "kms:DescribeKey"
+                                    ]
                                 }
                             ]
                         }
                     }
-                ],
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
                 ],
                 "Path": "/"
             }
@@ -615,6 +724,10 @@
                         {
                             "id": "F38",
                             "reason": "To allow the IAM:PassRole action. A condition to allow only lambda to assume the role has also been added."
+                        },
+                        {
+                            "id": "W76",
+                            "reason": "Complex role needs refactoring. This will be addressed in a future release."
                         }
                     ]
                 }
@@ -774,11 +887,6 @@
                                 },
                                 {
                                     "Effect": "Allow",
-                                    "Action": "s3:ListBucket",
-                                    "Resource": "arn:aws:s3:::*"
-                                },
-                                {
-                                    "Effect": "Allow",
                                     "Action": [
                                         "dynamodb:UpdateItem",
                                         "dynamodb:GetItem",
@@ -847,18 +955,6 @@
                                 {
                                     "Effect": "Allow",
                                     "Action": [
-                                        "dynamodb:GetRecords",
-                                        "dynamodb:GetShardIterator",
-                                        "dynamodb:DescribeStream",
-                                        "dynamodb:ListStreams"
-                                    ],
-                                    "Resource": {
-                                        "Fn::GetAtt": [ "TaskTrackingTable", "StreamArn" ]
-                                    }
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
                                         "events:EnableRule",
                                         "events:DisableRule"
                                     ],
@@ -895,20 +991,13 @@
                                 },
                                 {
                                     "Effect": "Allow",
-                                    "Action": "cloudformation:ListStackResources",
-                                    "Resource": {
-                                        "Ref": "AWS::StackId"
-                                    }
-                                },
-                                {
-                                    "Effect": "Allow",
                                     "Action": [
                                         "cloudformation:GetTemplate",
                                         "cloudformation:ListStackResources"
                                     ],
-                                    "Resource": {
-                                        "Fn::Sub": "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*"
-                                    }
+                                    "Resource": [
+                                        { "Fn::Sub": "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*" }
+                                    ]
                                 },
                                 {
                                     "Effect": "Allow",
@@ -979,17 +1068,13 @@
                                         ]
                                     }
                                 },
-                                
                                 {
                                     "Sid": "ActionsRequireAllResources",
                                     "Effect": "Allow",
                                     "Action": [
                                         "cloudformation:DeleteStack",
-
                                         "cloudwatch:PutMetricData",
-
                                         "dynamodb:ListTables",
-
                                         "ec2:DescribeVpcs",
                                         "ec2:DescribeSubnets",
                                         "ec2:DescribeImages",
@@ -1002,29 +1087,133 @@
                                         "iam:PassRole",
                                         "events:PutRule",
                                         "events:ListRules",
-
                                         "logs:DescribeLogGroups",
-
                                         "pricing:GetAttributeValues",
-
                                         "ssm:GetParameter",
                                         "ssm:GetParameters",
-
                                         "sts:AssumeRole",
-
-                                        "tag:GetResources"
+                                        "tag:GetResources",
+                                        "s3:ListBuckets",
+                                        "dynamodb:ListStreams"
                                     ],
                                     "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogGroup",
+                                        "logs:CreateLogStream",
+                                        "logs:PutLogEvents"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:DescribeStream",
+                                        "dynamodb:GetRecords",
+                                        "dynamodb:GetShardIterator",
+                                        "dynamodb:ListStreams"
+                                    ],
+                                    "Resource": [
+                                        { "Fn::GetAtt": ["ConfigurationTable", "StreamArn"] },
+                                        { "Fn::GetAtt": ["TaskTrackingTable", "StreamArn"] },
+                                        { "Fn::GetAtt": ["ConcurrencyTable", "StreamArn"] },
+                                        { "Fn::GetAtt": ["TriggerTable", "StreamArn"] }
+                                    ]
+                                },
+                                {
+                                    "Sid": "KMS",
+                                    "Effect": "Allow",
+                                    "Resource": { "Fn::GetAtt": [ "ResourceEncryptionKey", "Arn" ] },
+                                    "Action": [
+                                      "kms:Encrypt",
+                                      "kms:Decrypt",
+                                      "kms:ReEncrypt*",
+                                      "kms:GenerateDataKey*",
+                                      "kms:DescribeKey"
+                                    ]
                                 }
                             ]
                         }
                     }
                 ],
-                "ManagedPolicyArns": [
-                    "arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole",
-                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                ],
                 "Path": "/"
+            }
+        },
+        "EcsExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W11",
+                            "reason": "GetAuthorizationToken requires global resource"
+                        }
+                    ]
+                }
+            },
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                          "Sid": "",
+                          "Effect": "Allow",
+                          "Principal": {
+                            "Service": "ecs-tasks.amazonaws.com"
+                          },
+                          "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Policies": [
+                    {
+                        "PolicyName": "OpsAutomatorLambdaRolePolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "ecr:GetAuthorizationToken",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "ecr:BatchCheckLayerAvailability",
+                                        "ecr:GetDownloadUrlForLayer",
+                                        "ecr:BatchGetImage"
+                                    ],
+                                    "Resource": { "Fn::Sub": "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/ops-automator" }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogStream",
+                                        "logs:PutLogEvents"
+                                    ],
+                                    "Resource": [
+                                        { "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AWS::StackName}-logs" },
+                                        { "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AWS::StackName}-logs:log-stream:*" }
+                                    ]
+                                },
+                                {
+                                    "Sid": "KMS",
+                                    "Effect": "Allow",
+                                    "Resource": { "Fn::GetAtt": [ "ResourceEncryptionKey", "Arn" ] },
+                                    "Action": [
+                                      "kms:Encrypt",
+                                      "kms:Decrypt",
+                                      "kms:ReEncrypt*",
+                                      "kms:GenerateDataKey*",
+                                      "kms:DescribeKey"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
             }
         },
         "LastSchedulerExecutionTable": {
@@ -1042,7 +1231,21 @@
                         "KeyType": "HASH"
                     }
                 ],
-                "BillingMode": "PAY_PER_REQUEST"
+                "BillingMode": "PAY_PER_REQUEST",
+                "SSESpecification": {
+                    "Fn::If": [
+                        "EncryptResourceData",
+                        {
+                            "KMSMasterKeyId": { "Ref": "ResourceEncryptionKey" },
+                            "SSEEnabled": true,
+                            "SSEType": "KMS"
+                        },
+                        {
+                            "KMSMasterKeyId": "",
+                            "SSEEnabled": false
+                        }
+                    ]
+                }
             }
         },
         "ConfigurationTable": {
@@ -1063,6 +1266,20 @@
                 "BillingMode": "PAY_PER_REQUEST",
                 "StreamSpecification": {
                     "StreamViewType": "NEW_AND_OLD_IMAGES"
+                },
+                "SSESpecification": {
+                    "Fn::If": [
+                        "EncryptResourceData",
+                        {
+                            "KMSMasterKeyId": { "Ref": "ResourceEncryptionKey" },
+                            "SSEEnabled": true,
+                            "SSEType": "KMS"
+                        },
+                        {
+                            "KMSMasterKeyId": "",
+                            "SSEEnabled": false
+                        }
+                    ]
                 }
             }
         },
@@ -1089,6 +1306,20 @@
                         "KeyType": "HASH"
                     }
                 ],
+                "SSESpecification": {
+                    "Fn::If": [
+                        "EncryptResourceData",
+                        {
+                            "KMSMasterKeyId": { "Ref": "ResourceEncryptionKey" },
+                            "SSEEnabled": true,
+                            "SSEType": "KMS"
+                        },
+                        {
+                            "KMSMasterKeyId": "",
+                            "SSEEnabled": false
+                        }
+                    ]
+                },
                 "BillingMode": "PAY_PER_REQUEST",
                 "TimeToLiveSpecification": {
                     "AttributeName": "TTL",
@@ -1157,6 +1388,20 @@
                 "BillingMode": "PAY_PER_REQUEST",
                 "StreamSpecification": {
                     "StreamViewType": "NEW_AND_OLD_IMAGES"
+                },
+                "SSESpecification": {
+                    "Fn::If": [
+                        "EncryptResourceData",
+                        {
+                            "KMSMasterKeyId": { "Ref": "ResourceEncryptionKey" },
+                            "SSEEnabled": true,
+                            "SSEType": "KMS"
+                        },
+                        {
+                            "KMSMasterKeyId": "",
+                            "SSEEnabled": false
+                        }
+                    ]
                 }
             }
         },
@@ -1178,6 +1423,20 @@
                 "BillingMode": "PAY_PER_REQUEST",
                 "StreamSpecification": {
                     "StreamViewType": "KEYS_ONLY"
+                },
+                "SSESpecification": {
+                    "Fn::If": [
+                        "EncryptResourceData",
+                        {
+                            "KMSMasterKeyId": { "Ref": "ResourceEncryptionKey" },
+                            "SSEEnabled": true,
+                            "SSEType": "KMS"
+                        },
+                        {
+                            "KMSMasterKeyId": "",
+                            "SSEEnabled": false
+                        }
+                    ]
                 }
             }
         },
@@ -1236,6 +1495,15 @@
                             }
                         ]
                     ]
+                },
+                "KmsMasterKeyId": {
+                    "Fn::If": [
+                        "EncryptResourceData",
+                        {
+                            "Ref": "ResourceEncryptionKey"
+                        },
+                        ""
+                    ]
                 }
             }
         },
@@ -1275,6 +1543,15 @@
                             }
                         ]
                     ]
+                },
+                "KmsMasterKeyId": {
+                    "Fn::If": [
+                        "EncryptResourceData",
+                        {
+                            "Ref": "ResourceEncryptionKey"
+                        },
+                        ""
+                    ]
                 }
             }
         },
@@ -1313,6 +1590,15 @@
                                 ]
                             }
                         ]
+                    ]
+                },
+                "KmsMasterKeyId": {
+                    "Fn::If": [
+                        "EncryptResourceData",
+                        {
+                            "Ref": "ResourceEncryptionKey"
+                        },
+                        ""
                     ]
                 }
             }
@@ -1445,7 +1731,7 @@
                     ]
                 },
                 "Handler": "main.lambda_handler",
-                "Runtime": "python3.7",
+                "Runtime": "python3.8",
                 "Role": {
                     "Fn::GetAtt": [
                         "OpsAutomatorLambdaRole",
@@ -1624,11 +1910,7 @@
                             "Fn::If": [
                                 "UseEcs",
                                 {
-                                    "Fn::FindInMap": [
-                                        "Settings",
-                                        "EcsCluster",
-                                        "ClusterName"
-                                    ]
+                                    "Ref": "EcsCluster"
                                 },
                                 {
                                     "Ref": "AWS::NoValue"
@@ -1690,7 +1972,33 @@
                                 "Metrics",
                                 "Url"
                             ]
-                        }
+                        },
+                        "AWSVPC_SUBNETS": {
+                            "Fn::If": [
+                                "UseEcs",
+                                { "Fn::If": [
+                                    "CreateVpcResources",
+                                    { "Fn::Join": [ ",",
+                                        [ { "Ref": "PublicSubnetAz1" }, { "Ref": "PublicSubnetAz2" } ]
+                                    ] },
+                                    {
+                                        "Fn::Join": [
+                                            ",",
+                                            { "Ref": "SubnetIds" }
+                                        ]
+                                    }
+                                ] },
+                                "None"
+                            ]
+                        },
+                        "AWSVPC_SECURITYGROUPS": {
+                            "Fn::If": [
+                                "UseEcs",
+                                { "Ref": "FargateSecurityGroup" },
+                                "None"
+                            ]
+                        },
+                        "AWSVPC_ASSIGNPUBLICIP": "ENABLED"
                     }
                 },
                 "MemorySize": {
@@ -1706,6 +2014,16 @@
         },
         "OpsAutomatorCloudWatchQueueHandlerLambda": {
             "Type": "AWS::Lambda::Function",
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W48",
+                            "reason": "KMS not required: no customer data"
+                        }
+                    ]
+                }
+            },
             "Properties": {
                 "Code": {
                     "S3Bucket": {
@@ -1739,7 +2057,7 @@
                     ]
                 },
                 "Handler": "cloudwatch_queue_handler_lambda.lambda_handler",
-                "Runtime": "python3.7",
+                "Runtime": "python3.8",
                 "Role": {
                     "Fn::GetAtt": [
                         "OpsAutomatorCloudWatchLogHandlerRole",
@@ -1846,12 +2164,17 @@
                         "MemoryReservation": 128
                     }
                 ],
+                "Cpu": "1024",
+                "Memory": "2048",
+                "RequiresCompatibilities": [ "FARGATE" ],
+                "NetworkMode": "awsvpc",
                 "TaskRoleArn": {
                     "Fn::GetAtt": [
                         "OpsAutomatorLambdaRole",
                         "Arn"
                     ]
                 },
+                "ExecutionRoleArn": { "Ref": "EcsExecutionRole" },
                 "Volumes": []
             }
         },
@@ -1861,8 +2184,8 @@
                 "cfn_nag": {
                     "rules_to_suppress": [
                         {
-                            "id": "W35",
-                            "reason": "Access logging is not required for this bucket. Custom metrics reporting is already done."
+                            "id": "W51",
+                            "reason": "The bucket is not public. When using the CF template in PROD, create a bucket policy to allow only administrators/ auditors access to the bucket"
                         }
                     ]
                 }
@@ -1910,6 +2233,10 @@
                     "BlockPublicPolicy": true,  
                     "IgnorePublicAcls": true,  
                     "RestrictPublicBuckets": true  
+                },
+                "LoggingConfiguration": {
+                    "DestinationBucketName": { "Ref": "S3LoggingBucket" },
+                    "LogFilePrefix": "access-logs"
                 }
             }
         },
@@ -1919,8 +2246,8 @@
                 "cfn_nag": {
                     "rules_to_suppress": [
                         {
-                            "id": "W35",
-                            "reason": "Access logging is not required for this bucket. Custom metrics reporting is already done."
+                            "id": "W51",
+                            "reason": "The bucket is not public. When using the CF template in PROD, create a bucket policy to allow only administrators/ auditors access to the bucket"
                         }
                     ]
                 }
@@ -1957,6 +2284,10 @@
                     "BlockPublicPolicy": true,  
                     "IgnorePublicAcls": true,  
                     "RestrictPublicBuckets": true  
+                },
+                "LoggingConfiguration": {
+                    "DestinationBucketName": { "Ref": "S3LoggingBucket" },
+                    "LogFilePrefix": "access-logs"
                 }
             }
         },
@@ -2004,6 +2335,15 @@
                                 ]
                             }
                         ]
+                    ]
+                },
+                "KmsMasterKeyId": {
+                    "Fn::If": [
+                        "EncryptResourceData",
+                        {
+                            "Ref": "ResourceEncryptionKey"
+                        },
+                        ""
                     ]
                 }
             }
@@ -2077,8 +2417,8 @@
                 "cfn_nag": {
                     "rules_to_suppress": [
                         {
-                            "id": "W35",
-                            "reason": "Access logging is not required for this bucket. Custom metrics reporting is already done."
+                            "id": "W51",
+                            "reason": "The bucket is not public. When using the CF template in PROD, create a bucket policy to allow only administrators/ auditors access to the bucket"
                         }
                     ]
                 }
@@ -2115,6 +2455,10 @@
                     "BlockPublicPolicy": true,  
                     "IgnorePublicAcls": true,  
                     "RestrictPublicBuckets": true  
+                },
+                "LoggingConfiguration": {
+                    "DestinationBucketName": { "Ref": "S3LoggingBucket" },
+                    "LogFilePrefix": "access-logs"
                 }
             }
         },
@@ -2737,7 +3081,21 @@
         },
         "OpsAutomatorEcsRepository": {
             "Condition": "UseEcs",
-            "Type": "AWS::ECR::Repository"
+            "Type": "AWS::ECR::Repository",
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W28",
+                            "reason": "Dynamic names for ECS do not follow standard practice for resource naming and are not deriveable from stackname."
+                        }
+                    ]
+                }
+            },
+            "DeletionPolicy": "Retain",
+            "Properties": {
+                "RepositoryName": "ops-automator"
+            }
         },
         "ResourceEncryptionKey": {
             "Type": "AWS::KMS::Key",
@@ -2767,26 +3125,6 @@
                             },
                             "Action": "kms:*",
                             "Resource": "*"
-                        },
-                        {
-                            "Sid": "Allow use of the key",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "AWS": {
-                                    "Fn::GetAtt": [
-                                        "OpsAutomatorLambdaRole",
-                                        "Arn"
-                                    ]
-                                }
-                            },
-                            "Action": [
-                                "kms:Encrypt",
-                                "kms:Decrypt",
-                                "kms:ReEncrypt*",
-                                "kms:GenerateDataKey*",
-                                "kms:DescribeKey"
-                            ],
-                            "Resource": "*"
                         }
                     ]
                 }
@@ -2804,6 +3142,372 @@
                 }
             },
             "Condition": "EncryptResourceData"
+        },
+        "S3LoggingBucket": {
+            "DeletionPolicy": "Retain",
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "BucketName": {
+                    "Fn::Sub": "aws-opsautomator-s3-access-logs-${AWS::AccountId}-${AWS::Region}"
+                },
+                "AccessControl": "LogDeliveryWrite",
+                "VersioningConfiguration": {
+                    "Status": "Enabled"
+                },
+                "BucketEncryption": {
+                    "ServerSideEncryptionConfiguration": [
+                        {
+                            "ServerSideEncryptionByDefault": {
+                                "SSEAlgorithm": "AES256"
+                            }
+                        }
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "AWS Ops Automator Access Logs"
+                    }
+                ],
+                "PublicAccessBlockConfiguration": {
+                    "BlockPublicAcls": true,
+                    "BlockPublicPolicy": true,
+                    "IgnorePublicAcls": true,
+                    "RestrictPublicBuckets": true
+                }
+            },
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W35",
+                            "reason": "This S3 bucket is used as the destination for storing access logs"
+                        },
+                        {
+                            "id": "W51",
+                            "reason": "Log delivery controlled by ACL, not bucket policy"
+                        }
+                    ]
+                }
+            }
+        },
+        "EcsCluster": {
+            "Condition": "UseEcs",
+            "Type": "AWS::ECS::Cluster"
+        },
+        "Vpc": {
+            "Condition": "CreateVpcResources",
+            "Type": "AWS::EC2::VPC",
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W60",
+                            "reason": "VPC is only used for the Fargate cluster, reducing the importance of Flow Logs (which add cost)."
+                        }
+                    ]
+                }
+            },
+            "Properties": {
+                "CidrBlock": {
+                    "Fn::FindInMap": [
+                        "Settings",
+                        "VpcCidrs",
+                        "vpc"
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "vpc"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "PublicSubnetAz1": {
+            "Condition": "CreateVpcResources",
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Vpc"
+                },
+                "CidrBlock": {
+                    "Fn::FindInMap": [
+                        "Settings",
+                        "VpcCidrs",
+                        "pubsubnet1"
+                    ]
+                },
+                "AvailabilityZone": {
+                    "Fn::If": [
+                        "UseSpecifiedVpcAvailabilityZones",
+                        {
+                            "Fn::Select": [
+                                "0",
+                                {
+                                    "Ref": "VpcAvailabilityZones"
+                                }
+                            ]
+                        },
+                        {
+                            "Fn::Select": [
+                                "0",
+                                {
+                                    "Fn::GetAZs": {
+                                        "Ref": "AWS::Region"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "PublicSubnetAz2": {
+            "Condition": "CreateVpcResources",
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Vpc"
+                },
+                "CidrBlock": {
+                    "Fn::FindInMap": [
+                        "Settings",
+                        "VpcCidrs",
+                        "pubsubnet2"
+                    ]
+                },
+                "AvailabilityZone": {
+                    "Fn::If": [
+                        "UseSpecifiedVpcAvailabilityZones",
+                        {
+                            "Fn::Select": [
+                                "1",
+                                {
+                                    "Ref": "VpcAvailabilityZones"
+                                }
+                            ]
+                        },
+                        {
+                            "Fn::Select": [
+                                "1",
+                                {
+                                    "Fn::GetAZs": {
+                                        "Ref": "AWS::Region"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "InternetGateway": {
+            "Condition": "CreateVpcResources",
+            "Type": "AWS::EC2::InternetGateway"
+        },
+        "AttachGateway": {
+            "Condition": "CreateVpcResources",
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Vpc"
+                },
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "RouteViaIgw": {
+            "Condition": "CreateVpcResources",
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            }
+        },
+        "PublicRouteViaIgw": {
+            "Condition": "CreateVpcResources",
+            "DependsOn": "AttachGateway",
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteViaIgw"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "PubSubnet1RouteTableAssociation": {
+            "Condition": "CreateVpcResources",
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PublicSubnetAz1"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteViaIgw"
+                }
+            }
+        },
+        "PubSubnet2RouteTableAssociation": {
+            "Condition": "CreateVpcResources",
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PublicSubnetAz2"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteViaIgw"
+                }
+            }
+        },
+        "FargateSecurityGroup": {
+            "Condition": "UseEcs",
+            "Type": "AWS::EC2::SecurityGroup",
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W40",
+                            "reason": "Must allow egress of all protocols, all dests."
+                        },
+                        {
+                            "id": "W5",
+                            "reason": "Must allow egress of all protocols, all dests."
+                        }
+                    ]
+                }
+            },
+            "Description": "Security group for Fargate cluster",
+            "Properties": {
+                "GroupDescription": "Access to the Fargate containers",
+                "VpcId": {
+                    "Fn::If": [
+                        "CreateVpcResources",
+                        {
+                            "Ref": "Vpc"
+                        },
+                        {
+                            "Ref": "VpcId"
+                        }
+                    ]
+                }
+            }
+        },
+        "FargateSGSelfEgress": {
+            "Condition": "UseEcs",
+            "Type": "AWS::EC2::SecurityGroupEgress",
+            "Properties": {
+                "Description": "Egress to other containers in the same security group",
+                "GroupId": {
+                    "Ref": "FargateSecurityGroup"
+                },
+                "IpProtocol": -1,
+                "FromPort": -1,
+                "ToPort": -1,
+                "SourceSecurityGroupId": {
+                    "Ref": "FargateSecurityGroup"
+                }
+            }
+        },
+        "FargateSGExtEgress": {
+            "Condition": "UseEcs",
+            "Type": "AWS::EC2::SecurityGroupEgress",
+            "Properties": {
+                "Description": "Egress to external networks",
+                "GroupId": {
+                    "Ref": "FargateSecurityGroup"
+                },
+                "IpProtocol": -1,
+                "FromPort": -1,
+                "ToPort": -1,
+                "CidrIp": "0.0.0.0/0"
+            }
+        },
+        "ECSRole": {
+            "Condition": "UseEcs",
+            "Type": "AWS::IAM::Role",
+            "Metadata": {
+                "cfn_nag": {
+                    "rules_to_suppress": [
+                        {
+                            "id": "W11",
+                            "reason": "Global access to services required for automation to function"
+                        }
+                    ]
+                }
+            },
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ecs.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "ecs-service",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "ec2:AttachNetworkInterface",
+                                        "ec2:CreateNetworkInterface",
+                                        "ec2:CreateNetworkInterfacePermission",
+                                        "ec2:DeleteNetworkInterface",
+                                        "ec2:DeleteNetworkInterfacePermission",
+                                        "ec2:Describe*",
+                                        "ec2:DetachNetworkInterface",
+                                        "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                                        "elasticloadbalancing:DeregisterTargets",
+                                        "elasticloadbalancing:Describe*",
+                                        "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+                                        "elasticloadbalancing:RegisterTargets"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Sid": "KMS",
+                                    "Effect": "Allow",
+                                    "Resource": { "Fn::GetAtt": [ "ResourceEncryptionKey", "Arn" ] },
+                                    "Action": [
+                                      "kms:Encrypt",
+                                      "kms:Decrypt",
+                                      "kms:ReEncrypt*",
+                                      "kms:GenerateDataKey*",
+                                      "kms:DescribeKey"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
         }
     },
     "Outputs": {
@@ -2872,6 +3576,15 @@
                             }
                         ]
                     },
+                    ""
+                ]
+            }
+        },
+        "Cluster": {
+            "Value": {
+                "Fn::If": [
+                    "UseEcs",
+                    { "Ref": "EcsCluster" },
                     ""
                 ]
             }

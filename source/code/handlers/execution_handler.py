@@ -253,7 +253,7 @@ class ExecutionHandler(object):
                 except Exception as ex:
                     self._logger.warning(WARN_METRICS_DATA, str(ex))
 
-        self._logger.info(INF_ACTION, self.action, self.action_id, self.task, json.dumps(self.action_parameters, indent=3))
+        self._logger.info(INF_ACTION, self.action, self.action_id, self.task, safe_json(self.action_parameters, indent=3))
         if not handlers.running_local(self._context):
             self._logger.info(INF_LAMBDA_MEMORY, self._context.function_name, self._context.memory_limit_in_mb)
 

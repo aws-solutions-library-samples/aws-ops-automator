@@ -376,6 +376,9 @@ class TaskTrackingHandler(object):
                 else:
                     # run as ECS job
                     ecs_args = {
+                        "subnets": os.getenv('AWSVPC_SUBNETS'),
+                        "securitygroups": os.getenv('AWSVPC_SECURITYGROUPS'),
+                        "assignpublicip": os.getenv('AWSVPC_ASSIGNPUBLICIP'),
                         handlers.HANDLER_EVENT_ACTION: action,
                         handlers.TASK_NAME: task_item[handlers.TASK_TR_NAME],
                         handlers.TASK_TR_ID: task_item[handlers.TASK_TR_ID]}

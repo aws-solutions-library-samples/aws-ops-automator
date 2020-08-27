@@ -14,6 +14,7 @@ import inspect
 import time
 import unittest
 from types import FunctionType
+import sys
 
 import actions.ec2_resize_instance_action as r
 import handlers.ec2_tag_event_handler
@@ -49,6 +50,9 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if not sys.warnoptions:
+            import warnings
+            warnings.simplefilter("ignore")
 
         cls.logger = ConsoleLogger()
 

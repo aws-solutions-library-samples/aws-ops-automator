@@ -41,8 +41,17 @@ def build_script(script, bucket, version, prefix):
 
 if __name__ == "__main__":
     try:
-        print((build_script(script=sys.argv[1], bucket=sys.argv[2], version=sys.argv[3],
-                           prefix=sys.argv[4] if len(sys.argv) > 3 else "")))
+        script = sys.argv[1]
+        bucket = sys.argv[2]
+        version = sys.argv[3]
+        if len(sys.argv) > 4:
+            prefix = sys.argv[4]
+        else:
+            prefix = ""
+
+        print(build_script(script, bucket, version, prefix))
+
     except Exception as ex:
         print(ex)
+        raise ex
         exit(1)

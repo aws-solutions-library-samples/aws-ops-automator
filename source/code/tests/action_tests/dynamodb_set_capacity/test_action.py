@@ -13,6 +13,7 @@
 import inspect
 import unittest
 from types import FunctionType
+import sys
 
 import actions.dynamodb_set_capacity_action as dbb
 import services
@@ -48,6 +49,9 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if not sys.warnoptions:
+            import warnings
+            warnings.simplefilter("ignore")
 
         cls.logger = ConsoleLogger()
 

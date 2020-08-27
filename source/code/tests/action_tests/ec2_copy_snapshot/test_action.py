@@ -14,6 +14,7 @@ import inspect
 import json
 import unittest
 from types import FunctionType
+import sys
 
 import actions
 import actions.ec2_copy_snapshot_action as copy_snapshot
@@ -56,7 +57,10 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-
+        if not sys.warnoptions:
+            import warnings
+            warnings.simplefilter("ignore")
+            
         cls.logger = ConsoleLogger()
 
         cls.task_runner = get_task_runner(TESTED_ACTION, KEEP_AND_USE_EXISTING_ACTION_STACK)

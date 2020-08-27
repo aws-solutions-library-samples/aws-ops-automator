@@ -61,7 +61,6 @@ class TaskTrackingTable(object):
         self._s3_client = None
         self._account = None
         self._run_local = handlers.running_local(self._context)
-        self._resource_encryption_key = os.getenv(handlers.ENV_RESOURCE_ENCRYPTION_KEY, "")
         self._kms_client = None
 
     def __enter__(self):
@@ -159,17 +158,8 @@ class TaskTrackingTable(object):
 
         resource_data_str = safe_json(action_resources)
 
-        encrypted = self._resource_encryption_key not in [None, ""]
-        item[handlers.TASK_TR_ENCRYPTED_RESOURCES] = encrypted
-        if encrypted:
-            resource_data_str = base64.b64encode(self.kms_client.encrypt_with_retries(
-                KeyId=self._resource_encryption_key, Plaintext=resource_data_str)["CiphertextBlob"])
-
         if len(resource_data_str) < int(os.getenv(handlers.ENV_RESOURCE_TO_S3_SIZE, 16)) * 1024:
-            if encrypted:
-                item[handlers.TASK_TR_RESOURCES] = action_resources if not encrypted else resource_data_str
-            else:
-                item[handlers.TASK_TR_RESOURCES] = as_dynamo_safe_types(action_resources)
+            item[handlers.TASK_TR_RESOURCES] = as_dynamo_safe_types(action_resources)
         else:
             bucket = os.getenv(handlers.ENV_RESOURCE_BUCKET)
             key = "{}.json".format(item[handlers.TASK_TR_ID])

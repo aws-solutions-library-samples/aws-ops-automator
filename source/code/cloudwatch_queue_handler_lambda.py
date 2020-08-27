@@ -1,9 +1,23 @@
+###################################################################################################################### 
+#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           # 
+#                                                                                                                    # 
+#  Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance     # 
+#  with the License. A copy of the License is located at                                                             # 
+#                                                                                                                    # 
+#      http://www.apache.org/licenses/                                                                               # 
+#                                                                                                                    # 
+#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES # 
+#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    # 
+#  and limitations under the License.                                                                                # 
+######################################################################################################################
+
 import collections
 import os
 import time
 from datetime import datetime
 
 import boto3
+from botocore.exceptions import ClientError
 
 MIN_REMAINING_EXEC_TIME_SEC = 60
 
@@ -127,8 +141,8 @@ class LogHandler(object):
                         resp = self._log_client.put_log_events(**put_event_args)
                         self._stream_tokens[log_stream] = resp.get("nextSequenceToken", None)
                         break
-                    except Exception as ex:
-                        exception_type = type(ex).__name__
+                    except ClientError as ex:
+                        exception_type = ex.response['Error']['Code']
                         # stream did not exist, in that case create it and try again with token set in create method
                         if exception_type == "ResourceNotFoundException":
                             self._create_log_stream(log_stream=log_stream)
@@ -136,8 +150,8 @@ class LogHandler(object):
                         elif exception_type in ["InvalidSequenceTokenException", "DataAlreadyAcceptedException"]:
                             # noinspection PyBroadException
                             try:
-                                token = ex.message.split(":")[-1].strip()
-                                self._stream_tokens[log_stream] = ex.message.split(":")[-1].strip()
+                                token = ex.response['Error']['Message'].split(":")[-1].strip()
+                                self._stream_tokens[log_stream] = token
                                 print(("Token for existing stream {} is {}".format(log_stream, token)))
                             except:
                                 self._stream_tokens[log_stream] = None
