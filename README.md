@@ -25,7 +25,7 @@ The Ops Automator framework handles the following functionality:
 
 Ops Automator lets you focus on implementing the actual logic of the action. Actions are developed in Python and can be added easily to the Ops Automator solution. Ops Automator has the ability to generate CloudFormation scripts for configuring tasks, based on metadata of the action that are part of the deployment.
 
-Development of actions is described in the Ops Automator Action Developers guide.
+Development of actions is described in the Ops Automator Action Implementation Guide.
 
 Documentation
 -------------
