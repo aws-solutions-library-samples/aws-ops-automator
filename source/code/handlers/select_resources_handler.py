@@ -83,8 +83,23 @@ class SelectResourcesHandler(object):
     """
 
     def __init__(self, event, context, logger=None, tracking_store=None):
+        """
+        Initialize the event object.
+
+        Args:
+            self: (todo): write your description
+            event: (dict): write your description
+            context: (str): write your description
+            logger: (todo): write your description
+            tracking_store: (todo): write your description
+        """
 
         def log_stream_name():
+            """
+            Get stream name.
+
+            Args:
+            """
 
             classname = self.__class__.__name__
             dt = datetime.utcnow()
@@ -186,12 +201,24 @@ class SelectResourcesHandler(object):
 
     @property
     def sts(self):
+        """
+        The client : class : ~plex.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._sts is None:
             self._sts = boto3.client("sts")
         return self._sts
 
     @property
     def _resource_name(self):
+        """
+        Get the resource name.
+
+        Args:
+            self: (todo): write your description
+        """
         name = self.action_properties[actions.ACTION_RESOURCES]
         if name in [None, ""]:
             name = self._event.get(handlers.HANDLER_SELECT_ARGUMENTS, {}).get(handlers.HANDLER_EVENT_RESOURCE_NAME, "")
@@ -248,12 +275,24 @@ class SelectResourcesHandler(object):
 
     @property
     def _this_account(self):
+        """
+        Returns the account associated account.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.sub_task is not None:
             return self.sub_task[handlers.TASK_THIS_ACCOUNT]
         return self.task.get(handlers.TASK_THIS_ACCOUNT, True)
 
     @property
     def _accounts(self):
+        """
+        List of the list.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.sub_task is not None:
             return self.sub_task[handlers.TASK_ACCOUNTS]
         return self.task.get(handlers.TASK_ACCOUNTS, [])
@@ -283,6 +322,14 @@ class SelectResourcesHandler(object):
         """
 
         def filter_by_action_filter(srv, used_role, r):
+            """
+            Filter the action filter for the given action.
+
+            Args:
+                srv: (array): write your description
+                used_role: (bool): write your description
+                r: (array): write your description
+            """
             filter_method = getattr(self.action_class, actions.SELECT_AND_PROCESS_RESOURCE_METHOD, None)
             if filter_method is not None:
                 r = filter_method(srv, self._logger, self._resource_name, r, self._context,
@@ -297,6 +344,17 @@ class SelectResourcesHandler(object):
             return r
 
         def is_selected_resource(aws_service, resource, used_role, taskname, tags_filter, does_resource_supports_tags):
+            """
+            Return true if the given service is selected.
+
+            Args:
+                aws_service: (todo): write your description
+                resource: (dict): write your description
+                used_role: (todo): write your description
+                taskname: (str): write your description
+                tags_filter: (str): write your description
+                does_resource_supports_tags: (todo): write your description
+            """
 
             # No tags then just use filter method if any
             if not does_resource_supports_tags:
@@ -356,6 +414,12 @@ class SelectResourcesHandler(object):
                         first += self.batch_size
 
         def setup_tag_filtering(t_name):
+            """
+            Setup a t_tag.
+
+            Args:
+                t_name: (str): write your description
+            """
             # get optional tag filter
             no_select_by_tags = self.action_properties.get(actions.ACTION_NO_TAG_SELECT, False)
             if no_select_by_tags:
@@ -383,6 +447,12 @@ class SelectResourcesHandler(object):
             return select_tag, tag_filter_string
 
         def add_aggregated(aggregated_resources):
+            """
+            Add aggregated aggregated aggregated aggregations.
+
+            Args:
+                aggregated_resources: (todo): write your description
+            """
             # create tasks action for aggregated resources , optionally split in batch size chunks
             for ra in resource_batches(aggregated_resources):
                 if self._check_can_execute(ra):
@@ -401,6 +471,12 @@ class SelectResourcesHandler(object):
                     yield action_item
 
         def add_as_individual(resources):
+            """
+            Add an individual group to the group.
+
+            Args:
+                resources: (dict): write your description
+            """
             for ri in resources:
                 # task action for each selected resource
                 if self._check_can_execute([ri]):
@@ -607,11 +683,24 @@ class SelectResourcesHandler(object):
         self._timer.cancel()
 
     def start_timer(self, remaining):
+        """
+        Starts the timer.
+
+        Args:
+            self: (todo): write your description
+            remaining: (todo): write your description
+        """
         execution_time_left = (self._context.get_remaining_time_in_millis() / 1000.00) - remaining
         self._timer = threading.Timer(execution_time_left, self.select_timed_out)
         self._timer.start()
 
     def is_timed_out(self):
+        """
+        Return true if the event is set.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._timeout_event is not None and self._timeout_event.is_set()
 
     def _build_describe_argument(self):

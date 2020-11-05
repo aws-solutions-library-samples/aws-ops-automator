@@ -34,6 +34,13 @@ ERR_FAILED_FORWARD = "Failed to forward event {},  {}"
 
 
 def lambda_handler(event, _):
+    """
+    Process lambda lambda lambda lambda.
+
+    Args:
+        event: (dict): write your description
+        _: (todo): write your description
+    """
     print("Ops Automator Events Forwarder (version %version%)")
     destination_region = os.getenv("OPS_AUTOMATOR_REGION", "")
     destination_account = os.getenv("OPS_AUTOMATOR_ACCOUNT")

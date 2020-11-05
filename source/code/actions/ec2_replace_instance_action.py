@@ -327,6 +327,14 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
     }
 
     def __init__(self, action_arguments, action_parameters):
+        """
+        Initialize an action.
+
+        Args:
+            self: (dict): write your description
+            action_arguments: (str): write your description
+            action_parameters: (todo): write your description
+        """
 
         ActionBase.__init__(self, action_arguments, action_parameters)
 
@@ -386,6 +394,13 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @staticmethod
     def action_logging_subject(arguments, _):
+        """
+        Returns a dictionary of the action arguments.
+
+        Args:
+            arguments: (todo): write your description
+            _: (todo): write your description
+        """
         instance = arguments[ACTION_PARAM_RESOURCES]
         name = instance.get("Tags", {}).get("Name", "").strip()
         if name != "":
@@ -397,10 +412,24 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @staticmethod
     def action_validate_parameters(parameters, task_settings, logger):
+        """
+        Checks that the parameters are valid.
+
+        Args:
+            parameters: (dict): write your description
+            task_settings: (todo): write your description
+            logger: (todo): write your description
+        """
 
         mode = parameters.get(PARAM_REPLACE_MODE)
 
         def check_types(types):
+            """
+            Check that the ec2 instance types are valid
+
+            Args:
+                types: (str): write your description
+            """
             valid_types = services.ec2_service.Ec2Service.valid_instance_types()
             if valid_types not in [None, []]:
                 for inst_type in [e.strip() for e in types]:
@@ -440,6 +469,18 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
     # noinspection PyUnusedLocal,PyUnusedLocal,PyUnusedLocal,PyUnusedLocal
     @staticmethod
     def process_and_select_resource(service, logger, resource_name, resource, context, task, task_assumed_role):
+        """
+        Process a resource and returns the filter.
+
+        Args:
+            service: (str): write your description
+            logger: (todo): write your description
+            resource_name: (str): write your description
+            resource: (dict): write your description
+            context: (todo): write your description
+            task: (dict): write your description
+            task_assumed_role: (todo): write your description
+        """
 
         parameters = task.get(TASK_PARAMETERS, {})
         if parameters.get(PARAM_REPLACE_MODE) == REPLACE_BY_SPECIFIED_TYPE:
@@ -465,6 +506,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @property
     def ec2_client(self):
+        """
+        Return ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec
+
+        Args:
+            self: (todo): write your description
+        """
         if self._ec2_client is None:
             methods = [
                 "run_instances",
@@ -485,6 +532,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @property
     def ec2_service(self):
+        """
+        Creates a cloud provider.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._ec2_service is None:
             self._ec2_service = services.create_service("ec2", session=self._session_,
                                                         service_retry_strategy=get_default_retry_strategy("ec2",
@@ -493,6 +546,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @property
     def elb_client(self):
+        """
+        Return an elbb client.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._elb_client is None:
             methods = ["register_instances_with_load_balancer",
                        "deregister_instances_from_load_balancer"]
@@ -506,6 +565,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @property
     def elb_service(self):
+        """
+        Returns an elasticsearch service.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._elb_service is None:
             self._elb_service = services.create_service("elb", session=self._session_,
                                                         service_retry_strategy=get_default_retry_strategy("ec2",
@@ -514,6 +579,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @property
     def elbv2_client(self):
+        """
+        Return elbv2 client.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._elbv2_client is None:
             methods = ["deregister_targets",
                        "register_targets"]
@@ -526,6 +597,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @property
     def elbv2_service(self):
+        """
+        Return an elbv2 service.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._elbv2_service is None:
             self._elbv2_service = services.create_service("elbv2", session=self._session_,
                                                           service_retry_strategy=get_default_retry_strategy("elbv2",
@@ -534,6 +611,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @property
     def elb_data(self):
+        """
+        Return elb data.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._elb_data is None:
             self._elb_data = self._get_elb_data({})
             self._elb_data = self._get_elbv2_data(self._elb_data)
@@ -541,14 +624,35 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
 
     @classmethod
     def is_in_stopping_or_stopped_state(cls, state):
+        """
+        Return true if a statement is a statement.
+
+        Args:
+            cls: (todo): write your description
+            state: (todo): write your description
+        """
         return (state & 0xFF) in EC2_STOPPING_STATES
 
     @classmethod
     def insufficient_capacity(cls, ex):
+        """
+        Returns the capacity of capacity
+
+        Args:
+            cls: (todo): write your description
+            ex: (todo): write your description
+        """
         return type(ex).__name__ == "ClientError" and ex.response.get("Error", {}).get("Code", None) == INSUFFICIENT_CAPACITY
 
     @classmethod
     def load_balancing_str(cls, registrations):
+        """
+        Load load balancing string.
+
+        Args:
+            cls: (todo): write your description
+            registrations: (str): write your description
+        """
         names = []
         for r in registrations:
             if r["Version"] == 1:
@@ -559,6 +663,13 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
         return s
 
     def _get_instance(self, instance_id):
+        """
+        Retrieve an ec2 instance.
+
+        Args:
+            self: (str): write your description
+            instance_id: (str): write your description
+        """
 
         return self.ec2_service.get(services.ec2_service.INSTANCES,
                                     InstanceIds=[instance_id],
@@ -566,6 +677,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                                     select="Reservations[*].Instances[]")
 
     def _set_new_instance_type(self):
+        """
+        Set the new instance type.
+
+        Args:
+            self: (todo): write your description
+        """
 
         if self.replace_mode == REPLACE_BY_SPECIFIED_TYPE:
             self.instance_type_index += 1
@@ -628,8 +745,19 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
         self.new_instance_type = current_type
 
     def _create_replacement_instance(self):
+        """
+        Create an instance instance to the cloud
+
+        Args:
+            self: (todo): write your description
+        """
 
         def copy_volume_tags():
+            """
+            Copy ebs volume tags
+
+            Args:
+            """
             source_volume_ids = [m["Ebs"]["VolumeId"] for m in self.instance["BlockDeviceMappings"]]
 
             with Timer(timeout_seconds=60) as t:
@@ -697,42 +825,77 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                         self.ec2_client.create_tags_with_retries(Resources=volume_id, Tags=tag_key_value_list(tags))
 
         def get_user_data():
+            """
+            Get user data. ec2 instance.
+
+            Args:
+            """
             return self.ec2_service.get(services.ec2_service.INSTANCE_ATTRIBUTE,
                                         InstanceId=self.instance_id,
                                         region=self._region_,
                                         Attribute="userData").get("UserData", None)
 
         def get_termination_protection():
+            """
+            Returns a list of ec2 ec2 sessions.
+
+            Args:
+            """
             return self.ec2_service.get(services.ec2_service.INSTANCE_ATTRIBUTE,
                                         InstanceId=self.instance_id,
                                         region=self._region_,
                                         Attribute="disableApiTermination").get("DisableApiTermination")
 
         def get_kernel():
+            """
+            Returns ec2 kernel.
+
+            Args:
+            """
             return self.ec2_service.get(services.ec2_service.INSTANCE_ATTRIBUTE,
                                         InstanceId=self.instance_id,
                                         region=self._region_,
                                         Attribute="kernel").get("Kernel")
 
         def get_ramdisk():
+            """
+            Returns disk disk details.
+
+            Args:
+            """
             return self.ec2_service.get(services.ec2_service.INSTANCE_ATTRIBUTE,
                                         InstanceId=self.instance_id,
                                         region=self._region_,
                                         Attribute="ramdisk").get("RamdiskId")
 
         def get_shutdown_behavior():
+            """
+            Returns the ec2 instance
+
+            Args:
+            """
             return self.ec2_service.get(services.ec2_service.INSTANCE_ATTRIBUTE,
                                         InstanceId=self.instance_id,
                                         region=self._region_,
                                         Attribute="instanceInitiatedShutdownBehavior").get("InstanceInitiatedShutdownBehavior")
 
         def get_ebs_optimized():
+            """
+            Return ebs instance of an ebs instance.
+
+            Args:
+            """
             if self.new_instance_type.startswith(
                     "t2.") or self.new_instance_type in INSTANCES_TYPES_NOT_SUPPORTING_EBS_OPTIMIZATION:
                 return False
             return self.instance["EbsOptimized"]
 
         def get_network_interfaces():
+            """
+            Return a dict of all the interfaces.
+
+            Args:
+            """
             result = [
                 {
                     "AssociatePublicIpAddress": network_interface.get("Association", {}).get("PublicIp") is not None,
@@ -815,6 +978,14 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
         copy_volume_tags()
 
     def _get_elb_data(self, data, load_balancers=None):
+        """
+        Get elb data.
+
+        Args:
+            self: (todo): write your description
+            data: (todo): write your description
+            load_balancers: (bool): write your description
+        """
 
         result = copy.deepcopy(data)
 
@@ -838,6 +1009,14 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
         return result
 
     def _get_elbv2_data(self, data, target_group_arns=None):
+        """
+        Get target group data.
+
+        Args:
+            self: (todo): write your description
+            data: (todo): write your description
+            target_group_arns: (str): write your description
+        """
 
         result = copy.deepcopy(data)
 
@@ -874,6 +1053,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
         return result
 
     def _test_simulate_insufficient_instance_capacity(self):
+        """
+        Simulate an instruction capacity
+
+        Args:
+            self: (todo): write your description
+        """
 
         if self.new_instance_type in self.get(PARAM_TEST_UNAVAILABLE_TYPES, []):
             raise ClientError(
@@ -885,8 +1070,20 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                 }, operation_name="start_instances")
 
     def _register_new_instance_to_elb_v1(self):
+        """
+        This function to register an obn.
+
+        Args:
+            self: (todo): write your description
+        """
 
         def register_instance_v1(reg):
+            """
+            Registers an load balancer.
+
+            Args:
+                reg: (todo): write your description
+            """
 
             self.elb_client.register_instances_with_load_balancer_with_retries(
                 LoadBalancerName=reg["LoadBalancerName"],
@@ -898,6 +1095,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
             )
 
         def register_instance_v2(reg):
+            """
+            Register v2. v2.
+
+            Args:
+                reg: (dict): write your description
+            """
 
             target = {
                 "Id": self.new_instance_id
@@ -920,8 +1123,20 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                 register_instance_v2(registration)
 
     def _deregister_source_instance(self):
+        """
+        Deregisters the source instance.
+
+        Args:
+            self: (todo): write your description
+        """
 
         def deregister_instance_v1(reg):
+            """
+            Deregister instance.
+
+            Args:
+                reg: (str): write your description
+            """
 
             self.elb_client.deregister_instances_from_load_balancer_with_retries(
                 LoadBalancerName=reg["LoadBalancerName"],
@@ -930,6 +1145,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                 }])
 
         def deregister_instance_v2(reg):
+            """
+            Deregister a zone
+
+            Args:
+                reg: (dict): write your description
+            """
 
             target = {
                 "Id": self.instance_id
@@ -956,6 +1177,13 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                 deregister_instance_v2(registration)
 
     def _wait_for_new_instance_running(self, timeout=600):
+        """
+        Waits the instance to complete.
+
+        Args:
+            self: (todo): write your description
+            timeout: (float): write your description
+        """
         with Timer(timeout) as timer:
 
             while True:
@@ -969,14 +1197,33 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                 time.sleep(15)
 
     def is_completed(self, start_data):
+        """
+        Returns true if all tags have been completed
+
+        Args:
+            self: (todo): write your description
+            start_data: (dict): write your description
+        """
 
         def task_is_triggered_by_tag_event():
+            """
+            Returns true if task is event handler.
+
+            Args:
+            """
             task_change_events = self._events_.get(handlers.ec2_tag_event_handler.EC2_TAG_EVENT_SOURCE, {}).get(
                 handlers.TAG_CHANGE_EVENT, [])
 
             return handlers.ec2_tag_event_handler.EC2_CHANGED_INSTANCE_TAGS_EVENT in task_change_events
 
         def set_tags_on_new_instance(new_instance_type, original_type):
+            """
+            Set new tag_type and new_type
+
+            Args:
+                new_instance_type: (str): write your description
+                original_type: (str): write your description
+            """
 
             # tags copied from replaced instance
             copied_tags_filter_str = self.get(PARAM_COPIED_INSTANCE_TAGS, "*")
@@ -1029,6 +1276,12 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
                 raise_exception(ERR_SET_TAGS, self.new_instance_id, tag_ex)
 
         def get_scoped_elb_data(registrations):
+            """
+            Returns a dictionary of scoped data.
+
+            Args:
+                registrations: (str): write your description
+            """
 
             result = {}
             if registrations not in [{}, None]:
@@ -1083,8 +1336,19 @@ class Ec2ReplaceInstanceAction(ActionEc2EventBase):
         raise_exception(ERR_STARTING_NEW_INSTANCE, self.new_instance_id, safe_json(instance, indent=3))
 
     def execute(self):
+        """
+        Return true if the actions have been called.
+
+        Args:
+            self: (todo): write your description
+        """
 
         def should_replace_instance():
+            """
+            Determine if the instance should be fetched.
+
+            Args:
+            """
             if self.original_type == self.new_instance_type and not self.replace_if_same_type:
                 self._logger_.info(INF_INSTANCE_NOT_REPLACED, self.instance_id, self.original_type)
                 self.result["not-replaced"] = True

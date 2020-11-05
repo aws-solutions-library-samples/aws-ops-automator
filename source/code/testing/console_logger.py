@@ -25,15 +25,45 @@ LOG_LEVEL_TEST = "TEST"
 class ConsoleLogger(object):
 
     def __init__(self, debug=False):
+        """
+        Initialize the debug.
+
+        Args:
+            self: (todo): write your description
+            debug: (bool): write your description
+        """
         self._debug = debug
 
     def __enter__(self):
+        """
+        Decor function.
+
+        Args:
+            self: (todo): write your description
+        """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit the given exc is raised.
+
+        Args:
+            self: (todo): write your description
+            exc_type: (todo): write your description
+            exc_val: (todo): write your description
+            exc_tb: (todo): write your description
+        """
         self.flush()
 
     def _emit(self, level, msg, *args):
+        """
+        Emit a message.
+
+        Args:
+            self: (todo): write your description
+            level: (int): write your description
+            msg: (str): write your description
+        """
         s = msg if len(args) == 0 else msg.format(*args)
         dt = date_time_provider().now()
         s = LOG_FORMAT.format(dt.year, dt.month, dt.day, dt.hour, dt.minute,
@@ -42,27 +72,81 @@ class ConsoleLogger(object):
 
     @property
     def debug_enabled(self):
+        """
+        Return the debug status is enabled.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._debug
 
     @debug_enabled.setter
     def debug_enabled(self, value):
+        """
+        Sets the debug flag.
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         self._debug = value
 
     def info(self, msg, *args):
+        """
+        Log an info.
+
+        Args:
+            self: (todo): write your description
+            msg: (str): write your description
+        """
         self._emit(LOG_LEVEL_INFO, msg, *args)
 
     def error(self, msg, *args):
+        """
+        Emit an error.
+
+        Args:
+            self: (todo): write your description
+            msg: (str): write your description
+        """
         self._emit(LOG_LEVEL_ERROR, msg, *args)
 
     def warning(self, msg, *args):
+        """
+        Log msg with warning.
+
+        Args:
+            self: (todo): write your description
+            msg: (str): write your description
+        """
         self._emit(LOG_LEVEL_WARNING, msg, *args)
 
     def test(self, msg, *args):
+        """
+        Emit a test.
+
+        Args:
+            self: (todo): write your description
+            msg: (str): write your description
+        """
         self._emit(LOG_LEVEL_TEST, msg, *args)
 
     def debug(self, msg, *args):
+        """
+        Log a debug message.
+
+        Args:
+            self: (todo): write your description
+            msg: (str): write your description
+        """
         if self._debug:
             self._emit(LOG_LEVEL_DEBUG, msg, *args)
 
     def flush(self):
+        """
+        Flush the cache entries.
+
+        Args:
+            self: (todo): write your description
+        """
         pass

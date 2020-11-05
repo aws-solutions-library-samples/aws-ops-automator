@@ -19,6 +19,17 @@ class DynamoDbServiceRetry(AwsApiServiceRetry):
     """
 
     def __init__(self, context=None, logger=None, timeout=None, wait_strategy=None, lambda_time_out_margin=10):
+        """
+        Initialize a connection.
+
+        Args:
+            self: (todo): write your description
+            context: (str): write your description
+            logger: (todo): write your description
+            timeout: (int): write your description
+            wait_strategy: (todo): write your description
+            lambda_time_out_margin: (float): write your description
+        """
         AwsApiServiceRetry.__init__(
             self,
             call_retry_strategies=None,
@@ -45,8 +56,22 @@ class DynamoDbServiceRetry(AwsApiServiceRetry):
 
     @classmethod
     def dynamo_resource_in_use(cls, ex):
+        """
+        Return a dynamo dynamo.
+
+        Args:
+            cls: (callable): write your description
+            ex: (todo): write your description
+        """
         return type(ex).__name__ == "ResourceInUseException"
 
     @classmethod
     def dynamo_connection_reset_by_peer(cls, ex):
+        """
+        Reset the connection to the given peer.
+
+        Args:
+            cls: (callable): write your description
+            ex: (todo): write your description
+        """
         return "Connection reset by peer" in str(ex)

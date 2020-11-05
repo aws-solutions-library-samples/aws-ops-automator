@@ -26,6 +26,18 @@ class AwsApiServiceRetry(object):
 
     def __init__(self, call_retry_strategies=None, logger=None, wait_strategy=None, context=None, timeout=300,
                  lambda_time_out_margin=20):
+        """
+        Initialize retry thread.
+
+        Args:
+            self: (todo): write your description
+            call_retry_strategies: (str): write your description
+            logger: (todo): write your description
+            wait_strategy: (todo): write your description
+            context: (str): write your description
+            timeout: (int): write your description
+            lambda_time_out_margin: (float): write your description
+        """
         self.default_strategies = [
             self.api_throttled,
             self.server_error,
@@ -136,12 +148,26 @@ class AwsApiServiceRetry(object):
         """
 
         def timed_out_by_specified_timeout(start_time, time_now, next_wait):
+            """
+            Returns true if there is out of the specified false otherwise.
+
+            Args:
+                start_time: (todo): write your description
+                time_now: (todo): write your description
+                next_wait: (todo): write your description
+            """
             if self._timeout is None:
                 return False
 
             return (time_now - start_time) > (self._timeout - next_wait)
 
         def timed_out_by_lambda_timeout(next_wait):
+            """
+            Returns true if the next one of the requested.
+
+            Args:
+                next_wait: (bool): write your description
+            """
             if self.context is None:
                 return False
 

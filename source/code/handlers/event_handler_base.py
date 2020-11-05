@@ -50,6 +50,19 @@ class EventHandlerBase(object):
 
     def __init__(self, event, context, resource, handled_event_source, handled_event_detail_type, event_name_in_detail="event",
                  is_tag_change_event=False):
+        """
+        Initialize the event.
+
+        Args:
+            self: (todo): write your description
+            event: (todo): write your description
+            context: (str): write your description
+            resource: (str): write your description
+            handled_event_source: (todo): write your description
+            handled_event_detail_type: (todo): write your description
+            event_name_in_detail: (str): write your description
+            is_tag_change_event: (bool): write your description
+        """
 
         self._context = context
         self._event = json.loads(event["Records"][0]["Sns"]["Message"])
@@ -69,6 +82,15 @@ class EventHandlerBase(object):
 
     @staticmethod
     def _get_logger(class_name, context, account=None, region=None):
+        """
+        Create a logger object.
+
+        Args:
+            class_name: (str): write your description
+            context: (todo): write your description
+            account: (str): write your description
+            region: (str): write your description
+        """
         dt = datetime.utcnow()
         log_stream = LOG_STREAM.format(class_name,
                                        account + "-" if account is not None else "",
@@ -77,12 +99,26 @@ class EventHandlerBase(object):
 
     @staticmethod
     def is_subscribed_sns_message(event):
+        """
+        Determine if a given event.
+
+        Args:
+            event: (dict): write your description
+        """
         record = event.get("Records", [{}])[0]
         events_topic_arn = os.getenv(handlers.ENV_EVENTS_TOPIC_ARN, None)
         return record.get("EventSource") == "aws:sns" and record.get("Sns", {}).get("TopicArn", "") == events_topic_arn
 
     @classmethod
     def is_handling_request(cls, event, context):
+        """
+        Checks if the given event is authenticated.
+
+        Args:
+            cls: (todo): write your description
+            event: (todo): write your description
+            context: (todo): write your description
+        """
         with cls._get_logger(cls.__name__, account="invalid", context=context) as logger:
             if not EventHandlerBase.is_subscribed_sns_message(event):
                 return False
@@ -96,9 +132,23 @@ class EventHandlerBase(object):
 
     @staticmethod
     def is_handling_event(event, logger):
+        """
+        Check if event is an event.
+
+        Args:
+            event: (todo): write your description
+            logger: (todo): write your description
+        """
         raise NotImplementedError("\"is_handling_event\"  method must be implemented for classes inherited from EventHandlerBase")
 
     def _event_triggers_task(self, task):
+        """
+        Process event handlers.
+
+        Args:
+            self: (todo): write your description
+            task: (dict): write your description
+        """
 
         task_name = task[handlers.TASK_NAME]
 
@@ -263,27 +313,80 @@ class EventHandlerBase(object):
             self._logger.flush()
 
     def _select_parameters(self, event_name, task):
+        """
+        Selects the parameters of the given task.
+
+        Args:
+            self: (todo): write your description
+            event_name: (str): write your description
+            task: (todo): write your description
+        """
         raise NotImplementedError
 
     def _event_region(self):
+        """
+        Return the region.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._event.get("region")
 
     def _event_account(self):
+        """
+        Returns the account account.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._event.get("account")
 
     def _event_name(self):
+        """
+        The name of the event.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._event["detail"].get(self.event_name_in_detail, "")
 
     def _event_time(self):
+        """
+        Return the event time.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._event["time"]
 
     def _event_resources(self):
+        """
+        Return the list of resources.
+
+        Args:
+            self: (todo): write your description
+        """
         return None
 
     def _source_resource_tags(self, session, task):
+        """
+        Creates a resource tags for a resource.
+
+        Args:
+            self: (todo): write your description
+            session: (todo): write your description
+            task: (todo): write your description
+        """
         raise NotImplementedError
 
     def _new_tags_triggers_task(self, task):
+        """
+        Creates new tags for new tags.
+
+        Args:
+            self: (todo): write your description
+            task: (dict): write your description
+        """
 
         # get the changed tags and the new tak values
         changed_tag_keys = set(self._event.get("detail", {}).get("changed-tag-keys", []))

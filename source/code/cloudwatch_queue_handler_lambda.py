@@ -29,11 +29,25 @@ VERSION = "%version%"
 class Throttle(object):
 
     def __init__(self, max_calls, per_number_of_seconds=1):
+        """
+        Initialize the number of calls.
+
+        Args:
+            self: (todo): write your description
+            max_calls: (int): write your description
+            per_number_of_seconds: (int): write your description
+        """
         self.max_calls = max_calls
         self.per_number_of_seconds = per_number_of_seconds
         self.calls = list()
 
     def check(self):
+        """
+        Check if all calls have expired.
+
+        Args:
+            self: (todo): write your description
+        """
 
         while len(self.calls) >= self.max_calls:
             while len(self.calls) > 0:
@@ -64,6 +78,12 @@ ENV_CLOUDWATCH_TRIGGER_TABLE = "CLOUDWATCH_TRIGGER_TABLE"
 class LogHandler(object):
 
     def __init__(self):
+        """
+        Initialize the api.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self.log_group = os.environ[ENV_LOG_GROUP]
 
@@ -86,9 +106,22 @@ class LogHandler(object):
 
     @property
     def streams_used(self):
+        """
+        Return a list of the stream.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._stream_tokens
 
     def _create_log_stream(self, log_stream):
+        """
+        Create log stream.
+
+        Args:
+            self: (todo): write your description
+            log_stream: (str): write your description
+        """
         self._max_cwl_api_calls.check()
         try:
             print(("Creating log stream {}".format(log_stream)))
@@ -100,6 +133,16 @@ class LogHandler(object):
                 raise e
 
     def add_message(self, stream_name, timestamp, message, number):
+        """
+        Add a message to the buffer.
+
+        Args:
+            self: (todo): write your description
+            stream_name: (str): write your description
+            timestamp: (int): write your description
+            message: (str): write your description
+            number: (int): write your description
+        """
 
         if self._buffer_size + (len(message) + LOG_ENTRY_ADDITIONAL) > LOG_MAX_BATCH_SIZE:
             self.flush()
@@ -112,11 +155,24 @@ class LogHandler(object):
         self._buffer_size += (len(message) + LOG_ENTRY_ADDITIONAL)
 
     def _check_stream_throttle(self, log_stream):
+        """
+        Check if the stream is_put_stream.
+
+        Args:
+            self: (todo): write your description
+            log_stream: (str): write your description
+        """
         if log_stream not in self._max_put_call_stream_throttling:
             self._max_put_call_stream_throttling[log_stream] = Throttle(self.max_put_calls_per_stream)
         self._max_put_call_stream_throttling[log_stream].check()
 
     def flush(self):
+        """
+        Flush the write buffers.
+
+        Args:
+            self: (todo): write your description
+        """
 
         for log_stream in self._buffer:
 
@@ -174,7 +230,19 @@ class LogHandler(object):
 
 
 def lambda_handler(event, context):
+    """
+    Main handler.
+
+    Args:
+        event: (dict): write your description
+        context: (todo): write your description
+    """
     def trigger_next_execution():
+        """
+        Trigger the next execution.
+
+        Args:
+        """
 
         boto3.client("dynamodb").put_item(
             TableName=os.getenv(ENV_CLOUDWATCH_TRIGGER_TABLE),

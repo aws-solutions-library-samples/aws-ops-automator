@@ -41,6 +41,15 @@ class ActionEc2EventBase(ActionBase):
 
     @staticmethod
     def check_tag_filters_and_tags(parameters, task_settings, tag_param_names, logger):
+        """
+        Check for tags and tags and tags.
+
+        Args:
+            parameters: (dict): write your description
+            task_settings: (dict): write your description
+            tag_param_names: (str): write your description
+            logger: (todo): write your description
+        """
 
         # check if tag events triggering is used
         task_events = task_settings.get(ACTION_PARAM_EVENTS, {})
@@ -68,11 +77,34 @@ class ActionEc2EventBase(ActionBase):
         return
 
     def __init__(self, action_arguments, action_parameters):
+        """
+        Initializes the arguments object.
+
+        Args:
+            self: (todo): write your description
+            action_arguments: (str): write your description
+            action_parameters: (todo): write your description
+        """
         ActionBase.__init__(self, action_arguments, action_parameters)
 
     def set_ec2_instance_tags_with_event_loop_check(self, instance_ids, tags_to_set, client=None, region=None):
+        """
+        Set ec2 ec2 ec2 instance
+
+        Args:
+            self: (dict): write your description
+            instance_ids: (int): write your description
+            tags_to_set: (str): write your description
+            client: (todo): write your description
+            region: (str): write your description
+        """
 
         def get_instances():
+            """
+            Returns a list. ec2 instances.
+
+            Args:
+            """
             ec2 = services.create_service("ec2", session=self._session_,
                                           service_retry_strategy=get_default_retry_strategy("ec2", context=self._context_))
 
@@ -83,6 +115,11 @@ class ActionEc2EventBase(ActionBase):
                                      select="Reservations[*].Instances[].{Tags:Tags,InstanceId:InstanceId}"))
 
         def get_ec2_client():
+            """
+            Return ec2 ec2 ec2 client
+
+            Args:
+            """
             if client is not None:
                 return client
 

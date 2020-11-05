@@ -74,6 +74,14 @@ HANDLED_EVENTS = {
 class EbsSnapshotEventHandler(EventHandlerBase):
 
     def __init__(self, event, context):
+        """
+        Initialize the event.
+
+        Args:
+            self: (todo): write your description
+            event: (todo): write your description
+            context: (str): write your description
+        """
         EventHandlerBase.__init__(self, event=event,
                                   resource=services.ec2_service.SNAPSHOTS,
                                   context=context,
@@ -84,6 +92,13 @@ class EbsSnapshotEventHandler(EventHandlerBase):
 
     @staticmethod
     def is_handling_event(event, logger):
+        """
+        Returns true if event is event.
+
+        Args:
+            event: (dict): write your description
+            logger: (todo): write your description
+        """
         try:
             return event.get("source", "") == handlers.EC2_EVENT_SOURCE and \
                    event.get("detail-type") == EBS_SNAPSHOT_NOTIFICATION and \
@@ -93,6 +108,14 @@ class EbsSnapshotEventHandler(EventHandlerBase):
             return False
 
     def _select_parameters(self, event_name, task):
+        """
+        Creates task parameters
+
+        Args:
+            self: (todo): write your description
+            event_name: (str): write your description
+            task: (todo): write your description
+        """
         if self._event_name() == EBS_SNAPSHOT_FOR_VOLUME_CREATED:
             return {
                 "Filters": [{"Name": "volume-id", "Values": [self._source]}],
@@ -169,6 +192,13 @@ class EbsSnapshotEventHandler(EventHandlerBase):
         }
 
     def handle_request(self, use_custom_select=True):
+        """
+        Handle a request handler.
+
+        Args:
+            self: (todo): write your description
+            use_custom_select: (bool): write your description
+        """
         # handle regular EBS snapshot events on snapshot level
         EventHandlerBase.handle_request(self, use_custom_select)
         if self._event.get("detail", {}).get("event", None) == EBS_SNAPSHOT_CREATED:
@@ -185,4 +215,12 @@ class EbsSnapshotEventHandler(EventHandlerBase):
                 EventHandlerBase.handle_request(self, use_custom_select)
 
     def _source_resource_tags(self, session, task):
+        """
+        Creates a resource tags for a resource.
+
+        Args:
+            self: (todo): write your description
+            session: (todo): write your description
+            task: (todo): write your description
+        """
         raise NotImplementedError

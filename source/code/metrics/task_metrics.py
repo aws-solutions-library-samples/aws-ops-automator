@@ -54,6 +54,12 @@ class TaskMetrics(object):
         self._metrics_client = None
 
     def __enter__(self):
+        """
+        Returns the return value of the call.
+
+        Args:
+            self: (todo): write your description
+        """
         self.return_ = """
         Returns itself as the managed resource.
         :return:
@@ -71,6 +77,12 @@ class TaskMetrics(object):
         self.flush()
 
     def flush(self):
+        """
+        Flush the metric metrics.
+
+        Args:
+            self: (todo): write your description
+        """
         if len(self._metrics) > 0 and self._stack is not None:
             if self._logger is not None:
                 self._logger.debug("CloudWatch Metrics data is :\n{}", safe_json(self._metrics, indent=3))
@@ -80,12 +92,28 @@ class TaskMetrics(object):
 
     @property
     def metrics_client(self):
+        """
+        Gets the metrics client.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._metrics_client is None:
             self._metrics_client = boto_retry.get_client_with_retries("cloudwatch", ["put_metric_data"], context=self._context,
                                                                       logger=self._logger)
         return self._metrics_client
 
     def put_task_select_data(self, task_name, items, selected_items, selection_time):
+        """
+        Put task data into the task queue
+
+        Args:
+            self: (todo): write your description
+            task_name: (str): write your description
+            items: (todo): write your description
+            selected_items: (str): write your description
+            selection_time: (str): write your description
+        """
         self._metrics += [
             {
                 # per task metrics
@@ -112,6 +140,17 @@ class TaskMetrics(object):
             }]
 
     def put_task_state_metrics(self, task_name, metric_state_name, task_level, count=1, data=None):
+        """
+        Updates task metrics.
+
+        Args:
+            self: (todo): write your description
+            task_name: (str): write your description
+            metric_state_name: (str): write your description
+            task_level: (todo): write your description
+            count: (int): write your description
+            data: (dict): write your description
+        """
 
         if task_level:
             self._metrics.append({
@@ -146,6 +185,14 @@ class TaskMetrics(object):
             })
 
     def put_general_errors_and_warnings(self, error_count=0, warning_count=0):
+        """
+        Put task information about all tasks to task_count.
+
+        Args:
+            self: (todo): write your description
+            error_count: (todo): write your description
+            warning_count: (int): write your description
+        """
 
         for i in [(TaskMetrics.METRIC_ERRORS, error_count),
                   (TaskMetrics.METRIC_WARNINGS, warning_count)]:

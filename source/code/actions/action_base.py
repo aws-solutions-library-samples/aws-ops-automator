@@ -25,6 +25,14 @@ from helpers import pascal_to_snake_case
 class ActionBase(object):
 
     def __init__(self, arguments, action_parameters):
+        """
+        Initialize actions and initialisation.
+
+        Args:
+            self: (todo): write your description
+            arguments: (dict): write your description
+            action_parameters: (todo): write your description
+        """
         self._assumed_role_ = None
         self._context_ = None
         self._debug_ = None
@@ -84,9 +92,23 @@ class ActionBase(object):
             setattr(self, "_{}_".format(pascal_to_snake_case(ap)), action_parameters[ap])
 
     def get(self, name, default=None):
+        """
+        Get a case by name.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            default: (todo): write your description
+        """
         return getattr(self, "_{}_".format(pascal_to_snake_case(name)), default)
 
     def time_out(self):
+        """
+        The timeout of the event.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._timeout_event_ is not None and self._timeout_event_.is_set()
 
     def build_tags_from_template(self,
@@ -96,6 +118,18 @@ class ActionBase(object):
                                  account=None,
                                  restricted_value_set=False,
                                  include_deleted_tags=True):
+        """
+        Build a template template from template from a template.
+
+        Args:
+            self: (todo): write your description
+            parameter_name: (str): write your description
+            region: (str): write your description
+            tag_variables: (str): write your description
+            account: (todo): write your description
+            restricted_value_set: (str): write your description
+            include_deleted_tags: (bool): write your description
+        """
 
         tag_str = self.get(parameter_name, "")
         if tag_str is not None:
@@ -115,6 +149,16 @@ class ActionBase(object):
         return tags
 
     def build_str_from_template(self, parameter_name, region=None, tag_variables=None, account=None):
+        """
+        Builds a template string from a template name.
+
+        Args:
+            self: (todo): write your description
+            parameter_name: (str): write your description
+            region: (str): write your description
+            tag_variables: (str): write your description
+            account: (int): write your description
+        """
 
         string_template = self.get(parameter_name, "")
         if string_template is not None:
@@ -135,6 +179,15 @@ class ActionBase(object):
         return tags["@str@"]
 
     def get_action_session(self, account, param_name=None, logger=None):
+        """
+        Return the service object for the given account.
+
+        Args:
+            self: (dict): write your description
+            account: (todo): write your description
+            param_name: (str): write your description
+            logger: (todo): write your description
+        """
         self._logger_.debug("Getting action session for account \"{}\", task is \"{}\", parameter is \"{}\"", account,
                             self._task_, param_name)
 
@@ -158,6 +211,12 @@ class ActionBase(object):
             return None
 
     def get_account_for_task(self):
+        """
+        Return the role for the role.
+
+        Args:
+            self: (todo): write your description
+        """
         assumed_role = self.get(actions.ACTION_PARAM_ASSUMED_ROLE, None)
         if assumed_role is not None:
             account = services.account_from_role_arn(assumed_role)

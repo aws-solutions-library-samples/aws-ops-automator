@@ -36,6 +36,12 @@ LOG_STREAM = "TaskConfigAdminApi-{:0>4d}{:0>2d}{:0>2d}"
 
 
 def _get_logger(context):
+    """
+    Create a logger object.
+
+    Args:
+        context: (todo): write your description
+    """
     dt = datetime.utcnow()
     logstream = LOG_STREAM.format(dt.year, dt.month, dt.day)
     return QueuedLogger(logstream=logstream, buffersize=10, context=context)
@@ -71,6 +77,15 @@ def get_task(name, context=None, exception_if_not_exists=True):
 
 
 def _get_task(name, context=None, logger=None, exception_if_not_exists=True):
+    """
+    Get a task.
+
+    Args:
+        name: (str): write your description
+        context: (dict): write your description
+        logger: (todo): write your description
+        exception_if_not_exists: (todo): write your description
+    """
     item = TaskConfiguration(context=context, logger=logger).get_config_item(name)
     if item is None and exception_if_not_exists:
         raise ValueError("not found: task with name {} does not exist".format(name))
@@ -78,6 +93,17 @@ def _get_task(name, context=None, logger=None, exception_if_not_exists=True):
 
 
 def get_next_task_execution(name, context=None, days=None, hours=None, minutes=None, include_disabled=False):
+    """
+    Return the next task.
+
+    Args:
+        name: (str): write your description
+        context: (todo): write your description
+        days: (todo): write your description
+        hours: (todo): write your description
+        minutes: (int): write your description
+        include_disabled: (bool): write your description
+    """
     with _get_logger(context=context) as logger:
         logger.info("get_next_task_execution")
         return _get_next_task_execution(name=name, context=context, days=days, hours=hours, minutes=minutes,
@@ -85,7 +111,24 @@ def get_next_task_execution(name, context=None, days=None, hours=None, minutes=N
 
 
 def _get_next_task_execution(name, context=None, logger=None, days=None, hours=None, minutes=None, include_disabled=False):
+    """
+    Return the next task.
+
+    Args:
+        name: (str): write your description
+        context: (todo): write your description
+        logger: (todo): write your description
+        days: (todo): write your description
+        hours: (todo): write your description
+        minutes: (int): write your description
+        include_disabled: (bool): write your description
+    """
     def get_period():
+        """
+        Get a period.
+
+        Args:
+        """
         period = 0
         if days is not None:
             period += days * 60 * 24
@@ -259,6 +302,14 @@ def delete_task(name, exception_if_not_exists=False, context=None):
 
 
 def start_task(name, context=None, task_group=None):
+    """
+    Starts a new task.
+
+    Args:
+        name: (str): write your description
+        context: (todo): write your description
+        task_group: (str): write your description
+    """
     with _get_logger(context=context) as logger:
         logger.info("execute_task")
         if task_group is None:
@@ -276,6 +327,12 @@ def start_task(name, context=None, task_group=None):
 
 
 def start_completion_handler(context=None):
+    """
+    Starts a completion thread.
+
+    Args:
+        context: (todo): write your description
+    """
     with _get_logger(context=context) as logger:
         logger.info("execute_completion_handler")
 

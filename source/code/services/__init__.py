@@ -172,6 +172,14 @@ def account_from_role_arn(role_arn):
 
 
 def get_session(role_arn=None, sts_client=None, logger=None):
+    """
+    Get a boto3 session.
+
+    Args:
+        role_arn: (str): write your description
+        sts_client: (str): write your description
+        logger: (str): write your description
+    """
     if role_arn not in [None, ""]:
         sts = sts_client if sts_client is not None else boto3.client("sts")
         account = account_from_role_arn(role_arn)

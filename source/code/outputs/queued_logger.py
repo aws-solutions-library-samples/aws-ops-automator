@@ -47,8 +47,26 @@ class QueuedLogger(object):
     """
 
     def __init__(self, logstream, context, loggroup=None, buffersize=50, use_retries=True, debug=False):
+        """
+        Initialize the log group.
+
+        Args:
+            self: (todo): write your description
+            logstream: (str): write your description
+            context: (str): write your description
+            loggroup: (todo): write your description
+            buffersize: (int): write your description
+            use_retries: (bool): write your description
+            debug: (bool): write your description
+        """
 
         def get_loggroup(lambda_context):
+            """
+            Returns the log group.
+
+            Args:
+                lambda_context: (str): write your description
+            """
             group = os.getenv(ENV_LOG_GROUP, None)
             if group is None:
                 if lambda_context is None:
@@ -94,6 +112,15 @@ class QueuedLogger(object):
         self.flush()
 
     def _emit(self, level, msg, extended_info, *args):
+        """
+        Emit a log.
+
+        Args:
+            self: (todo): write your description
+            level: (int): write your description
+            msg: (str): write your description
+            extended_info: (todo): write your description
+        """
 
         self._num += 1
         s = msg if len(args) == 0 else msg.format(*args)
@@ -126,12 +153,24 @@ class QueuedLogger(object):
 
     @property
     def dynamodb_client(self):
+        """
+        Returns a dynamodb client.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._dynamodb_client is None:
             self._dynamodb_client = boto_retry.get_client_with_retries("dynamodb", methods=["put_item"], context=self._context)
         return self._dynamodb_client
 
     @property
     def sqs_client(self):
+        """
+        Return an instance of the sqs client.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._sqs_client is None:
             self._sqs_client = services.get_session().client("sqs")
         return self._sqs_client
@@ -211,6 +250,11 @@ class QueuedLogger(object):
         """
 
         def trigger_process_queued_entries_execution():
+            """
+            Trigger the process entries onodb entries : return : return :
+
+            Args:
+            """
 
             self.dynamodb_client.put_item_with_retries(
                 TableName=self._trigger_table,

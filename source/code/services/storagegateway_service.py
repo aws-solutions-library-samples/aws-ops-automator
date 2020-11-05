@@ -89,6 +89,13 @@ class StoragegatewayService(AwsService):
 
     @staticmethod
     def use_cached_tags(resource, tags_to_retrieve):
+        """
+        Return a list of tags tags for a resource.
+
+        Args:
+            resource: (todo): write your description
+            tags_to_retrieve: (bool): write your description
+        """
         return tags_to_retrieve > 1
 
     def _get_tags_for_resource(self, client, resource):

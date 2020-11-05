@@ -73,6 +73,14 @@ class SchedulerTaskCleanupAction(ActionBase):
     }
 
     def __init__(self, action_arguments, action_parameters):
+        """
+        Initialize an action.
+
+        Args:
+            self: (dict): write your description
+            action_arguments: (str): write your description
+            action_parameters: (todo): write your description
+        """
 
         ActionBase.__init__(self, action_arguments, action_parameters)
 
@@ -90,6 +98,12 @@ class SchedulerTaskCleanupAction(ActionBase):
 
     @property
     def client(self):
+        """
+        Create a new : class.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._client is None:
             self._client = get_client_with_retries("dynamodb",
                                                    methods=[
@@ -101,6 +115,12 @@ class SchedulerTaskCleanupAction(ActionBase):
         return self._client
 
     def execute(self):
+        """
+        Execute the actions.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self._logger_.info("{}, version {}", str(self.__class__).split(".")[-2], self.properties[ACTION_VERSION])
         self._logger_.debug("Implementation {}", __name__)
@@ -160,6 +180,13 @@ class SchedulerTaskCleanupAction(ActionBase):
         }
 
     def delete_tasks(self, items_to_delete):
+        """
+        Deletes all items in a given items.
+
+        Args:
+            self: (todo): write your description
+            items_to_delete: (str): write your description
+        """
 
         deleted = 0
 

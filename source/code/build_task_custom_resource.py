@@ -23,6 +23,13 @@ import boto3
 class CustomCfnJsonEncoder(json.JSONEncoder):
 
     def default(self, o):
+        """
+        Convert an object to json.
+
+        Args:
+            self: (todo): write your description
+            o: (todo): write your description
+        """
         if isinstance(o, set):
             return list(o)
         if isinstance(o, datetime):

@@ -28,6 +28,15 @@ class CustomResource(object):
     EVENT_TYPE_DELETE = "Delete"
 
     def __init__(self, event, context, logger=None):
+        """
+        Called when an event.
+
+        Args:
+            self: (todo): write your description
+            event: (todo): write your description
+            context: (str): write your description
+            logger: (todo): write your description
+        """
         self._event = event
         self._context = context
         self._logger = logger
@@ -160,6 +169,12 @@ class CustomResource(object):
 
     @property
     def region(self):
+        """
+        The region of the current region.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.stack_id.split(":")[3]
 
     def new_physical_resource_id(self):

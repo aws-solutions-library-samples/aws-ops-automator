@@ -23,6 +23,12 @@ class TestTagFilterSet(unittest.TestCase):
     tags3.update(copy.deepcopy(tags2))
 
     def test_equal_single(self):
+        """
+        A filter * filter *.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(TagFilterSet("A=B").pairs_matching_any_filter(self.tags1), self.tags1)
         self.assertEqual(TagFilterSet("A=B").pairs_matching_any_filter(self.tags3), self.tags1)
         self.assertEqual(TagFilterSet("*").pairs_matching_any_filter(self.tags1), self.tags1)
@@ -52,6 +58,12 @@ class TestTagFilterSet(unittest.TestCase):
         self.assertEqual(TagFilterSet("!").pairs_matching_any_filter(self.tags1), self.tags1)
 
     def test_not_equal_single(self):
+        """
+        Given a filter that matches.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(TagFilterSet("X=Y").pairs_matching_any_filter(self.tags1), {})
         self.assertNotEqual(TagFilterSet("X=Y").pairs_matching_any_filter(self.tags1), self.tags1)
         self.assertEqual(TagFilterSet("X=*").pairs_matching_any_filter(self.tags3), {})
@@ -66,6 +78,12 @@ class TestTagFilterSet(unittest.TestCase):
         self.assertEqual(TagFilterSet("\.{4,}").pairs_matching_any_filter(self.tags3), {})
 
     def test_multiple(self):
+        """
+        Test for multiple tags that matches.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(TagFilterSet("A=B,CD=EFG").pairs_matching_any_filter(self.tags1), self.tags1)
         self.assertEqual(TagFilterSet("A=B,X=Y").pairs_matching_any_filter(self.tags3), self.tags1)
         self.assertEqual(TagFilterSet("CD=EFG,X=Y").pairs_matching_any_filter(self.tags3), self.tags2)
@@ -74,6 +92,12 @@ class TestTagFilterSet(unittest.TestCase):
         self.assertEqual(TagFilterSet("A=B,CD=EFG").pairs_matching_any_filter({}), {})
 
     def test_not_operator(self):
+        """
+        Filters the filter and filter.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(TagFilterSet("!A=B").pairs_matching_any_filter(self.tags1), {})
         self.assertEqual(TagFilterSet("!A").pairs_matching_any_filter(self.tags1), {})
         self.assertEqual(TagFilterSet("!Z").pairs_matching_any_filter(self.tags1), self.tags1)
@@ -86,6 +110,12 @@ class TestTagFilterSet(unittest.TestCase):
         self.assertEqual(TagFilterSet("!A=!\d").pairs_matching_any_filter(self.tags1), {})
 
     def test_not_equal_operator(self):
+        """
+        Filters out of the condition.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(TagFilterSet("A=!B").pairs_matching_any_filter(self.tags1), {})
         self.assertNotEqual(TagFilterSet("A=!B").pairs_matching_any_filter(self.tags1), self.tags1)
         self.assertEqual(TagFilterSet("*=!B").pairs_matching_any_filter(self.tags1), {})
@@ -96,14 +126,32 @@ class TestTagFilterSet(unittest.TestCase):
         self.assertEqual(TagFilterSet("A=!\.").pairs_matching_any_filter(self.tags1), {})
 
     def test_not_equal_and_not_operator(self):
+        """
+        Returns true if the filter matches the condition.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(TagFilterSet("!Z=!B").pairs_matching_any_filter(self.tags1), {})
         self.assertEqual(TagFilterSet("!Z=!Y").pairs_matching_any_filter(self.tags1), self.tags1)
 
     def test_exceptions(self):
+        """
+        Test if any tags that match any filter.
+
+        Args:
+            self: (todo): write your description
+        """
         bad_filter = TagFilterSet("\\.(")
         self.assertRaises(ValueError, bad_filter.pairs_matching_any_filter, self.tags1)
 
     def other_tests(self):
+        """
+        Filters the filter.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertTrue(TagFilterSet("!A=B").has_not_operator())
         self.assertFalse(TagFilterSet("A=B").has_not_operator())
         self.assertTrue(TagFilterSet("A=B,!C=D").has_not_operator())

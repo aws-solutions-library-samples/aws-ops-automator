@@ -32,27 +32,65 @@ RESOURCE_STACK_NAME_TEMPLATE = "{}{}-TestResources"
 
 
 def template_path(tested_module, template_name):
+    """
+    Return the path to a template.
+
+    Args:
+        tested_module: (todo): write your description
+        template_name: (str): write your description
+    """
     return os.path.join(os.path.dirname(tested_module), template_name)
 
 
 def tasklist_tagname(tested_action):
+    """
+    Return the case name.
+
+    Args:
+        tested_action: (todo): write your description
+    """
     return snake_to_pascal_case(TASKLIST_TAGNAME.format(tested_action))
 
 
 def region():
+    """
+    Returns the number of seconds
+
+    Args:
+    """
     return TESTED_REGION
 
 
 def remote_region():
+    """
+    Returns the remote region of the remote.
+
+    Args:
+    """
     return TESTED_REMOTE_REGION
 
 
 def resources_stack_name(tested_action):
+    """
+    Return the stack name of the stack.
+
+    Args:
+        tested_action: (todo): write your description
+    """
     prefix = os.getenv(ENV_TEST_STACK_PREFIX, "")
     return snake_to_pascal_case(RESOURCE_STACK_NAME_TEMPLATE.format(prefix, tested_action))
 
 
 def get_resource_stack(tested_action, create_resource_stack_func, use_existing=False, region_name=None):
+    """
+    Returns the stack stack.
+
+    Args:
+        tested_action: (str): write your description
+        create_resource_stack_func: (str): write your description
+        use_existing: (bool): write your description
+        region_name: (str): write your description
+    """
     stack_region = region_name if region_name is not None else region()
     resource_stack_name = resources_stack_name(tested_action)
     resource_stack = Stack(resource_stack_name, owned=False, region=stack_region)
@@ -65,6 +103,14 @@ def get_resource_stack(tested_action, create_resource_stack_func, use_existing=F
 
 # noinspection PyUnusedLocal
 def get_task_runner(tested_action, use_existing_action_stack=False, interval=None):
+    """
+    Get a task runner.
+
+    Args:
+        tested_action: (todo): write your description
+        use_existing_action_stack: (bool): write your description
+        interval: (str): write your description
+    """
     stack_name = action_stack_name(tested_action)
     if not use_existing_action_stack:
         action_stack = Stack(stack_name=stack_name, owned=True, region=region())
@@ -79,6 +125,15 @@ def get_task_runner(tested_action, use_existing_action_stack=False, interval=Non
 
 
 def set_snapshot_sources_tags(snapshot_id, source_volume_id=None, source_snapshot_id=None, region_name=None):
+    """
+    Creates the snapshot tags for a snapshot
+
+    Args:
+        snapshot_id: (str): write your description
+        source_volume_id: (str): write your description
+        source_snapshot_id: (str): write your description
+        region_name: (str): write your description
+    """
     tags = {}
     if source_volume_id is not None:
         tags[actions.marker_snapshot_tag_source_source_volume_id()] = source_volume_id
@@ -90,6 +145,16 @@ def set_snapshot_sources_tags(snapshot_id, source_volume_id=None, source_snapsho
 
 
 def set_snapshot_copied_tag(snapshot_id, task_name, destination_region, copy_snapshot_id, region_name=None):
+    """
+    Sets the snapshot of the snapshot to - id of the snapshot.
+
+    Args:
+        snapshot_id: (str): write your description
+        task_name: (str): write your description
+        destination_region: (str): write your description
+        copy_snapshot_id: (bool): write your description
+        region_name: (str): write your description
+    """
     copied_tag_name = Ec2CopySnapshotAction.marker_tag_copied_to(task_name)
     tags = {
         copied_tag_name: safe_json(

@@ -61,6 +61,20 @@ def build_tags_from_template(tags_str,
                              tag_variables=None,
                              restricted_value_set=False,
                              include_deleted_tags=True):
+    """
+    Build template tags object from template_str
+
+    Args:
+        tags_str: (str): write your description
+        task: (todo): write your description
+        task_id: (str): write your description
+        timezone: (todo): write your description
+        account: (todo): write your description
+        region: (str): write your description
+        tag_variables: (str): write your description
+        restricted_value_set: (str): write your description
+        include_deleted_tags: (bool): write your description
+    """
 
     tag_vars = {} if tag_variables is None else copy.copy(tag_variables)
 
@@ -152,6 +166,18 @@ def build_tags_from_template(tags_str,
 
 
 def build_str_from_template(tags_str, task, task_id, timezone="UTC", account=None, region=None, tag_variables=None):
+    """
+    Builds a string from a template string.
+
+    Args:
+        tags_str: (str): write your description
+        task: (array): write your description
+        task_id: (str): write your description
+        timezone: (todo): write your description
+        account: (int): write your description
+        region: (str): write your description
+        tag_variables: (str): write your description
+    """
     return build_tags_from_template("str=" + tags_str, task, task_id,
                                     timezone=timezone,
                                     account=account, region=region,
@@ -159,6 +185,12 @@ def build_str_from_template(tags_str, task, task_id, timezone="UTC", account=Non
 
 
 def clean_tag_set(tags_to_clean):
+    """
+    Convert tags to clean tags.
+
+    Args:
+        tags_to_clean: (str): write your description
+    """
     for t in tags_to_clean:
         if tags_to_clean[t] == TAG_DELETE:
             continue
@@ -197,10 +229,36 @@ def split_task_list(task_list):
 
 
 def set_ec2_tags(ec2_client, resource_ids, tags, can_delete=True, logger=None):
+    """
+    Set the ec2 ec2 ec2 tags
+
+    Args:
+        ec2_client: (todo): write your description
+        resource_ids: (str): write your description
+        tags: (str): write your description
+        can_delete: (todo): write your description
+        logger: (todo): write your description
+    """
     def create_tags(client, resources, created_tags):
+        """
+        Create an array.
+
+        Args:
+            client: (todo): write your description
+            resources: (dict): write your description
+            created_tags: (str): write your description
+        """
         client.create_tags_with_retries(Resources=resources, Tags=created_tags)
 
     def delete_tags(client, resources, tags_to_delete):
+        """
+        Delete all tags from a set of resources.
+
+        Args:
+            client: (todo): write your description
+            resources: (dict): write your description
+            tags_to_delete: (str): write your description
+        """
         client.delete_tags_with_retries(Resources=resources, Tags=[{"Key": t} for t in tags_to_delete])
 
     _set_resource_tags(client=ec2_client, resources=resource_ids,
@@ -211,11 +269,37 @@ def set_ec2_tags(ec2_client, resource_ids, tags, can_delete=True, logger=None):
 
 
 def set_dynamodb_tags(ddb_client, resource_arns, tags, can_delete=True, logger=None):
+    """
+    Sets the dynamb resource tags.
+
+    Args:
+        ddb_client: (todo): write your description
+        resource_arns: (str): write your description
+        tags: (todo): write your description
+        can_delete: (todo): write your description
+        logger: (todo): write your description
+    """
     def create_tags(client, resources, created_tags):
+        """
+        Creates a list of tags.
+
+        Args:
+            client: (todo): write your description
+            resources: (dict): write your description
+            created_tags: (str): write your description
+        """
         for arn in resources:
             client.tag_resource_with_retries(ResourceArn=arn, Tags=created_tags)
 
     def delete_tags(client, resources, deleted_tags):
+        """
+        Delete tags for the specified tags.
+
+        Args:
+            client: (todo): write your description
+            resources: (dict): write your description
+            deleted_tags: (todo): write your description
+        """
         for arn in resources:
             client.untag_resource_with_retries(ResourceArn=arn, TagKeys=deleted_tags)
 
@@ -229,11 +313,37 @@ def set_dynamodb_tags(ddb_client, resource_arns, tags, can_delete=True, logger=N
 
 
 def set_rds_tags(rds_client, resource_arns, tags, can_delete=True, logger=None):
+    """
+    Set rdf tags for a resource.
+
+    Args:
+        rds_client: (todo): write your description
+        resource_arns: (str): write your description
+        tags: (todo): write your description
+        can_delete: (todo): write your description
+        logger: (todo): write your description
+    """
     def create_tags(client, resources, created_tags):
+        """
+        Create a list of the given resource.
+
+        Args:
+            client: (todo): write your description
+            resources: (dict): write your description
+            created_tags: (str): write your description
+        """
         for arn in resources:
             client.add_tags_to_resource_with_retries(ResourceName=arn, Tags=created_tags)
 
     def delete_tags(client, resources, deleted_tags):
+        """
+        Deletes tags from a list of resources.
+
+        Args:
+            client: (todo): write your description
+            resources: (dict): write your description
+            deleted_tags: (todo): write your description
+        """
         for arn in resources:
             client.remove_tags_from_resource_with_retries(ResourceName=arn, TagKeys=deleted_tags)
 
@@ -247,11 +357,37 @@ def set_rds_tags(rds_client, resource_arns, tags, can_delete=True, logger=None):
 
 
 def set_storagegateway_tags(sgw_client, resource_arns, tags, can_delete=True, logger=None):
+    """
+    Set tags on a storage gateway.
+
+    Args:
+        sgw_client: (str): write your description
+        resource_arns: (str): write your description
+        tags: (str): write your description
+        can_delete: (str): write your description
+        logger: (todo): write your description
+    """
     def create_tags(client, resources, created_tags):
+        """
+        Create a list of the given resource.
+
+        Args:
+            client: (todo): write your description
+            resources: (dict): write your description
+            created_tags: (str): write your description
+        """
         for arn in resources:
             client.add_tags_to_resource_with_retries(ResourceARN=arn, Tags=created_tags)
 
     def delete_tags(client, resources, deleted_tags):
+        """
+        Deletes tags from the given resources.
+
+        Args:
+            client: (todo): write your description
+            resources: (dict): write your description
+            deleted_tags: (todo): write your description
+        """
         for arn in resources:
             client.remove_tags_from_resource_with_retries(ResourceARN=arn, TagKeys=deleted_tags)
 
@@ -265,6 +401,18 @@ def set_storagegateway_tags(sgw_client, resource_arns, tags, can_delete=True, lo
 
 
 def _set_resource_tags(client, resources, tags, create_func, delete_func, can_delete=True, logger=None):
+    """
+    Set the tags for a resource.
+
+    Args:
+        client: (todo): write your description
+        resources: (todo): write your description
+        tags: (todo): write your description
+        create_func: (todo): write your description
+        delete_func: (todo): write your description
+        can_delete: (str): write your description
+        logger: (todo): write your description
+    """
     tag_set = copy.deepcopy(tags)
 
     resource_list = resources if isinstance(resources, list) else [resources]

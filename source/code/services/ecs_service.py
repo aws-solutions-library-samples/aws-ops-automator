@@ -98,6 +98,13 @@ class EcsService(AwsService):
         return s
 
     def _map_describe_function_parameters(self, resources, args):
+        """
+        Map a map of parameters to a map of parameters.
+
+        Args:
+            self: (todo): write your description
+            resources: (todo): write your description
+        """
         if len(args) == 0:
             return args
         temp = AwsService._map_describe_function_parameters(self, resources, args)

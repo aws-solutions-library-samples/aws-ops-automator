@@ -43,17 +43,44 @@ class MonthdaySetBuilder(SetBuilder):
         self._post_custom_parsers = [self._parse_weekday]
 
     def _parse_weekday(self, day_str):
+        """
+        Parse the weekday string.
+
+        Args:
+            self: (todo): write your description
+            day_str: (str): write your description
+        """
         # dayW return working day nearest to day
         return self._get_weekday(day_str)
 
     def _parse_unknown(self, item):
+        """
+        Parse unknown.
+
+        Args:
+            self: (todo): write your description
+            item: (todo): write your description
+        """
         return [] if item in [str(d) for d in range(self.last, 32)] else None
 
     def _separator_characters(self):
+        """
+        Return a character separator.
+
+        Args:
+            self: (todo): write your description
+        """
         # adding W to separator characters, it should not be formatted
         return SetBuilder._separator_characters(self) + self.WILDCARD_WEEKDAY
 
     def _get_weekday(self, day_str):
+        """
+        Gets the weekday weekday.
+
+        Args:
+            self: (todo): write your description
+            day_str: (str): write your description
+        """
         # returns working day nearest to day in month, string is in format dayW
         if (1 < len(day_str) <= 3) and day_str.endswith(self.WILDCARD_WEEKDAY):
             day = self._get_value_by_str(day_str[0:-1])

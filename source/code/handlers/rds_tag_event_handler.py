@@ -58,6 +58,14 @@ HANDLED_EVENTS = {
 
 class RdsTagEventHandler(EventHandlerBase):
     def __init__(self, event, context):
+        """
+        Initialize event.
+
+        Args:
+            self: (todo): write your description
+            event: (todo): write your description
+            context: (str): write your description
+        """
         EventHandlerBase.__init__(self, event=event,
                                   context=context,
                                   resource="",
@@ -68,6 +76,13 @@ class RdsTagEventHandler(EventHandlerBase):
 
     @staticmethod
     def is_handling_event(event, logger):
+        """
+        Returns true if the event is an event.
+
+        Args:
+            event: (dict): write your description
+            logger: (todo): write your description
+        """
         try:
             if event.get("source", "") != handlers.TAG_EVENT_SOURCE:
                 return False
@@ -86,9 +101,24 @@ class RdsTagEventHandler(EventHandlerBase):
             return False
 
     def handle_request(self, use_custom_select=True):
+        """
+        Handle a request.
+
+        Args:
+            self: (todo): write your description
+            use_custom_select: (bool): write your description
+        """
         EventHandlerBase.handle_request(self, use_custom_select=False)
 
     def _select_parameters(self, event_name, task):
+        """
+        Selects parameters of the given event.
+
+        Args:
+            self: (todo): write your description
+            event_name: (str): write your description
+            task: (todo): write your description
+        """
         resource_type = self._event["detail"]["resource-type"]
         if resource_type not in RESOURCE_MAPPINGS:
             raise NotImplementedError
@@ -100,7 +130,21 @@ class RdsTagEventHandler(EventHandlerBase):
                 }
 
     def _event_name(self):
+        """
+        Returns the name of the event.
+
+        Args:
+            self: (todo): write your description
+        """
         return CHANGE_PREFIX.format(RESOURCE_MAPPINGS[self._event["detail"]["resource-type"]])
 
     def _source_resource_tags(self, session, task):
+        """
+        Creates a resource tags for a resource.
+
+        Args:
+            self: (todo): write your description
+            session: (todo): write your description
+            task: (todo): write your description
+        """
         raise NotImplementedError

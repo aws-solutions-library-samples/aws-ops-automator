@@ -69,6 +69,12 @@ class CliRequestHandler(object):
 
     @property
     def parameters(self):
+        """
+        Returns a dict of the parameters.
+
+        Args:
+            self: (todo): write your description
+        """
         params = self._event.get("parameters", {})
         extra = self.additional_parameters.get(self.action, {})
         params.update(extra)
@@ -95,6 +101,12 @@ class CliRequestHandler(object):
         """
 
         def snake_to_pascal_case(s):
+            """
+            Convert a string to snake case.
+
+            Args:
+                s: (str): write your description
+            """
             converted = ""
             s = s.strip("_").capitalize()
             i = 0
@@ -112,6 +124,12 @@ class CliRequestHandler(object):
             return converted
 
         def dict_to_pascal_case(d):
+            """
+            Convert a dictionary to snake case.
+
+            Args:
+                d: (todo): write your description
+            """
 
             ps = {}
 

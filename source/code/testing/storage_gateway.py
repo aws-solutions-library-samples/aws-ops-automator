@@ -24,6 +24,14 @@ from services.storagegateway_service import StoragegatewayService
 class StorageGateway(object):
 
     def __init__(self, region=None, session=None):
+        """
+        Initialize a boto3 service.
+
+        Args:
+            self: (todo): write your description
+            region: (str): write your description
+            session: (todo): write your description
+        """
 
         self.region = region if region is not None else boto3.Session().region_name
         self.session = session if session is not None else boto3.Session(region_name=self.region)
@@ -34,6 +42,12 @@ class StorageGateway(object):
 
     @property
     def latest_gateway_image(self):
+        """
+        Latest gateway gateway.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._latest_gateway_image is None:
             ec2 = Ec2Service(session=self.session)
             sl = sorted([i for i in ec2.describe(services.ec2_service.IMAGES,
@@ -59,15 +73,43 @@ class StorageGateway(object):
 
     @classmethod
     def is_exception_with_code(cls, ex, code):
+        """
+        Returns if the exception is an exception.
+
+        Args:
+            cls: (callable): write your description
+            ex: (todo): write your description
+            code: (str): write your description
+        """
         return getattr(ex, "response", {}).get("Error", {}).get("Code", "") == code
 
     @classmethod
     def invalid_gateway(cls, ex):
+        """
+        Return the result of the gateway gateway.
+
+        Args:
+            cls: (todo): write your description
+            ex: (todo): write your description
+        """
         return cls.is_exception_with_code(ex, "InvalidGatewayRequestException")
 
     def build_storage_gateway(self, gateway_name, instance_public_address):
+        """
+        Build a storage gateway.
+
+        Args:
+            self: (todo): write your description
+            gateway_name: (str): write your description
+            instance_public_address: (bool): write your description
+        """
 
         def get_activation_key():
+            """
+            Get activation key.
+
+            Args:
+            """
             key = None
             with Timer(timeout_seconds=1200, start=True) as activation_key_timer:
                 while True:
@@ -143,6 +185,13 @@ class StorageGateway(object):
         return gw_arn, gw_id, volume_arn, volume_id
 
     def delete_gateway(self, gateway_arn):
+        """
+        Delete gateway.
+
+        Args:
+            self: (todo): write your description
+            gateway_arn: (todo): write your description
+        """
         try:
             if gateway_arn is not None:
                 self.sgw_client.delete_gateway(GatewayARN=gateway_arn)
@@ -151,6 +200,13 @@ class StorageGateway(object):
                 raise ex
 
     def get_gateway_volumes_for_gateway(self, gateway_arn):
+        """
+        Get volumes_gateumes_volumes.
+
+        Args:
+            self: (todo): write your description
+            gateway_arn: (str): write your description
+        """
         try:
             volumes = self.sgw_service.describe(services.storagegateway_service.VOLUMES, GatewayARN=gateway_arn)
             return volumes
@@ -160,6 +216,13 @@ class StorageGateway(object):
             return []
 
     def get_tags(self, resource_arn):
+        """
+        Get tags for a resource.
+
+        Args:
+            self: (todo): write your description
+            resource_arn: (str): write your description
+        """
         # noinspection PyBroadException,PyPep8
         try:
             tags = list(self.sgw_service.describe(services.storagegateway_service.TAGS_FOR_RESOURCE,
@@ -170,10 +233,25 @@ class StorageGateway(object):
             return {}
 
     def add_tags(self, arn , tags):
+        """
+        Adds tags : class : class
+
+        Args:
+            self: (todo): write your description
+            arn: (todo): write your description
+            tags: (list): write your description
+        """
         if len(tags) > 0:
             self.sgw_client.add_tags_to_resource(ResourceARN=arn, Tags=[{"Key": t, "Value": tags[t]} for t in tags])
 
     def get_gateway_by_name(self, gateway_name):
+        """
+        Retrieve a gateway by name.
+
+        Args:
+            self: (todo): write your description
+            gateway_name: (str): write your description
+        """
         gateways = [g for g in self.sgw_service.describe(services.storagegateway_service.GATEWAYS) if
                     g.get("GatewayName", "") == gateway_name]
         return gateways[0] if len(gateways) > 0 else None

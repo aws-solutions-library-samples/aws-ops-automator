@@ -16,6 +16,14 @@ import sys
 
 
 def get_error_constant_name(scope, message, prefix):
+    """
+    Get the constant name for the given scope.
+
+    Args:
+        scope: (str): write your description
+        message: (str): write your description
+        prefix: (str): write your description
+    """
     for g in [n for n in scope if n.startswith(prefix)]:
         if isinstance(scope[g], str) and scope[g] == message:
             return g
@@ -23,6 +31,13 @@ def get_error_constant_name(scope, message, prefix):
 
 
 def get_extended_info(error_message, prefix):
+    """
+    Returns a dictionary of the details of the caller.
+
+    Args:
+        error_message: (str): write your description
+        prefix: (str): write your description
+    """
     # noinspection PyProtectedMember
     caller_stack_frame = sys._getframe(2)
     caller = caller_stack_frame.f_code.co_name
@@ -44,6 +59,12 @@ def get_extended_info(error_message, prefix):
 
 
 def raise_value_error(msg, *args):
+    """
+    Raises an error message.
+
+    Args:
+        msg: (str): write your description
+    """
     s = msg if len(args) == 0 else msg.format(*args)
     ext_error_info = get_extended_info(msg, "ERR")
     code = ext_error_info.get("Code", None)
@@ -53,6 +74,12 @@ def raise_value_error(msg, *args):
 
 
 def raise_exception(msg, *args):
+    """
+    Raise an exception.
+
+    Args:
+        msg: (str): write your description
+    """
     s = msg if len(args) == 0 else msg.format(*args)
     ext_error_info = get_extended_info(msg, "ERR")
     code = ext_error_info.get("Code", None)

@@ -21,11 +21,23 @@ ENV_TEST_STACK_PREFIX = "TEST_STACK_PREFIX"
 
 
 def action_stack_name(tested_action):
+    """
+    Return the stack name.
+
+    Args:
+        tested_action: (todo): write your description
+    """
     prefix = os.getenv(ENV_TEST_STACK_PREFIX, "")
     return helpers.snake_to_pascal_case(ACTION_STACK_NAME_TEMPLATE.format(prefix, tested_action))
 
 
 def assumed_test_role_name(tested_action):
+    """
+    Assumed role name for the case - case.
+
+    Args:
+        tested_action: (todo): write your description
+    """
     prefix = os.getenv(ENV_TEST_STACK_PREFIX, "")
     return helpers.snake_to_pascal_case(ACTION_STACK_ROLE_NAME_TEMPLATE.format(prefix, tested_action))
 

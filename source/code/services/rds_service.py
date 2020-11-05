@@ -141,6 +141,14 @@ class RdsService(AwsService):
         self._tag_account = None
 
     def _extract_resources(self, resp, select):
+        """
+        Extract resources from the response.
+
+        Args:
+            self: (todo): write your description
+            resp: (todo): write your description
+            select: (todo): write your description
+        """
         # the RDS API returns an ARN in the DBSnapshotIdentifierfield for shared snapshots. This overloaded method will
         # extract the expected DBSnapshotIdentifier from the property
         resources = AwsService._extract_resources(self, resp, select)
@@ -155,6 +163,13 @@ class RdsService(AwsService):
 
     @staticmethod
     def use_cached_tags(resource, tags_to_retrieve):
+        """
+        Return a list of tags tags for a resource.
+
+        Args:
+            resource: (todo): write your description
+            tags_to_retrieve: (bool): write your description
+        """
         return tags_to_retrieve > 1
 
     def describe_resources_function_name(self, resource_name):

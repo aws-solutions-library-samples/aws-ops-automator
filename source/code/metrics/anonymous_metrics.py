@@ -35,6 +35,13 @@ def allow_send_metrics():
 
 
 def send_metrics_data(metrics_data, logger):
+    """
+    Send metrics to facebook by sending
+
+    Args:
+        metrics_data: (todo): write your description
+        logger: (todo): write your description
+    """
     url = os.getenv(metrics.ENV_METRICS_URL, None)
     if url is None:
         logger.warning(WARN_ENV_METRICS_URL_NOT_SET, metrics.ENV_METRICS_URL)

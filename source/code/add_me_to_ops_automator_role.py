@@ -17,6 +17,13 @@ import boto3
 
 
 def add_me_to_role(stack, principal):
+    """
+    Add role to role
+
+    Args:
+        stack: (todo): write your description
+        principal: (str): write your description
+    """
     role_resource = boto3.client("cloudformation").describe_stack_resource(
         StackName=stack, LogicalResourceId="OpsAutomatorLambdaRole").get("StackResourceDetail", None)
 

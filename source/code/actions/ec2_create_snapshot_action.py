@@ -345,6 +345,14 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
     }
 
     def __init__(self, arguments, action_parameters):
+        """
+        Initializes this volume
+
+        Args:
+            self: (dict): write your description
+            arguments: (dict): write your description
+            action_parameters: (todo): write your description
+        """
 
         ActionBase.__init__(self, arguments, action_parameters)
 
@@ -389,6 +397,13 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
 
     @staticmethod
     def action_logging_subject(arguments, _):
+        """
+        Returns a string representing the given action.
+
+        Args:
+            arguments: (todo): write your description
+            _: (todo): write your description
+        """
         instance = arguments[ACTION_PARAM_RESOURCES]
         instance_id = instance["InstanceId"]
         account = instance["AwsAccount"]
@@ -397,6 +412,12 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
 
     @property
     def ec2_client(self):
+        """
+        Return ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec
+
+        Args:
+            self: (todo): write your description
+        """
         if self._ec2_client is None:
             methods = ["create_snapshot",
                        "describe_tags",
@@ -413,6 +434,12 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
 
     @property
     def all_volume_tags(self):
+        """
+        Return a list of all ebs volumes
+
+        Args:
+            self: (todo): write your description
+        """
         if self._all_volume_tags is None:
             self._all_volume_tags = {}
             volumes = list(self.volumes.keys())
@@ -446,8 +473,22 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
         return self._all_volume_tags
 
     def create_volume_snapshot(self, volume):
+        """
+        Creates a new volume
+
+        Args:
+            self: (todo): write your description
+            volume: (todo): write your description
+        """
 
         def create_snapshot(vol, snapshot_description):
+            """
+            Creates a new snapshot.
+
+            Args:
+                vol: (str): write your description
+                snapshot_description: (str): write your description
+            """
             snapshot_id = ""
             try:
                 create_snapshot_resp = self.ec2_client.create_snapshot_with_retries(DryRun=self._dryrun_, VolumeId=vol,
@@ -468,6 +509,14 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
             return snapshot_id
 
         def set_snapshot_tags(snap, vol, dev):
+            """
+            Sets the tags
+
+            Args:
+                snap: (todo): write your description
+                vol: (str): write your description
+                dev: (todo): write your description
+            """
             try:
                 tags = get_tags_for_volume_snapshot(vol, dev)
 
@@ -514,6 +563,13 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
                     raise ex
 
         def get_tags_for_volume_snapshot(vol, dev):
+            """
+            Returns a list of all tags associated volume
+
+            Args:
+                vol: (todo): write your description
+                dev: (todo): write your description
+            """
             vol_tags = self.copied_instance_tagfilter.pairs_matching_any_filter(self.tags_on_instance)
             tags_on_volume = self.all_volume_tags.get(vol, {})
             vol_tags.update(self.copied_volume_tagfilter.pairs_matching_any_filter(tags_on_volume))
@@ -549,8 +605,21 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
         set_snapshot_tags(snapshot, volume, device)
 
     def is_completed(self, snapshot_create_data):
+        """
+        Checks if a list of the specified.
+
+        Args:
+            self: (todo): write your description
+            snapshot_create_data: (dict): write your description
+        """
 
         def grant_create_volume_permissions(snap_ids):
+            """
+            Grant permissions onmissions.
+
+            Args:
+                snap_ids: (str): write your description
+            """
 
             if self.accounts_with_create_permissions is not None and len(self.accounts_with_create_permissions) > 0:
 
@@ -571,6 +640,13 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
                         raise_exception(ERR_SETTING_CREATE_VOLUME_PERMISSIONS, self.accounts_with_create_permissions, ex)
 
         def tag_shared_snapshots(snapshot_data, snap_ids):
+            """
+            Creates a list of snapshots.
+
+            Args:
+                snapshot_data: (dict): write your description
+                snap_ids: (str): write your description
+            """
             if self.accounts_with_create_permissions not in ["", None] and self.tag_shared_snapshots:
 
                 for account in self.accounts_with_create_permissions:
@@ -606,6 +682,13 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
                         raise Exception(ERR_SETTING_SHARED_TAGS.format(account, str(ex)))
 
         def set_volume_tags(volume_id, snap_id):
+            """
+            Sets the volume
+
+            Args:
+                volume_id: (str): write your description
+                snap_id: (str): write your description
+            """
             tags = self.build_tags_from_template(parameter_name=PARAM_VOLUME_TAGS,
                                                  tag_variables={
                                                      TAG_PLACEHOLDER_VOLUME_SNAPSHOT: snap_id
@@ -624,6 +707,12 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
                     raise Exception(ERR_SETTING_VOLUME_TAGS.format(self.instance_id, ex))
 
         def set_instance_tags(snap_ids):
+            """
+            Sets the instance tags
+
+            Args:
+                snap_ids: (str): write your description
+            """
             tags = self.build_tags_from_template(parameter_name=PARAM_INSTANCE_TAGS,
                                                  tag_variables={
                                                      TAG_PLACEHOLDER_INSTANCE_SNAPSHOTS: ','.join(sorted(snap_ids))
@@ -718,8 +807,21 @@ class Ec2CreateSnapshotAction(ActionEc2EventBase):
         return test_result
 
     def execute(self):
+        """
+        Executes a single ebs volume
+
+        Args:
+            self: (todo): write your description
+        """
 
         def volume_has_active_snapshots(ec2_service, vol_id):
+            """
+            Returns true if a list of the ebs
+
+            Args:
+                ec2_service: (todo): write your description
+                vol_id: (str): write your description
+            """
 
             # test if the snapshot with the ids that were returned from the CreateSnapshot API call exists and are completed
             volume_snapshots = list(

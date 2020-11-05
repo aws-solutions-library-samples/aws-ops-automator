@@ -44,11 +44,24 @@ class TestAction(unittest.TestCase):
     metrics_client = None
 
     def __init__(self, method_name):
+        """
+        Initialize the account.
+
+        Args:
+            self: (todo): write your description
+            method_name: (str): write your description
+        """
         unittest.TestCase.__init__(self, method_name)
         self.account = services.get_aws_account()
 
     @classmethod
     def setUpClass(cls):
+        """
+        Set up cloudwatch stack
+
+        Args:
+            cls: (todo): write your description
+        """
         if not sys.warnoptions:
             import warnings
             warnings.simplefilter("ignore")
@@ -75,6 +88,13 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def create_resource_stack(cls, resource_stack_name):
+        """
+        Creates stack stack.
+
+        Args:
+            cls: (callable): write your description
+            resource_stack_name: (str): write your description
+        """
         try:
             cls.logger.test("Creating test resources stack {}", resource_stack_name)
             ami = Ec2(region()).latest_aws_linux_image["ImageId"]
@@ -103,6 +123,19 @@ class TestAction(unittest.TestCase):
                   cpu_high=90,
                   cpu_low=10,
                   interval=None):
+        """
+        Perform a test test.
+
+        Args:
+            self: (todo): write your description
+            test_method: (str): write your description
+            instance_id: (str): write your description
+            expect_under_utilized: (str): write your description
+            expect_over_utilized: (str): write your description
+            cpu_high: (todo): write your description
+            cpu_low: (todo): write your description
+            interval: (int): write your description
+        """
 
         parameters = {
             lt.PARAM_CPU_PERC_LOW: cpu_low,
@@ -146,6 +179,12 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X] Tags created for instance")
 
     def test_instance_no_cpu_load(self):
+        """
+        Loads the cpu instance
+
+        Args:
+            self: (todo): write your description
+        """
 
         self.base_test(test_method=inspect.stack()[0][3],
                        instance_id=self.instance_no_cpu_load,
@@ -156,6 +195,12 @@ class TestAction(unittest.TestCase):
                        interval="0/{} * * * ?".format(INTERVAL_MINUTES))
 
     def test_instance_cpu_load(self):
+        """
+        Loads the cpu instance
+
+        Args:
+            self: (todo): write your description
+        """
 
         self.base_test(test_method=inspect.stack()[0][3],
                        instance_id=self.instance_cpu_load,
@@ -167,6 +212,12 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """
+        Tear down the context manager.
+
+        Args:
+            cls: (todo): write your description
+        """
 
         if cls.resource_stack is not None and not KEEP_AND_USE_EXISTING_RESOURCES_STACK:
             cls.resource_stack.delete_stack()
@@ -175,6 +226,12 @@ class TestAction(unittest.TestCase):
             cls.task_runner.cleanup(KEEP_AND_USE_EXISTING_ACTION_STACK)
 
     def tearDown(self):
+        """
+        Tear down the next callable.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
 

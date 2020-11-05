@@ -68,6 +68,13 @@ class TestAction(unittest.TestCase):
     ami_multiple_volumes = None
 
     def __init__(self, method_name):
+        """
+        Initialize a new instance.
+
+        Args:
+            self: (todo): write your description
+            method_name: (str): write your description
+        """
         unittest.TestCase.__init__(self, method_name)
         self.replaced_instance_id = None
         self.replaced_instance = None
@@ -78,10 +85,22 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def get_methods(cls):
+        """
+        Return a list of methods
+
+        Args:
+            cls: (todo): write your description
+        """
         return [x for x, y in list(cls.__dict__.items()) if type(y) == FunctionType and x.startswith("test_")]
 
     @classmethod
     def setUpClass(cls):
+        """
+        Creates ec2 ec2 ec2 ec2 ec2 ec2 ec2 instance.
+
+        Args:
+            cls: (todo): write your description
+        """
         if not sys.warnoptions:
             import warnings
             warnings.simplefilter("ignore")
@@ -115,6 +134,13 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def create_resource_stack(cls, resource_stack_name):
+        """
+        Creates a cloudformation stack.
+
+        Args:
+            cls: (callable): write your description
+            resource_stack_name: (str): write your description
+        """
         try:
             cls.logger.test("Creating test resources stack {}", resource_stack_name)
             resource_stack = Stack(resource_stack_name, region=region())
@@ -133,6 +159,12 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def get_multi_volume_ami(cls):
+        """
+        Terminates an ami
+
+        Args:
+            cls: (todo): write your description
+        """
         if cls.ami_multiple_volumes is None:
             instance = None
             instance_id = None
@@ -181,14 +213,51 @@ class TestAction(unittest.TestCase):
                         tags=None,
                         assumed_type=None,
                         stopped_instance=False):
+        """
+        Replace an existing volume.
+
+        Args:
+            self: (todo): write your description
+            test_method: (str): write your description
+            load_balancing: (todo): write your description
+            multiple_volumes: (todo): write your description
+            same_volume_tags: (str): write your description
+            expected_new_type: (todo): write your description
+            unavailable_types: (str): write your description
+            try_next_in_range: (str): write your description
+            same_type: (str): write your description
+            replace_if_same_type: (str): write your description
+            mode: (str): write your description
+            replace_instance: (str): write your description
+            REPLACE_BY_SPECIFIED_TYPE: (todo): write your description
+            replaced_type: (todo): write your description
+            tags: (todo): write your description
+            assumed_type: (todo): write your description
+            stopped_instance: (todo): write your description
+        """
 
         def create_replaced_instance():
+            """
+            Create a new ec2 adapter
+
+            Args:
+            """
 
             def register_to_load_balancers():
+                """
+                Register load balancers to load balancers.
+
+                Args:
+                """
                 self.elb.register_instance(load_balancer_name=self.v1_elb_name, instance_id=self.replaced_instance_id)
                 self.elbv2.register_instance(target_group_arn=self.v2_target_group_arn, instance_id=self.replaced_instance_id)
 
             def tag_instance_volumes():
+                """
+                Tag all ebs volume
+
+                Args:
+                """
 
                 volumes = list(self.ec2.get_instance_volumes(self.replaced_instance_id))
 
@@ -240,6 +309,11 @@ class TestAction(unittest.TestCase):
                 self.ec2.stop_instance(self.replaced_instance_id)
 
         def check_instance_volumes_tags():
+            """
+            Check that all the ebs are enabled
+
+            Args:
+            """
             volumes = list(self.ec2.get_instance_volumes(self.new_instance_id))
             actual_tags = {v["Attachments"][0]["Device"]: v.get("Tags", {}) for v in volumes}
             for v in volumes:
@@ -248,6 +322,11 @@ class TestAction(unittest.TestCase):
                     self.fail("Tags  not set correctly on volume {}".format(v))
 
         def check_load_balancer_registrations():
+            """
+            Checks load balancer load balancers.
+
+            Args:
+            """
             load_balancers = self.elb.get_instance_load_balancers(self.new_instance_id)
             target_groups = self.elbv2.get_instance_target_groups(self.new_instance_id)
 
@@ -265,6 +344,11 @@ class TestAction(unittest.TestCase):
                         self.v2_target_group_arn))
 
         def validate_new_instance():
+            """
+            Validate instance instance
+
+            Args:
+            """
 
             replaced_state = self.ec2.get_instance(instance_id=self.replaced_instance_id)["State"]["Code"] & 0xFF
 
@@ -391,12 +475,26 @@ class TestAction(unittest.TestCase):
                     self.ec2.terminate_instance(instance_id=i)
 
     def get_new_instance_types(self, inst_id, same_type=False):
+        """
+        Returns a list of instances of the given instance.
+
+        Args:
+            self: (todo): write your description
+            inst_id: (str): write your description
+            same_type: (str): write your description
+        """
         current_type = self.ec2.get_instance(instance_id=inst_id)["InstanceType"]
         if same_type:
             return [current_type]
         return [t for t in TEST_INSTANCE_TYPES if t != current_type]
 
     def test_scale_up(self):
+        """
+        Scale the scale of scale
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -405,6 +503,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[2])
 
     def test_scale_up_already_largest(self):
+        """
+        Test for scale scale scale
+
+        Args:
+            self: (todo): write your description
+        """
         largest_size = TEST_INSTANCE_TYPES[-1]
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
@@ -415,6 +519,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=largest_size)
 
     def test_scale_up_not_avail_next(self):
+        """
+        Test if the next empty state.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -425,6 +535,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[2])
 
     def test_scale_up_not_avail(self):
+        """
+        Test if the scale scale scale
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -435,6 +551,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[0])
 
     def test_scale_up_not_avail_no_next(self):
+        """
+        Test if the next empty empty empty empty.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -446,6 +568,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[0])
 
     def test_scale_up_assumed(self):
+        """
+        Test for scale scale
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -456,6 +584,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[1])
 
     def test_scale_up_not_assumed(self):
+        """
+        Test for scale of the scale_replace_test
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -465,6 +599,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type="t2.nano")
 
     def test_scale_down(self):
+        """
+        Test for the scale.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -473,6 +613,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[0])
 
     def test_scale_down_already_smallest(self):
+        """
+        Scale the small small small small small scale.
+
+        Args:
+            self: (todo): write your description
+        """
         smallest_size = TEST_INSTANCE_TYPES[0]
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
@@ -483,6 +629,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=smallest_size)
 
     def test_scale_down_not_avail_next(self):
+        """
+        Test if the next empty slave.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -493,6 +645,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[0])
 
     def test_scale_down_not_avail_no_next(self):
+        """
+        Test if the next empty slave methods.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -504,6 +662,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[2])
 
     def test_scale_down_not_avail(self):
+        """
+        Scale the scale of the scale
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_STEP,
@@ -514,18 +678,36 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[2])
 
     def test_not_load_balanced_single_volume(self):
+        """
+        Test if all volumes have been saved
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=False,
                              mode=replace_instance.REPLACE_BY_SPECIFIED_TYPE,
                              multiple_volumes=False)
 
     def test_load_balanced_single_volume(self):
+        """
+        Test for all volumes exist
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=True,
                              mode=replace_instance.REPLACE_BY_SPECIFIED_TYPE,
                              multiple_volumes=False)
 
     def test_load_balanced_multiple_volumes_mixed_tags(self):
+        """
+        Test for load balancer volumes
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=True,
                              mode=replace_instance.REPLACE_BY_SPECIFIED_TYPE,
@@ -533,6 +715,12 @@ class TestAction(unittest.TestCase):
                              multiple_volumes=True)
 
     def test_load_balanced_multiple_volumes_same_tags(self):
+        """
+        Test if volume volume_same_tags
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=True,
                              mode=replace_instance.REPLACE_BY_SPECIFIED_TYPE,
@@ -540,6 +728,12 @@ class TestAction(unittest.TestCase):
                              multiple_volumes=True)
 
     def test_load_balanced_alternative_type(self):
+        """
+        Test if the alternative alternative type
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=True,
                              mode=replace_instance.REPLACE_BY_SPECIFIED_TYPE,
@@ -547,6 +741,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[2])
 
     def test_load_balanced_no_alternative_types_available(self):
+        """
+        Test for load load_balanced_available_available_available_available_available
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=True,
                              mode=replace_instance.REPLACE_BY_SPECIFIED_TYPE,
@@ -554,6 +754,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[0])
 
     def test_load_balanced_same_size_no_replace(self):
+        """
+        Test for load_balancing
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=True,
                              same_type=True,
@@ -562,6 +768,12 @@ class TestAction(unittest.TestCase):
                              expected_new_type=TEST_INSTANCE_TYPES[0])
 
     def test_load_balanced_same_size_replace(self):
+        """
+        Test if the load size of_balancing
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_replace(test_method=inspect.stack()[0][3],
                              load_balancing=True,
                              same_type=True,
@@ -571,6 +783,12 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """
+        Tear down the image class
+
+        Args:
+            cls: (todo): write your description
+        """
 
         if cls.resource_stack is not None and not KEEP_AND_USE_EXISTING_RESOURCES_STACK:
             cls.resource_stack.delete_stack()
@@ -585,9 +803,21 @@ class TestAction(unittest.TestCase):
             cls.ec2.delete_key_pair(cls.key_pair)
 
     def setUp(self):
+        """
+        Sets the result of this thread.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
     def tearDown(self):
+        """
+        Tear down the next callable.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
 

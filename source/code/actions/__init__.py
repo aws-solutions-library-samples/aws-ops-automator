@@ -220,30 +220,64 @@ _report_writer_provider_ = create_output_writer
 
 
 def date_time_provider():
+    """
+    Return the provider provider.
+
+    Args:
+    """
     return _date_time_provider_
 
 
 def set_date_time_provider(provider):
+    """
+    Sets the provider provider.
+
+    Args:
+        provider: (str): write your description
+    """
     global _date_time_provider_
     _date_time_provider_ = provider
 
 
 def reset_date_provider():
+    """
+    Reset the date provider.
+
+    Args:
+    """
     global _date_time_provider_
     _date_time_provider_ = datetime
 
 
 def get_report_output_writer(context=None, logger=None):
+    """
+    Returns a report writer writer output.
+
+    Args:
+        context: (todo): write your description
+        logger: (todo): write your description
+    """
     global _report_writer_provider_
     return _report_writer_provider_(context, logger)
 
 
 def set_report_output_provider(provider):
+    """
+    Sets the report provider.
+
+    Args:
+        provider: (str): write your description
+    """
     global _report_writer_provider_
     _report_writer_provider_ = provider
 
 
 def reset_report_output_provider():
+    """
+    Sets the report report.
+
+    Args:
+    """
     global _report_writer_provider_
     _report_writer_provider_ = create_output_writer
 
@@ -365,24 +399,52 @@ def build_action_metrics(action, **data):
 
 
 def marker_image_source_instance_tag():
+    """
+    Mark image tag tag.
+
+    Args:
+    """
     return MARKER_EC2_IMAGE_INSTANCE_TAG_TEMPLATE.format(os.getenv(handlers.ENV_STACK_NAME))
 
 
 def log_stream_datetime():
+    """
+    Generate a formatted datetime.
+
+    Args:
+    """
     dt = datetime.utcnow()
     return "{:0>4d}{:0>2d}{:0>2d}{:0>02d}{:0>02d}".format(dt.year, dt.month, dt.day, dt.hour, dt.minute)
 
 
 def log_stream_date():
+    """
+    Returns a string with the current date.
+
+    Args:
+    """
     dt = datetime.utcnow()
     return "{:0>4d}{:0>2d}{:0>2d}".format(dt.year, dt.month, dt.day)
 
 
 def marker_snapshot_tag_source_source_volume_id():
+    """
+    Return the snapshot volume snapshot tag for a snapshot of the snapshot.
+
+    Args:
+    """
     return MARKER_EC2_TAG_SOURCE_VOLUME_TEMPLATE.format(os.getenv(ENV_STACK_NAME))
 
 
 def get_resource_data(res, attribute_names, tag_names=None):
+    """
+    Get the data for an attribute
+
+    Args:
+        res: (dict): write your description
+        attribute_names: (str): write your description
+        tag_names: (str): write your description
+    """
     data = [res.get(a, "") for a in attribute_names]
     tag_data = []
     if tag_names not in [[], None]:

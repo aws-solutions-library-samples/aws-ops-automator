@@ -135,6 +135,13 @@ class IamService(AwsService):
 
     @staticmethod
     def select_service_roles(roles, service_principal_name):
+        """
+        Select principal roles for a given roles that service.
+
+        Args:
+            roles: (str): write your description
+            service_principal_name: (str): write your description
+        """
         return [r for r in roles
                 if any([s for s in r.get("AssumeRolePolicyDocument", {}).get("Statement", [])
                         if s["Effect"] == "Allow" and

@@ -109,6 +109,14 @@ class TaskTrackingHandler(object):
 
     @classmethod
     def is_handling_request(cls, event, context):
+        """
+        Determine if the current event.
+
+        Args:
+            cls: (todo): write your description
+            event: (dict): write your description
+            context: (todo): write your description
+        """
 
         # In simulation the handler is called directly when inserting or updating items in the table
         if handlers.running_local(context):
@@ -123,6 +131,13 @@ class TaskTrackingHandler(object):
 
     @classmethod
     def task_string(cls, action):
+        """
+        Return a string of the given action.
+
+        Args:
+            cls: (todo): write your description
+            action: (str): write your description
+        """
         return TASK_ACTION_STRINGS[action] if 0 <= action < len(TASK_ACTION_STRINGS) else "Unknown"
 
     @property
@@ -137,6 +152,12 @@ class TaskTrackingHandler(object):
 
     @property
     def s3_client(self):
+        """
+        Return an s3 client.
+
+        Args:
+            self: (todo): write your description
+        """
 
         if self._s3_client is None:
             self._s3_client = boto_retry.get_client_with_retries("s3", ["delete_item"], logger=self._logger)
@@ -144,6 +165,12 @@ class TaskTrackingHandler(object):
 
     @property
     def db_client(self):
+        """
+        Return the db client object.
+
+        Args:
+            self: (todo): write your description
+        """
 
         if self._db_client is None:
             self._db_client = boto_retry.get_client_with_retries("dynamodb", ["delete_item"], logger=self._logger)
@@ -411,6 +438,13 @@ class TaskTrackingHandler(object):
         self._start_task_execution(task_item)
 
     def _handle_completed_concurrency_item(self, task_item):
+        """
+        Handle a single task item.
+
+        Args:
+            self: (todo): write your description
+            task_item: (todo): write your description
+        """
 
         self._logger.debug("Handling completed concurrency logic")
         # gets the concurrency key for the task
@@ -426,9 +460,23 @@ class TaskTrackingHandler(object):
         ResultNotifications(context=self._context, logger=self._logger).publish_ended(task_item)
 
     def _handle_finished_task_without_completion(self, task_item):
+        """
+        Handle a task completion
+
+        Args:
+            self: (todo): write your description
+            task_item: (int): write your description
+        """
         ResultNotifications(context=self._context, logger=self._logger).publish_ended(task_item)
 
     def _handle_start_waiting_action(self, concurrency_item):
+        """
+        Handles the start action.
+
+        Args:
+            self: (todo): write your description
+            concurrency_item: (dict): write your description
+        """
 
         self._logger.debug("Handling start waiting task logic")
         # gets the concurrency key for the task
@@ -449,6 +497,13 @@ class TaskTrackingHandler(object):
             self._start_task_execution(oldest_waiting_task)
 
     def _handle_check_completion(self, task_item):
+        """
+        Handle completion completion.
+
+        Args:
+            self: (todo): write your description
+            task_item: (dict): write your description
+        """
         self._logger.debug("Handling test for completion logic")
         if task_item.get(handlers.TASK_TR_RUN_LOCAL, False) and not handlers.running_local(self._context):
             self._logger.debug("Item running in local mode skipped")
@@ -458,6 +513,13 @@ class TaskTrackingHandler(object):
         self._start_task_execution(task_item=task_item, action=handlers.HANDLER_ACTION_TEST_COMPLETION)
 
     def _handle_deleted_item(self, task_item):
+        """
+        Updates the deleted task.
+
+        Args:
+            self: (todo): write your description
+            task_item: (dict): write your description
+        """
 
         if task_item.get(handlers.TASK_TR_S3_RESOURCES, False):
 
@@ -482,33 +544,87 @@ class TaskTrackingHandler(object):
             """
 
             def table_name(rec):
+                """
+                Return the table name.
+
+                Args:
+                    rec: (str): write your description
+                """
                 source_arn = rec["eventSourceARN"]
                 return source_arn.split("/")[1]
 
             def from_tracking_table(rec):
+                """
+                Return an existing table from a table.
+
+                Args:
+                    rec: (todo): write your description
+                """
                 return table_name(rec) == os.getenv(handlers.ENV_ACTION_TRACKING_TABLE)
 
             def from_concurrency_table(rec):
+                """
+                Returns a table from the database table.
+
+                Args:
+                    rec: (todo): write your description
+                """
                 return table_name(rec) == os.getenv(handlers.ENV_CONCURRENCY_TABLE)
 
             def get_old_image(task_record):
+                """
+                Retrieve a record.
+
+                Args:
+                    task_record: (str): write your description
+                """
                 return task_record["dynamodb"].get("OldImage", {})
 
             def get_new_image(task_record):
+                """
+                Return a new record.
+
+                Args:
+                    task_record: (str): write your description
+                """
                 return task_record["dynamodb"].get("NewImage", {})
 
             def get_new_status(task_record):
+                """
+                Returns a new status object.
+
+                Args:
+                    task_record: (str): write your description
+                """
                 return get_new_image(task_record).get(handlers.TASK_TR_STATUS, {}).get("S")
 
             def get_old_status(task_record):
+                """
+                Get the status of a task.
+
+                Args:
+                    task_record: (str): write your description
+                """
                 return get_new_image(task_record).get(handlers.TASK_TR_STATUS, {}).get("S")
 
             def is_task_tracking_table_update(task_record):
+                """
+                Determine if a task is tracking.
+
+                Args:
+                    task_record: (todo): write your description
+                """
                 if not from_tracking_table(task_record):
                     return False
                 return task_record["eventName"] in ["UPDATE", "MODIFY"]
 
             def is_task_done(task_record):
+                """
+                Check if a task is complete.
+
+                Args:
+                    task_record: (todo): write your description
+                """
 
                 if not is_task_tracking_table_update(task_record):
                     return False
@@ -521,30 +637,78 @@ class TaskTrackingHandler(object):
                 return new_status in handlers.task_tracking_table.NOT_LONGER_ACTIVE_STATUSES
 
             def is_task_with_concurrency(task_record):
+                """
+                Checks if task is locked.
+
+                Args:
+                    task_record: (todo): write your description
+                """
                 return get_new_image(task_record).get(handlers.TASK_TR_CONCURRENCY_KEY, {}).get("S") is not None
 
             def get_old_last_update(task_record):
+                """
+                Gets the last record.
+
+                Args:
+                    task_record: (todo): write your description
+                """
                 return get_old_image(task_record).get(handlers.TASK_TR_LAST_WAIT_COMPLETION, {}).get("S")
 
             def get_new_last_update(task_record):
+                """
+                Get the last record.
+
+                Args:
+                    task_record: (todo): write your description
+                """
                 return get_new_image(task_record).get(handlers.TASK_TR_LAST_WAIT_COMPLETION, {}).get("S")
 
             def is_delete_task(task_record):
+                """
+                Determine if a task is deleted.
+
+                Args:
+                    task_record: (todo): write your description
+                """
                 return from_tracking_table(r) and task_record["eventName"] == "REMOVE"
 
             def is_new_task(task_record):
+                """
+                Return true if a new task record.
+
+                Args:
+                    task_record: (todo): write your description
+                """
                 if from_tracking_table(r) and task_record["eventName"] == "INSERT":
                     return get_new_status(task_record) == handlers.STATUS_PENDING
                 return False
 
             def is_completed_with_concurrency(task_record):
+                """
+                Returns true if task_record. task.
+
+                Args:
+                    task_record: (todo): write your description
+                """
                 return is_task_done(task_record) and is_task_with_concurrency(task_record)
 
             def is_completed_without_concurrency(task_record):
+                """
+                Returns true if task_record.
+
+                Args:
+                    task_record: (todo): write your description
+                """
 
                 return is_task_done(task_record) and not is_task_with_concurrency(task_record)
 
             def is_wait_for_completion(task_record):
+                """
+                Determine the given task is complete.
+
+                Args:
+                    task_record: (todo): write your description
+                """
 
                 if not is_task_tracking_table_update(task_record):
                     return False
@@ -556,6 +720,12 @@ class TaskTrackingHandler(object):
                 return get_old_last_update(task_record) != get_new_last_update(task_record)
 
             def is_concurrency_task_completed(concurrency_record):
+                """
+                Determine if a task is suitable for the given chain.
+
+                Args:
+                    concurrency_record: (str): write your description
+                """
                 if not from_concurrency_table(concurrency_record):
                     return False
 
@@ -565,6 +735,12 @@ class TaskTrackingHandler(object):
                 return concurrency_record["dynamodb"].get("NewImage", {}).get("RunNext", {}).get("BOOL", False)
 
             def get_action_type(rec):
+                """
+                Returns the action type of the given action.
+
+                Args:
+                    rec: (str): write your description
+                """
 
                 if is_new_task(rec):
                     return NEW_TASK

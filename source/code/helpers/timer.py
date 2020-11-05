@@ -15,24 +15,65 @@ import threading
 
 class Timer(object):
     def __init__(self, timeout_seconds, start=True):
+        """
+        Start a new timer.
+
+        Args:
+            self: (todo): write your description
+            timeout_seconds: (int): write your description
+            start: (int): write your description
+        """
         self.timeout = False
         self._timer = threading.Timer(interval=timeout_seconds, function=self.fn)
         if timeout_seconds > 0 and start:
             self.start()
 
     def fn(self):
+        """
+        Cancel a task.
+
+        Args:
+            self: (todo): write your description
+        """
         self._timer.cancel()
         self.timeout = True
 
     def start(self):
+        """
+        Start the timer.
+
+        Args:
+            self: (todo): write your description
+        """
         self.timeout = False
         self._timer.start()
 
     def stop(self):
+        """
+        Stop the task.
+
+        Args:
+            self: (todo): write your description
+        """
         self._timer.cancel()
 
     def __enter__(self):
+        """
+        Decor function.
+
+        Args:
+            self: (todo): write your description
+        """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit the given exception.
+
+        Args:
+            self: (todo): write your description
+            exc_type: (todo): write your description
+            exc_val: (todo): write your description
+            exc_tb: (todo): write your description
+        """
         self._timer.cancel()
