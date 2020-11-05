@@ -19,6 +19,12 @@ from tagging.tag_filter_expression import TagFilterExpression
 class TestTagFilterExpression(unittest.TestCase):
 
     def test_is_match(self):
+        """
+        Return true if the filter matches the filter.
+
+        Args:
+            self: (todo): write your description
+        """
         tags1 = {"A": "B"}
         tags2 = {"CD": "EFG"}
         tags3 = copy.copy(tags1)
@@ -51,6 +57,12 @@ class TestTagFilterExpression(unittest.TestCase):
         self.assertTrue(TagFilterExpression("A=*").is_match({"A": "1,2,3"}))
 
     def test_helper_functions(self):
+        """
+        Test for filter functions
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertEqual(TagFilterExpression("A=B&CD=!XYZ").get_filters(), ["A=B", "CD=!XYZ"])
         self.assertEqual(TagFilterExpression("(A=B&CD=!XYZ)|(A=Z|CD=EFG)").get_filters(), ["A=B", "CD=!XYZ", "A=Z", "CD=EFG"])
         self.assertEqual(TagFilterExpression("A&*=!XYZ").get_filters(), ["A", "*=!XYZ"])

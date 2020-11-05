@@ -17,8 +17,20 @@ from scheduling.minute_setbuilder import MinuteSetBuilder
 
 class TestMinuteSetBuilder(unittest.TestCase):
     def test_name(self):
+        """
+        Set the test name.
+
+        Args:
+            self: (todo): write your description
+        """
         for i in range(0, 59):
             self.assertEqual(MinuteSetBuilder().build(str(i)), {i})
 
     def test_exceptions(self):
+        """
+        Assigns the test to the test.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertRaises(ValueError, MinuteSetBuilder().build, "60")

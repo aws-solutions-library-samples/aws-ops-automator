@@ -18,6 +18,12 @@ from scheduling.monthday_setbuilder import MonthdaySetBuilder
 
 class TestMonthdaySetBuilder(unittest.TestCase):
     def test_name(self):
+        """
+        Return the name of the calendar.
+
+        Args:
+            self: (todo): write your description
+        """
         years = [2016, 2017]  # leap and normal year
 
         for year in years:
@@ -28,6 +34,12 @@ class TestMonthdaySetBuilder(unittest.TestCase):
                     self.assertEqual(MonthdaySetBuilder(year, month).build(str(day)), {day})
 
     def test_L_wildcard(self):
+        """
+        Test for each day.
+
+        Args:
+            self: (todo): write your description
+        """
         years = [2016, 2017]  # leap and normal year
 
         for year in years:
@@ -36,6 +48,12 @@ class TestMonthdaySetBuilder(unittest.TestCase):
                 self.assertEqual(MonthdaySetBuilder(year, month).build("L"), {days})
 
     def test_W_wildcard(self):
+        """
+        Test if the given day.
+
+        Args:
+            self: (todo): write your description
+        """
         years = [2016, 2017]  # leap and normal year
 
         for year in years:
@@ -53,6 +71,12 @@ class TestMonthdaySetBuilder(unittest.TestCase):
                     self.assertEqual(MonthdaySetBuilder(year, month).build(str(day) + "W"), {result})
 
     def test_exceptions(self):
+        """
+        Test for every day of every day.
+
+        Args:
+            self: (todo): write your description
+        """
         for h in range(13, 25):
             self.assertRaises(ValueError, MonthdaySetBuilder(2016, 1).build, "W")
             self.assertRaises(ValueError, MonthdaySetBuilder(2016, 1).build, "32W")

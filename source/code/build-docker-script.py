@@ -18,6 +18,13 @@ FIVE_YEARS = 5 * 365 * 24 * 3600
 
 
 def get_signed_url(bucket, key):
+    """
+    Gets a signed signed url
+
+    Args:
+        bucket: (str): write your description
+        key: (str): write your description
+    """
     s3 = boto3.client("s3")
 
     params = {
@@ -29,6 +36,15 @@ def get_signed_url(bucket, key):
 
 
 def build_script(script, bucket, version, prefix):
+    """
+    Generate a script script
+
+    Args:
+        script: (str): write your description
+        bucket: (str): write your description
+        version: (str): write your description
+        prefix: (str): write your description
+    """
     ecs_runner_script_url = get_signed_url(bucket, prefix + "ecs/ops-automator-ecs-runner.py")
     docker_file_url = get_signed_url(bucket, prefix + "ecs/Dockerfile")
 

@@ -68,6 +68,12 @@ def make_method_with_retries(boto_client_or_resource, name, service_retry_strate
 
     # closure function
     def wrapped_api_method(client_or_resource, **args):
+        """
+        Wraps the given api call to the given method.
+
+        Args:
+            client_or_resource: (str): write your description
+        """
         return retry_strategy.call(client_or_resource, name, args)
 
     # add closure function to the client or resource
@@ -92,6 +98,15 @@ def get_default_wait_strategy(service):
 
 
 def get_default_retry_strategy(service, wait_strategy=None, context=None, logger=None):
+    """
+    Returns the default retry strategy.
+
+    Args:
+        service: (todo): write your description
+        wait_strategy: (str): write your description
+        context: (todo): write your description
+        logger: (todo): write your description
+    """
     if wait_strategy is None:
         wait_strategy = get_default_wait_strategy(service)
     service_retry_strategy_class = _get_service_retry_strategy_class(service)
@@ -119,6 +134,20 @@ def _get_service_retry_strategy_class(service):
 
 def get_client_with_retries(service_name, methods, context=None, region=None, session=None, wait_strategy=None,
                             method_suffix=DEFAULT_SUFFIX, logger=None):
+    """
+    Returns a list of aws api.
+
+    Args:
+        service_name: (str): write your description
+        methods: (str): write your description
+        context: (todo): write your description
+        region: (str): write your description
+        session: (todo): write your description
+        wait_strategy: (str): write your description
+        method_suffix: (str): write your description
+        DEFAULT_SUFFIX: (str): write your description
+        logger: (todo): write your description
+    """
     args = {
         "service_name": service_name,
     }
@@ -204,6 +233,12 @@ class WaitStrategy(object):
         self._index = 0
 
     def __iter__(self):
+        """
+        Returns an iterator over the iterable.
+
+        Args:
+            self: (todo): write your description
+        """
         return self
 
     def __next__(self):
@@ -239,6 +274,12 @@ class ConstantWaitStrategy(object):
         self.random_factor = random_factor
 
     def __iter__(self):
+        """
+        Returns an iterator over the iterable.
+
+        Args:
+            self: (todo): write your description
+        """
         return self
 
     def __next__(self):
@@ -276,6 +317,12 @@ class LinearWaitStrategy(object):
         self._val = start
 
     def __iter__(self):
+        """
+        Returns an iterator over the iterable.
+
+        Args:
+            self: (todo): write your description
+        """
         return self
 
     def __next__(self):
@@ -314,6 +361,12 @@ class MultiplyWaitStrategy(object):
         self._val = start
 
     def __iter__(self):
+        """
+        Returns an iterator over the iterable.
+
+        Args:
+            self: (todo): write your description
+        """
         return self
 
     def __next__(self):
@@ -326,10 +379,24 @@ class MultiplyWaitStrategy(object):
         return _apply_randomness(val, self.random_factor)
 
     def reset(self):
+        """
+        Reset the state.
+
+        Args:
+            self: (todo): write your description
+        """
         self._val = self.start
 
 
 def update_calls(client_or_resource, method_name, retry):
+    """
+    Updates the method calls calls.
+
+    Args:
+        client_or_resource: (todo): write your description
+        method_name: (str): write your description
+        retry: (int): write your description
+    """
     if boto_retry_stats:
         dt = datetime.fromtimestamp(time())
         full_name = "{}.{}".format(type(client_or_resource).__name__, method_name)
@@ -343,6 +410,16 @@ def update_calls(client_or_resource, method_name, retry):
 
 
 def update_retries(client_or_resource, method_name, failed, retries, timed_out):
+    """
+    Update retries. retry.
+
+    Args:
+        client_or_resource: (todo): write your description
+        method_name: (str): write your description
+        failed: (str): write your description
+        retries: (int): write your description
+        timed_out: (bool): write your description
+    """
     if boto_retry_stats:
         full_name = "{}.{}".format(type(client_or_resource).__name__, method_name)
         statistics[full_name]["retries"] += retries
@@ -351,6 +428,11 @@ def update_retries(client_or_resource, method_name, failed, retries, timed_out):
 
 
 def print_statistics():
+    """
+    Print statistics.
+
+    Args:
+    """
     if boto_retry_stats and boto_stats_output:
         for name in sorted(statistics):
             print((STATS_FORMAT.format(name, statistics[name]["calls"], statistics[name]["failed"], statistics[name]["retries"],
@@ -358,5 +440,10 @@ def print_statistics():
 
 
 def clear_statistics():
+    """
+    Clear all the statistics.
+
+    Args:
+    """
     global statistics
     statistics = {}

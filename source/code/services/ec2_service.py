@@ -289,6 +289,15 @@ class Ec2Service(AwsService):
                             service_retry_strategy=service_retry_strategy)
 
     def _transform_returned_resource(self, client, resource, use_cached_tags=False):
+        """
+        Transform the returned returned return : meth
+
+        Args:
+            self: (todo): write your description
+            client: (todo): write your description
+            resource: (todo): write your description
+            use_cached_tags: (bool): write your description
+        """
 
         if self._resource_name in [INSTANCE_ATTRIBUTE,
                                    IMAGE_ATTRIBUTE,
@@ -317,6 +326,12 @@ class Ec2Service(AwsService):
 
     @staticmethod
     def valid_instance_types(logger=None):
+        """
+        Validate ec2 instance details
+
+        Args:
+            logger: (todo): write your description
+        """
 
         # first check if the environment variable is set
         ec2_types = os.getenv(ENV_EC2_VALID_INSTANCE_TYPES, "").strip()

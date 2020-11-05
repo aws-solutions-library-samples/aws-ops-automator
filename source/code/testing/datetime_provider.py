@@ -16,6 +16,12 @@ _delta_ = timedelta()
 
 
 def set_datetime_delta(delta):
+    """
+    Set delta delta delta.
+
+    Args:
+        delta: (todo): write your description
+    """
     global _delta_
     _delta_ = delta
 
@@ -26,10 +32,24 @@ class DatetimeProvider(datetime):
 
     @classmethod
     def now(cls, tz=None):
+        """
+        Return a datetime object representing the current timezone.
+
+        Args:
+            cls: (todo): write your description
+            tz: (todo): write your description
+        """
         dt = datetime.now(tz)
         return dt + _delta_
 
     @classmethod
     def utcnow(cls, tz=None):
+        """
+        Returns a datetime.
+
+        Args:
+            cls: (todo): write your description
+            tz: (todo): write your description
+        """
         dt = datetime.utcnow()
         return dt + _delta_

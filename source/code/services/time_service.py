@@ -47,6 +47,11 @@ class TimeService(AwsService):
         """
 
         def use_tuple():
+            """
+            Return a tuple tuple.
+
+            Args:
+            """
             return (as_tuple is not None and as_tuple) or (as_tuple is None and self._as_tuple)
 
         region = kwargs.get("region")

@@ -41,16 +41,35 @@ class TestAction(unittest.TestCase):
     ec2 = None
 
     def __init__(self, method_name):
+        """
+        Initialize a service.
+
+        Args:
+            self: (todo): write your description
+            method_name: (str): write your description
+        """
         unittest.TestCase.__init__(self, method_name)
         self.created_snapshots = None
         self.account = services.get_aws_account()
 
     @classmethod
     def get_methods(cls):
+        """
+        Return a list of methods
+
+        Args:
+            cls: (todo): write your description
+        """
         return [x for x, y in list(cls.__dict__.items()) if type(y) == FunctionType and x.startswith("test_")]
 
     @classmethod
     def setUpClass(cls):
+        """
+        Set the stack class.
+
+        Args:
+            cls: (todo): write your description
+        """
         if not sys.warnoptions:
             import warnings
             warnings.simplefilter("ignore")
@@ -71,6 +90,13 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def create_resource_stack(cls, resource_stack_name):
+        """
+        Create a cloudformation.
+
+        Args:
+            cls: (todo): write your description
+            resource_stack_name: (str): write your description
+        """
         try:
             cls.logger.test("Creating test resources stack {}", resource_stack_name)
             ami = Ec2(region()).latest_aws_linux_image["ImageId"]
@@ -88,8 +114,21 @@ class TestAction(unittest.TestCase):
             return None
 
     def test_create_snapshots_all_volumes(self):
+        """
+        Test if snapshot snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         def check_snapshot(snap_id, source_volume_id):
+            """
+            Checks if a snapshot is available
+
+            Args:
+                snap_id: (str): write your description
+                source_volume_id: (str): write your description
+            """
             checked_snapshot = self.ec2.get_snapshot(snap_id)
             self.assertIsNotNone(checked_snapshot, "Snapshot does exist")
             self.logger.test("[X] Snapshot was created")
@@ -136,6 +175,13 @@ class TestAction(unittest.TestCase):
             self.logger.test("[X] Snapshot description set")
 
         def check_volume(snapshot, volume):
+            """
+            Checks if the volume has been created.
+
+            Args:
+                snapshot: (bool): write your description
+                volume: (str): write your description
+            """
             volume_tags = self.ec2.get_volume_tags(volume_id=volume)
             volume_placeholders = {create_snapshot_action.TAG_PLACEHOLDER_VOLUME_SNAPSHOT: snapshot}
             self.assertTrue(testing.tags.verify_placeholder_tags(volume_tags, volume_placeholders),
@@ -143,6 +189,11 @@ class TestAction(unittest.TestCase):
             self.logger.test("[X] Volume placeholder tags created")
 
         def check_instance():
+            """
+            Check the instance instance tags exist
+
+            Args:
+            """
             instance_tags = self.ec2.get_instance_tags(self.instance_id)
             instance_placeholders = {
                 create_snapshot_action.TAG_PLACEHOLDER_INSTANCE_SNAPSHOTS: ",".join(sorted(self.created_snapshots))}
@@ -219,6 +270,12 @@ class TestAction(unittest.TestCase):
             self.delete_snapshots()
 
     def test_create_snapshots_root_volume_only(self):
+        """
+        Create snapshot of the snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         try:
             parameters = {
@@ -246,6 +303,12 @@ class TestAction(unittest.TestCase):
             self.delete_snapshots()
 
     def test_create_snapshots_with_default_name(self):
+        """
+        Creates the snapshot of the task name
+
+        Args:
+            self: (todo): write your description
+        """
 
         try:
             parameters = {
@@ -276,6 +339,12 @@ class TestAction(unittest.TestCase):
             self.delete_snapshots()
 
     def test_create_snapshots_data_volumes_only(self):
+        """
+        Create snapshot snapshot of volumes
+
+        Args:
+            self: (todo): write your description
+        """
 
         try:
             parameters = {
@@ -304,6 +373,12 @@ class TestAction(unittest.TestCase):
             self.delete_snapshots()
 
     def test_create_snapshots_volume_with_tagfilter(self):
+        """
+        Create snapshot snapshot snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         try:
             parameters = {
@@ -337,6 +412,12 @@ class TestAction(unittest.TestCase):
             self.delete_snapshots()
 
     def delete_snapshots(self):
+        """
+        Delete the snapshot
+
+        Args:
+            self: (todo): write your description
+        """
         if len(self.created_snapshots) > 0:
             self.logger.test("Deleting created snapshots {}", ",".join(self.created_snapshots))
         # noinspection PyBroadException,PyPep8
@@ -348,6 +429,12 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """
+        Tear down the context manager.
+
+        Args:
+            cls: (todo): write your description
+        """
 
         if cls.resource_stack is not None and not KEEP_AND_USE_EXISTING_RESOURCES_STACK:
             cls.resource_stack.delete_stack()
@@ -356,9 +443,21 @@ class TestAction(unittest.TestCase):
             cls.task_runner.cleanup(KEEP_AND_USE_EXISTING_ACTION_STACK)
 
     def setUp(self):
+        """
+        Sets the set of the current session.
+
+        Args:
+            self: (todo): write your description
+        """
         self.created_snapshots = []
 
     def tearDown(self):
+        """
+        Tear down the next callable.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
 

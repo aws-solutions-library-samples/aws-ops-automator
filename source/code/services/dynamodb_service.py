@@ -71,6 +71,11 @@ class DynamodbService(AwsService):
 
     @staticmethod
     def is_regional():
+        """
+        Determine if a regional regional object
+
+        Args:
+        """
         return True
 
     def describe_resources_function_name(self, resource_name):

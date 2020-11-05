@@ -150,6 +150,11 @@ class S3Service(AwsService):
 
     @staticmethod
     def is_regional():
+        """
+        Determine if a regional is a callable.
+
+        Args:
+        """
         return False
 
     def _map_describe_function_parameters(self, resources, args):
@@ -169,18 +174,41 @@ class S3Service(AwsService):
         return AwsService._map_describe_function_parameters(self, resources, translated_args)
 
     def _next_token_argument_name(self, resources):
+        """
+        Returns the name of the argument. argument.
+
+        Args:
+            self: (todo): write your description
+            resources: (todo): write your description
+        """
         if resources in self._continuation_data:
             return self._continuation_data[resources][0]
         else:
             return AwsService._next_token_argument_name(self, resources)
 
     def _next_token_result_name(self, resources):
+        """
+        Returns the next token name.
+
+        Args:
+            self: (todo): write your description
+            resources: (todo): write your description
+        """
         if resources in self._continuation_data:
             return self._continuation_data[resources][1]
         else:
             return AwsService._next_token_result_name(self, resources)
 
     def _transform_returned_resource(self, client, resource, use_cached_tags=False):
+        """
+        Transform a named resource
+
+        Args:
+            self: (todo): write your description
+            client: (todo): write your description
+            resource: (todo): write your description
+            use_cached_tags: (bool): write your description
+        """
         name = ""
         data = ""
         if self._resource_name == OBJECT_VERSIONS:
@@ -228,9 +256,24 @@ class S3Service(AwsService):
 
     @staticmethod
     def use_cached_tags(resource, tags_to_retrieve):
+        """
+        Use this function to cache a list of a resource.
+
+        Args:
+            resource: (todo): write your description
+            tags_to_retrieve: (bool): write your description
+        """
         return resource == BUCKETS and tags_to_retrieve > 10
 
     def _get_tags_for_resource(self, client, resource):
+        """
+        Returns a list of the tags for the given resource.
+
+        Args:
+            self: (todo): write your description
+            client: (todo): write your description
+            resource: (str): write your description
+        """
         if self._use_cached_tags:
             arn = "arn:aws:s3:::{}".format(resource["Name"])
             return self.cached_tags(resource_name="").get(arn)

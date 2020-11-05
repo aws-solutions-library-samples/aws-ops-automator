@@ -290,6 +290,11 @@ def get_module_for_handler(handler_name):
 
 
 def all_handlers():
+    """
+    Return a list handlers.
+
+    Args:
+    """
     global __actions
     if __actions is None:
         __actions = []
@@ -401,6 +406,15 @@ def set_scheduler_rule_every_minute(task=None, context=None):
 
 
 def set_event_for_time(next_time, task=None, logger=None, context=None):
+    """
+    Sets the event time.
+
+    Args:
+        next_time: (todo): write your description
+        task: (todo): write your description
+        logger: (todo): write your description
+        context: (todo): write your description
+    """
     next_event_time = next_time - timedelta(minutes=4)
     if logger is not None:
         logger.info(INF_NEXT_EVENT, next_time, next_event_time)
@@ -455,6 +469,12 @@ def _set_scheduler_cloudwatch_rule_expression(expression, context=None, task=Non
 
 
 def running_local(context):
+    """
+    Return the local local context.
+
+    Args:
+        context: (todo): write your description
+    """
     return context is None or getattr(context, "run_local", False)
 
 
@@ -471,9 +491,21 @@ def run_as_ecs_job(args, ecs_memory_size, context=None, logger=None):
     start_task_timeout = 300
 
     def timed_out_no_context(next_wait):
+        """
+        Return the number of the next callable.
+
+        Args:
+            next_wait: (todo): write your description
+        """
         return (time.time() - start_time) > (start_task_timeout - next_wait)
 
     def timed_out_by_lambda_timeout(next_wait):
+        """
+        Returns true if the given function returns false otherwise.
+
+        Args:
+            next_wait: (bool): write your description
+        """
         if context is None:
             return False
 
@@ -541,6 +573,13 @@ def run_as_ecs_job(args, ecs_memory_size, context=None, logger=None):
 
 
 def get_item_resource_data(item, context):
+    """
+    Get the data for a given item.
+
+    Args:
+        item: (todo): write your description
+        context: (todo): write your description
+    """
     global _kms_client
     resource_data = item.get(TASK_TR_RESOURCES, "{}")
 
@@ -548,15 +587,36 @@ def get_item_resource_data(item, context):
 
 
 def default_rolename_for_stack():
+    """
+    Return the default stack stack.
+
+    Args:
+    """
     return DEFAULT_ACCOUNT_ROLENAME.format(os.getenv(ENV_STACK_NAME))
 
 
 def log_to_debug(logger, msg, *args):
+    """
+    Convenience function to stderr.
+
+    Args:
+        logger: (todo): write your description
+        msg: (str): write your description
+    """
     if logger is not None:
         logger.debug(msg, *args)
 
 
 def get_task_session(account, task, this_account=False, logger=None):
+    """
+    Return the service session
+
+    Args:
+        account: (str): write your description
+        task: (str): write your description
+        this_account: (str): write your description
+        logger: (todo): write your description
+    """
     log_to_debug(logger, "Getting session for account \"{}\", task is \"{}\"", account, task[TASK_NAME])
 
     role_arn = get_account_role(account, task, logger=logger)
@@ -570,7 +630,22 @@ def get_task_session(account, task, this_account=False, logger=None):
 
 
 def get_account_role(account, task, logger=None, param_name=None):
+    """
+    Return the role for the role.
+
+    Args:
+        account: (todo): write your description
+        task: (dict): write your description
+        logger: (todo): write your description
+        param_name: (str): write your description
+    """
     def build_arn(role):
+        """
+        Build an arn. txt object.
+
+        Args:
+            role: (str): write your description
+        """
         if role is None:
             arn = None
         else:

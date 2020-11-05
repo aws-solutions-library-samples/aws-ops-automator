@@ -18,6 +18,12 @@ from scheduling.month_setbuilder import MonthSetBuilder
 
 class TestMonthSetBuilder(unittest.TestCase):
     def test_name(self):
+        """
+        Set the name of the calendar.
+
+        Args:
+            self: (todo): write your description
+        """
         # abbreviations
         for i, name in enumerate(calendar.month_abbr[1:]):
             self.assertEqual(MonthSetBuilder().build(name), {i + 1})
@@ -31,5 +37,11 @@ class TestMonthSetBuilder(unittest.TestCase):
             self.assertEqual(MonthSetBuilder().build(name.upper()), {i + 1})
 
     def test_value(self):
+        """
+        Set the test value.
+
+        Args:
+            self: (todo): write your description
+        """
         for i in range(1, 12):
             self.assertEqual(MonthSetBuilder().build(str(i)), {i})

@@ -32,6 +32,14 @@ LOG_STREAM = "{}-{:0>4d}{:0>2d}{:0>2d}"
 
 class ConfigurationResourceHandler(CustomResource):
     def __init__(self, event, context):
+        """
+        Initialize the event.
+
+        Args:
+            self: (todo): write your description
+            event: (todo): write your description
+            context: (str): write your description
+        """
         CustomResource.__init__(self, event, context)
 
         self.arguments = copy(self.resource_properties)
@@ -45,9 +53,23 @@ class ConfigurationResourceHandler(CustomResource):
 
     @classmethod
     def is_handling_request(cls, event, _):
+        """
+        Determine if event is_handling request.
+
+        Args:
+            cls: (todo): write your description
+            event: (dict): write your description
+            _: (todo): write your description
+        """
         return event.get("StackId") is not None and event.get("ResourceType") == "Custom::TaskConfig"
 
     def handle_request(self):
+        """
+        Handles the request
+
+        Args:
+            self: (todo): write your description
+        """
 
         start = datetime.now()
 
@@ -66,6 +88,12 @@ class ConfigurationResourceHandler(CustomResource):
             self._logger.flush()
 
     def _create_request(self):
+        """
+        Creates request
+
+        Args:
+            self: (todo): write your description
+        """
 
         name = self.resource_properties[CONFIG_TASK_NAME]
         try:
@@ -81,6 +109,12 @@ class ConfigurationResourceHandler(CustomResource):
             return False
 
     def _update_request(self):
+        """
+        Updates the physical physical resource
+
+        Args:
+            self: (todo): write your description
+        """
 
         self._logger.info("Updating Task resource")
         name = self.resource_properties.get(CONFIG_TASK_NAME)
@@ -106,6 +140,12 @@ class ConfigurationResourceHandler(CustomResource):
             return False
 
     def _delete_request(self):
+        """
+        Deletes resource request.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self._logger.info("Deleting Task resource")
         name = self.resource_properties.get(CONFIG_TASK_NAME)

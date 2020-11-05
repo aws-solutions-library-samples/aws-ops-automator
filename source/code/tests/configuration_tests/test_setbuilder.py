@@ -24,6 +24,12 @@ all_items = set([index for index in range(0, len(names))])
 # noinspection PyTypeChecker
 class TestSetBuilder(unittest.TestCase):
     def test_name(self):
+        """
+        Build a name of the test.
+
+        Args:
+            self: (todo): write your description
+        """
         # names 1 char
         for i, name in enumerate(names):
             self.assertEqual(SetBuilder(names=names).build(name), {i})
@@ -55,6 +61,12 @@ class TestSetBuilder(unittest.TestCase):
         self.assertEqual(SetBuilder(names=names).build(names), all_items)
 
     def test_value(self):
+        """
+        Set the test value
+
+        Args:
+            self: (todo): write your description
+        """
         # all by value
         for value in range(0, len(names)):
             self.assertEqual(SetBuilder(names=names).build(str(value)), {value})
@@ -64,11 +76,23 @@ class TestSetBuilder(unittest.TestCase):
             self.assertEqual(SetBuilder(names=names, offset=1).build(str(value)), {value})
 
     def test_min_max(self):
+        """
+        Set the min / max value.
+
+        Args:
+            self: (todo): write your description
+        """
         # builder initialized by min and max values
         for i in range(0, 5):
             self.assertEqual(SetBuilder(min_value=0, max_value=4).build(str(i)), {i})
 
     def test_wildcards(self):
+        """
+        Test for all wildcards.
+
+        Args:
+            self: (todo): write your description
+        """
         # all items using standard and custom wildcard
         self.assertEqual(SetBuilder(names).build("*"), all_items)
         self.assertEqual(SetBuilder(names).build("?"), all_items)
@@ -89,12 +113,24 @@ class TestSetBuilder(unittest.TestCase):
         self.assertEqual(SetBuilder(names).build("^-$"), all_items)
 
     def test_multiple(self):
+        """
+        Generate all the test sets of all elements in - place
+
+        Args:
+            self: (todo): write your description
+        """
         # comma separated list of names
         self.assertEqual(SetBuilder(names).build(",".join(names)), all_items)
         # comma separated list of values
         self.assertEqual(SetBuilder(names).build(",".join([str(i) for i in range(0, len(names))])), all_items)
 
     def test_ranges(self):
+        """
+        Create a set of ranges.
+
+        Args:
+            self: (todo): write your description
+        """
         # name range
         self.assertEqual(SetBuilder(names).build(names[0] + "-" + names[2]), {0, 1, 2})
         # name ranges no overlap
@@ -118,6 +154,12 @@ class TestSetBuilder(unittest.TestCase):
         self.assertRaises(ValueError, SetBuilder(names, wrap=False).build, "2-1")
 
     def test_increments(self):
+        """
+        Create the number of the test sets.
+
+        Args:
+            self: (todo): write your description
+        """
         # increments on start name and value
         self.assertEqual(SetBuilder(names).build(names[0] + "/5"), {i for i in list(range(0, len(names), 5))})
         self.assertEqual(SetBuilder(names).build("0/3"), {i for i in list(range(0, len(names), 3))})
@@ -135,6 +177,12 @@ class TestSetBuilder(unittest.TestCase):
         self.assertRaises(ValueError, SetBuilder(names, wrap=False).build, 10 - 5 / 5)
 
     def test_unknown_values(self):
+        """
+        Returns a set of unknown values in this set.
+
+        Args:
+            self: (todo): write your description
+        """
         # unknown name raises error
         with self.assertRaises(ValueError):
             SetBuilder(names).build("##")
@@ -146,19 +194,46 @@ class TestSetBuilder(unittest.TestCase):
         # this class has a handler for handling unknown items
         class SetBuilderWithHandler(SetBuilder):
             def _parse_unknown(self, s):
+                """
+                Parse a unknown type.
+
+                Args:
+                    self: (todo): write your description
+                    s: (todo): write your description
+                """
                 return [] if s == "" else None
 
         self.assertEqual(SetBuilderWithHandler(names).build(""), set())
         self.assertRaises(ValueError, SetBuilderWithHandler(names).build, "unknown")
 
     def test_custom_parsers(self):
+        """
+        Initialize custom custom custom custom parsers.
+
+        Args:
+            self: (todo): write your description
+        """
         class SetBuilderWithCustomPreParser(SetBuilder):
             def __init__(self, value_names):
+                """
+                Initialize custom custom settings.
+
+                Args:
+                    self: (todo): write your description
+                    value_names: (str): write your description
+                """
                 SetBuilder.__init__(self, names=value_names)
                 self._pre_custom_parsers = [self._pre_parser]
 
             # noinspection PyMethodMayBeStatic
             def _pre_parser(self, s):
+                """
+                Pre_pre_parser
+
+                Args:
+                    self: (todo): write your description
+                    s: (todo): write your description
+                """
                 if s == "###":
                     return [0]
 
@@ -167,11 +242,25 @@ class TestSetBuilder(unittest.TestCase):
         class SetBuilderWithCustomPostParser(SetBuilder):
 
             def __init__(self, nm):
+                """
+                Do some setup after initialisation.
+
+                Args:
+                    self: (todo): write your description
+                    nm: (int): write your description
+                """
                 SetBuilder.__init__(self, names=nm)
                 self._post_custom_parsers = [self._post_parser]
 
             # noinspection PyMethodMayBeStatic
             def _post_parser(self, s):
+                """
+                Parse the parser.
+
+                Args:
+                    self: (todo): write your description
+                    s: (todo): write your description
+                """
                 if s == "!!!":
                     return [1]
 
@@ -179,22 +268,49 @@ class TestSetBuilder(unittest.TestCase):
 
         class SetBuilderWithCustomParsers(SetBuilder):
             def __init__(self, nm):
+                """
+                Initialize the parser.
+
+                Args:
+                    self: (todo): write your description
+                    nm: (int): write your description
+                """
                 SetBuilder.__init__(self, names=nm)
                 self._post_custom_parsers = [self._pre_parser, self._post_parser]
 
             # noinspection PyMethodMayBeStatic
             def _pre_parser(self, s):
+                """
+                Parse a parser.
+
+                Args:
+                    self: (todo): write your description
+                    s: (todo): write your description
+                """
                 if s == "###":
                     return [99]
 
             # noinspection PyMethodMayBeStatic
             def _post_parser(self, s):
+                """
+                Parse a parser.
+
+                Args:
+                    self: (todo): write your description
+                    s: (todo): write your description
+                """
                 if s == "!!!":
                     return [100]
 
         self.assertEqual(SetBuilderWithCustomParsers(names).build("###,!!!," + names[0]), {0, 99, 100})
 
     def test_set_str(self):
+        """
+        Generate a string representation of set.
+
+        Args:
+            self: (todo): write your description
+        """
         sep_item = ", "
         sep_range = "-"
         sb = SetBuilder(names)
@@ -210,6 +326,12 @@ class TestSetBuilder(unittest.TestCase):
         self.assertEqual(sb.str({0, 1, 3, 4}), names[0] + sep_range + names[1] + sep_item + names[3] + sep_range + names[4])
 
     def test_exceptions(self):
+        """
+        Return a list of all the possible possible.
+
+        Args:
+            self: (todo): write your description
+        """
         # build with invalid param types, must be string or string list
         self.assertRaises(ValueError, SetBuilder(names=names).build, None)
         self.assertRaises(ValueError, SetBuilder(names=names).build, 1)

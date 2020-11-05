@@ -40,6 +40,19 @@ class TaskTestRunner(object):
 
     def __init__(self, action_name, tested_region=None, test_region=None, action_stack_name=None, logger=None,
                  task_list_tag_name=None, debug=False):
+        """
+        Initialize the action object.
+
+        Args:
+            self: (todo): write your description
+            action_name: (str): write your description
+            tested_region: (todo): write your description
+            test_region: (str): write your description
+            action_stack_name: (str): write your description
+            logger: (todo): write your description
+            task_list_tag_name: (str): write your description
+            debug: (bool): write your description
+        """
 
         self.debug = debug
         self.logger = logger if logger is not None else ConsoleLogger(debug=self.debug)
@@ -101,6 +114,12 @@ class TaskTestRunner(object):
 
     @property
     def action_stack_template(self):
+        """
+        Return the stack stack stack.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._action_stack_template is None:
 
             self._action_stack_template = copy.deepcopy(testing.TEMPLATE)
@@ -121,6 +140,12 @@ class TaskTestRunner(object):
 
     @property
     def tested_account(self):
+        """
+        The role.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._tested_account is None:
             if self._assumed_role not in [None, ""]:
                 self._tested_account = self._assumed_role = services.account_from_role_arn(self._assumed_role)
@@ -130,12 +155,24 @@ class TaskTestRunner(object):
 
     @property
     def action_stack(self):
+        """
+        The action stack.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._action_stack is None:
             self._ensure_action_stack()
         return self._action_stack
 
     @property
     def action_stack_resources(self):
+        """
+        Get the stack resources of this stack.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._action_stack_resources is None:
 
             self._action_stack_resources = {}
@@ -165,6 +202,12 @@ class TaskTestRunner(object):
         return self._action_stack_resources
 
     def _build_config_item(self):
+        """
+        Builds a configuration item
+
+        Args:
+            self: (todo): write your description
+        """
 
         item = {
             configuration.CONFIG_ACTION_NAME: self.action_name,
@@ -200,6 +243,12 @@ class TaskTestRunner(object):
         return item
 
     def _build_tasks_for_selected_resources(self):
+        """
+        Build tasks for each of the task.
+
+        Args:
+            self: (todo): write your description
+        """
         try:
 
             configured_task = configuration.task_configuration.TaskConfiguration(self.context, self.logger) \
@@ -226,6 +275,12 @@ class TaskTestRunner(object):
             raise ex
 
     def _get_tasks_to_execute(self):
+        """
+        Execute actions.
+
+        Args:
+            self: (todo): write your description
+        """
 
         task_items = self._build_tasks_for_selected_resources()
 
@@ -267,6 +322,14 @@ class TaskTestRunner(object):
             yield action_instance
 
     def verify_concurrency(self, action_argument, item):
+        """
+        Verify the conversion of the given action.
+
+        Args:
+            self: (todo): write your description
+            action_argument: (todo): write your description
+            item: (todo): write your description
+        """
         concurrency_key_method = getattr(self.action_class, handlers.ACTION_CONCURRENCY_KEY_METHOD, None)
         # prepare parameters for calling static function that returns the concurrency key
         if concurrency_key_method is not None:
@@ -300,6 +363,13 @@ class TaskTestRunner(object):
         self.max_concurrency = max_action_concurrency
 
     def verify_log_subject(self, action_argument):
+        """
+        Verify that the subject matches of the same arguments.
+
+        Args:
+            self: (todo): write your description
+            action_argument: (todo): write your description
+        """
         if callable(getattr(self.action_class, "action_logging_subject", None)):
             # noinspection PyBroadException,PyPep8
             try:
@@ -311,10 +381,32 @@ class TaskTestRunner(object):
             self.log_subject = action_log_subject
 
     def _add_action_stack_resources_to_action_stack_template(self):
+        """
+        Add a stack stack stack stack stack
+
+        Args:
+            self: (todo): write your description
+        """
 
         def fix_resource_references(resources, old, new):
+            """
+            Replace references in old_name.
+
+            Args:
+                resources: (todo): write your description
+                old: (str): write your description
+                new: (str): write your description
+            """
 
             def update_list(l, old_name, new_name):
+                """
+                Update a list with new_name.
+
+                Args:
+                    l: (int): write your description
+                    old_name: (str): write your description
+                    new_name: (str): write your description
+                """
                 for item in l:
                     if isinstance(item, dict):
                         fix_resource_references(item, old_name, new_name)
@@ -369,8 +461,21 @@ class TaskTestRunner(object):
                 action_statement.append(stack_resource_permissions)
 
     def _add_actions_permissions_to_action_stack_template(self):
+        """
+        Add actions to actions actions to actions.
+
+        Args:
+            self: (todo): write your description
+        """
 
         def build_action_policy_statement(action_name, added_action_permissions):
+            """
+            Build an action statements for the given action.
+
+            Args:
+                action_name: (str): write your description
+                added_action_permissions: (todo): write your description
+            """
             statements = []
 
             if len(added_action_permissions) > 0:
@@ -383,6 +488,12 @@ class TaskTestRunner(object):
             return statements
 
         def action_select_resources_permissions(action_prop):
+            """
+            Return the action permissions for the given action
+
+            Args:
+                action_prop: (str): write your description
+            """
             return services.get_resource_describe_permissions(action_prop[actions.ACTION_SERVICE],
                                                               [action_prop[actions.ACTION_RESOURCES]])
 
@@ -401,6 +512,12 @@ class TaskTestRunner(object):
         action_statement += build_action_policy_statement("ActionPermissions", required_actions)
 
     def _ensure_action_stack(self):
+        """
+        Ensure cloudformation stack exists.
+
+        Args:
+            self: (todo): write your description
+        """
 
         if self.action_stack_template == {}:
             return
@@ -426,6 +543,23 @@ class TaskTestRunner(object):
             action_select_params=None,
             debug=False,
             run_after_select=None):
+        """
+        Run the task.
+
+        Args:
+            self: (todo): write your description
+            parameters: (dict): write your description
+            complete_check_polling_interval: (bool): write your description
+            task_timeout: (int): write your description
+            task_name: (str): write your description
+            datetime_delta: (todo): write your description
+            events: (todo): write your description
+            tag_filter: (str): write your description
+            run_in_regions: (int): write your description
+            action_select_params: (str): write your description
+            debug: (bool): write your description
+            run_after_select: (todo): write your description
+        """
 
         self.results = []
         self.executed_tasks = []
@@ -510,9 +644,22 @@ class TaskTestRunner(object):
         return self.results
 
     def create_stack(self):
+        """
+        Creates a stack.
+
+        Args:
+            self: (todo): write your description
+        """
         self._ensure_action_stack()
 
     def cleanup(self, keep_action_stack=False):
+        """
+        Cleans up the state.
+
+        Args:
+            self: (todo): write your description
+            keep_action_stack: (bool): write your description
+        """
         # noinspection PyBroadException,PyPep8
         try:
             if self._action_stack is not None:
@@ -523,6 +670,14 @@ class TaskTestRunner(object):
             pass
 
     def success(self, expected_executed_tasks=None, results=None):
+        """
+        Returns true if the given expected by the expected result.
+
+        Args:
+            self: (todo): write your description
+            expected_executed_tasks: (todo): write your description
+            results: (dict): write your description
+        """
         checked_results = results if results is not None else self.results
         if expected_executed_tasks is not None and expected_executed_tasks != len(checked_results):
             return False

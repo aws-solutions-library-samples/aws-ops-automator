@@ -19,4 +19,10 @@ class MinuteSetBuilder(SetBuilder):
     """
 
     def __init__(self):
+        """
+        Initialize the internal state.
+
+        Args:
+            self: (todo): write your description
+        """
         SetBuilder.__init__(self, min_value=0, max_value=59, wrap=False)

@@ -44,6 +44,11 @@ LOG_STREAM = "{}-{:0>4d}{:0>2d}{:0>2d}"
 
 # load models for services that have not have their latest models deployed to Lambda
 def load_models():
+    """
+    Load all models.
+
+    Args:
+    """
     cdw = os.getcwd()
     models = os.path.join(cdw, "models")
     aws_data_path = os.getenv("AWS_DATA_PATH", None)
@@ -60,16 +65,36 @@ load_models()
 class EcsTaskContext(object):
 
     def __init__(self, timeout_seconds):
+        """
+        Initialize the function.
+
+        Args:
+            self: (todo): write your description
+            timeout_seconds: (int): write your description
+        """
         self._started = time.time()
         self._timeout = timeout_seconds
         self.run_local = False
         self.function_name = "ECS"
 
     def get_remaining_time_in_millis(self):
+        """
+        Returns the number of remaining remaining remaining remaining in the future.
+
+        Args:
+            self: (todo): write your description
+        """
         return max(self._timeout - (time.time() - self._started), 0) * 1000
 
 
 def lambda_handler(event, context):
+    """
+    Main handler.
+
+    Args:
+        event: (todo): write your description
+        context: (dict): write your description
+    """
     dt = datetime.utcnow()
     log_stream_name = LOG_STREAM.format("OpsAutomatorMain", dt.year, dt.month, dt.day)
 
@@ -105,6 +130,11 @@ def lambda_handler(event, context):
 
 
 def ecs_handler(args):
+    """
+    Handler for ec2 event handler.
+
+    Args:
+    """
     dt = datetime.utcnow()
     log_stream = LOG_STREAM.format("OpsAutomatorMainEcs", dt.year, dt.month, dt.day)
 

@@ -21,6 +21,17 @@ class Ec2ServiceRetry(AwsApiServiceRetry):
     """
 
     def __init__(self, context=None, logger=None, timeout=None, wait_strategy=None, lambda_time_out_margin=10):
+        """
+        Initialize volume.
+
+        Args:
+            self: (todo): write your description
+            context: (str): write your description
+            logger: (todo): write your description
+            timeout: (int): write your description
+            wait_strategy: (todo): write your description
+            lambda_time_out_margin: (float): write your description
+        """
         AwsApiServiceRetry.__init__(
             self,
             call_retry_strategies=None,

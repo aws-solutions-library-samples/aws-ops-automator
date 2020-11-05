@@ -18,6 +18,12 @@ from scheduling.weekday_setbuilder import WeekdaySetBuilder
 
 class TestMonthdaySetBuilder(unittest.TestCase):
     def test_name(self):
+        """
+        Return the name of the calendar.
+
+        Args:
+            self: (todo): write your description
+        """
         for i, day_name in enumerate(calendar.day_abbr):
             self.assertEqual(WeekdaySetBuilder().build(day_name), {i})
 
@@ -25,10 +31,22 @@ class TestMonthdaySetBuilder(unittest.TestCase):
             self.assertEqual(WeekdaySetBuilder().build(day_name), {i})
 
     def test_value(self):
+        """
+        Set the test value.
+
+        Args:
+            self: (todo): write your description
+        """
         for i in range(0, len(calendar.day_abbr) - 1):
             self.assertEqual(WeekdaySetBuilder().build(str(i)), {i})
 
     def test_L_wildcard(self):
+        """
+        Build a l - day of - related year.
+
+        Args:
+            self: (todo): write your description
+        """
 
         for year in [2016, 2017]:
             for month in range(1, 13):
@@ -63,6 +81,12 @@ class TestMonthdaySetBuilder(unittest.TestCase):
                     weekday = (weekday + 1) % 7
 
     def test_weekday_numbered(self):
+        """
+        Calculate the weekday of the given year.
+
+        Args:
+            self: (todo): write your description
+        """
 
         for year in [2016, 2017]:
             for month in range(1, 13):
@@ -95,6 +119,12 @@ class TestMonthdaySetBuilder(unittest.TestCase):
                     weekday = (weekday + 1) % 7
 
     def test_exceptions(self):
+        """
+        Set the day of the day for each day.
+
+        Args:
+            self: (todo): write your description
+        """
         # L needs year, month and days params
         self.assertRaises(ValueError, WeekdaySetBuilder().build, "1L")
         self.assertRaises(ValueError, WeekdaySetBuilder(year=2016, month=10, day=4).build, "0#6")

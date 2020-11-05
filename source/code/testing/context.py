@@ -23,6 +23,14 @@ DEFAULT_TIMEOUT = 300
 
 class Context(object):
     def __init__(self, timeout_seconds=DEFAULT_TIMEOUT):
+        """
+        Initialize the environment.
+
+        Args:
+            self: (todo): write your description
+            timeout_seconds: (int): write your description
+            DEFAULT_TIMEOUT: (int): write your description
+        """
         self._started = time.time()
         self._timeout = timeout_seconds
 
@@ -37,4 +45,10 @@ class Context(object):
                                                                          lambda_function)
 
     def get_remaining_time_in_millis(self):
+        """
+        Returns the number of remaining remaining remaining remaining in the future.
+
+        Args:
+            self: (todo): write your description
+        """
         return max(self._timeout - (time.time() - self._started), 0) * 1000

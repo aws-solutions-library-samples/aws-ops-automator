@@ -29,22 +29,49 @@ MAX_SIZE = 262143
 class ResultNotifications(object):
 
     def __init__(self, context, logger):
+        """
+        Initialize the context.
+
+        Args:
+            self: (todo): write your description
+            context: (str): write your description
+            logger: (todo): write your description
+        """
         self._sns_client = None
         self._context = context
         self._logger = logger
 
     @property
     def sns_client(self):
+        """
+        Return an sns client.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._sns_client is None:
             self._sns_client = get_client_with_retries("sns", methods=["publish"], context=self._context)
         return self._sns_client
 
     @property
     def topic_arn(self):
+        """
+        Return the environment variable.
+
+        Args:
+            self: (todo): write your description
+        """
         return os.getenv(ENV_RESULT_TOPIC, None)
 
     @classmethod
     def _build_common_attributes(cls, task):
+        """
+        Builds a dictionary of common attributes.
+
+        Args:
+            cls: (todo): write your description
+            task: (dict): write your description
+        """
         message = {a: task.get(a, "") for a in [
             handlers.TASK_TR_ID,
             handlers.TASK_TR_NAME,
@@ -58,9 +85,23 @@ class ResultNotifications(object):
         return message
 
     def _publish(self, message):
+        """
+        Publish a message.
+
+        Args:
+            self: (todo): write your description
+            message: (str): write your description
+        """
         self.sns_client.publish_with_retries(TopicArn=self.topic_arn, Message=safe_json(message)[0:MAX_SIZE])
 
     def publish_started(self, task):
+        """
+        Publish a message.
+
+        Args:
+            self: (todo): write your description
+            task: (dict): write your description
+        """
         try:
             if task.get(handlers.TASK_TR_NOTIFICATIONS, False):
                 message = self._build_common_attributes(task)
@@ -70,6 +111,13 @@ class ResultNotifications(object):
             self._logger.error(ERR_SEND_NOTIFICATION, self.topic_arn, ex)
 
     def publish_ended(self, task):
+        """
+        Publish a message.
+
+        Args:
+            self: (todo): write your description
+            task: (dict): write your description
+        """
         try:
             if task.get(handlers.TASK_TR_NOTIFICATIONS, False):
                 message = self._build_common_attributes(task)

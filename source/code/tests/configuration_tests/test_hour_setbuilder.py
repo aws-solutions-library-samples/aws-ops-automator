@@ -17,6 +17,12 @@ from scheduling.hour_setbuilder import HourSetBuilder
 
 class TestHourSetBuilder(unittest.TestCase):
     def test_name(self):
+        """
+        Set the name of the environment.
+
+        Args:
+            self: (todo): write your description
+        """
         for i in range(0, 24):
             self.assertEqual(HourSetBuilder().build(str(i)), {i})
 
@@ -32,6 +38,12 @@ class TestHourSetBuilder(unittest.TestCase):
         self.assertEqual(HourSetBuilder().build("12pm"), {12})
 
     def test_exceptions(self):
+        """
+        Assigns the test results.
+
+        Args:
+            self: (todo): write your description
+        """
         for h in range(13, 25):
             self.assertRaises(ValueError, HourSetBuilder().build, (str(h) + "PM"))
             self.assertRaises(ValueError, HourSetBuilder().build, "PM")

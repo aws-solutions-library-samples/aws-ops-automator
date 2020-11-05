@@ -27,6 +27,14 @@ from tagging.tag_filter_expression import TagFilterExpression
 class Ec2(object):
 
     def __init__(self, region=None, session=None):
+        """
+        Initialize aws ec2 ec2 service.
+
+        Args:
+            self: (todo): write your description
+            region: (str): write your description
+            session: (todo): write your description
+        """
         self.region = region if region is not None else boto3.Session().region_name
         self.session = session if session is not None else boto3.Session(region_name=self.region)
         self.ec2_client = self.session.client("ec2", region_name=self.region)
@@ -37,7 +45,20 @@ class Ec2(object):
 
     @property
     def latest_aws_linux_image(self):
+        """
+        Compute the aws aws aws aws aws image.
+
+        Args:
+            self: (todo): write your description
+        """
         def compare_date(a,b):
+            """
+            Compares two datetime objects.
+
+            Args:
+                a: (todo): write your description
+                b: (todo): write your description
+            """
             return int(
                 (dateutil.parser.parse(a["CreationDate"]) - dateutil.parser.parse(b["CreationDate"])).total_seconds()
                 )
@@ -69,7 +90,20 @@ class Ec2(object):
 
     @property
     def latest_aws_windows_core_image(self):
+        """
+        Latest image image image
+
+        Args:
+            self: (todo): write your description
+        """
         def compare_date(a,b):
+            """
+            Compares two datetime objects.
+
+            Args:
+                a: (todo): write your description
+                b: (todo): write your description
+            """
             return int(
                 (dateutil.parser.parse(a["CreationDate"]) - dateutil.parser.parse(b["CreationDate"])).total_seconds()
                 )
@@ -100,12 +134,25 @@ class Ec2(object):
         return self._latest_aws_image
 
     def get_default_vpc(self):
+        """
+        Returns the default vpc if it.
+
+        Args:
+            self: (todo): write your description
+        """
         vpcs = [v for v in self.ec2_service.describe(services.ec2_service.VPCS) if v["IsDefault"]]
         if len(vpcs) != 0:
             return vpcs[0]
         return None
 
     def get_instance(self, instance_id):
+        """
+        Returns an ec2 instance.
+
+        Args:
+            self: (str): write your description
+            instance_id: (str): write your description
+        """
         # noinspection PyBroadException,PyPep8
         try:
             return self.ec2_service.get(services.ec2_service.INSTANCES,
@@ -115,17 +162,46 @@ class Ec2(object):
             return None
 
     def get_instance_tags(self, instance_id):
+        """
+        Retrieves an instance.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+        """
         return self.get_resource_tags("instance", instance_id)
 
     def get_instance_status(self, instance_id):
+        """
+        Return the status of an instance.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+        """
         instance = self.get_instance(instance_id)
         assert (instance is not None)
         return instance["State"]["Name"]
 
     def restore_instance_tags(self, instance_id, tags):
+        """
+        Restore an instance of an instance.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            tags: (list): write your description
+        """
         self.restore_resource_tags(resource_id=instance_id, resource_type="instance", tags=tags)
 
     def get_root_volume(self, instance_id):
+        """
+        Returns the root volume.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+        """
         instance = self.get_instance(instance_id)
         root_device = instance["RootDeviceName"]
         root_volume = None
@@ -138,6 +214,14 @@ class Ec2(object):
         return root_volume
 
     def get_resource_tags(self, resource_type, resource_id):
+        """
+        Get all tags of the specified resource type.
+
+        Args:
+            self: (todo): write your description
+            resource_type: (str): write your description
+            resource_id: (str): write your description
+        """
         response = self.ec2_client.describe_tags(Filters=[
             {
                 "Name": "resource-type",
@@ -152,32 +236,90 @@ class Ec2(object):
 
     @classmethod
     def is_exception_with_code(cls, ex, code):
+        """
+        Returns if the exception is an exception.
+
+        Args:
+            cls: (callable): write your description
+            ex: (todo): write your description
+            code: (str): write your description
+        """
         return getattr(ex, "response", {}).get("Error", {}).get("Code", "") == code
 
     @classmethod
     def snapshot_not_found(cls, ex):
+        """
+        Returns a snapshot of the given exception.
+
+        Args:
+            cls: (todo): write your description
+            ex: (str): write your description
+        """
         return cls.is_exception_with_code(ex, "InvalidSnapshot.NotFound")
 
     @classmethod
     def snapshot_creation_per_volume_rate_exceeded(cls, ex):
+        """
+        Returns a snapshot snapshot of a snapshot that snapshot.
+
+        Args:
+            cls: (todo): write your description
+            ex: (todo): write your description
+        """
         return cls.is_exception_with_code(ex, "SnapshotCreationPerVolumeRateExceeded")
 
     @classmethod
     def snapshot_request_limit_exceeded(cls, ex):
+        """
+        Return a snapshot of a snapshot.
+
+        Args:
+            cls: (todo): write your description
+            ex: (todo): write your description
+        """
         return cls.is_exception_with_code(ex, "RequestLimitExceeded")
 
     @classmethod
     def image_not_found(cls, ex):
+        """
+        Return a : class : class is not found.
+
+        Args:
+            cls: (todo): write your description
+            ex: (todo): write your description
+        """
         return cls.is_exception_with_code(ex, "InvalidAMIID.NotFound")
 
     @classmethod
     def image_not_available(cls, ex):
+        """
+        Return a list of all available image class.
+
+        Args:
+            cls: (todo): write your description
+            ex: (todo): write your description
+        """
         return cls.is_exception_with_code(ex, "InvalidAMIID.Unavailable")
 
     def restore_volume_tags(self, image_id, tags):
+        """
+        Restore an image tags
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+            tags: (str): write your description
+        """
         self.restore_resource_tags(resource_id=image_id, resource_type="volume", tags=tags)
 
     def get_snapshot(self, snapshot_id):
+        """
+        Returns the snapshot with the given snapshot
+
+        Args:
+            self: (todo): write your description
+            snapshot_id: (str): write your description
+        """
         try:
             return self.ec2_service.get(services.ec2_service.SNAPSHOTS, SnapshotIds=[snapshot_id], region=self.region)
         except Exception as ex:
@@ -186,10 +328,24 @@ class Ec2(object):
             raise ex
 
     def get_snapshot_status(self, snapshot_id):
+        """
+        Returns the status of a given snapshot
+
+        Args:
+            self: (todo): write your description
+            snapshot_id: (str): write your description
+        """
         snapshot = self.get_snapshot(snapshot_id)
         return snapshot.get("State") if snapshot is not None else None
 
     def delete_snapshots(self, snapshot_ids):
+        """
+        Deletes the specified snapshots
+
+        Args:
+            self: (todo): write your description
+            snapshot_ids: (str): write your description
+        """
         for snapshot_id in snapshot_ids:
             try:
                 self.ec2_client.delete_snapshot(SnapshotId=snapshot_id)
@@ -198,18 +354,49 @@ class Ec2(object):
                     raise ex
 
     def get_snapshot_tags(self, snapshot_id):
+        """
+        Gets the tags associated with the given snapshot.
+
+        Args:
+            self: (todo): write your description
+            snapshot_id: (str): write your description
+        """
         return self.get_resource_tags("snapshot", snapshot_id)
 
     def restore_snapshot_tags(self, image_id, tags):
+        """
+        Restore a snapshot of an image.
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+            tags: (todo): write your description
+        """
         self.restore_resource_tags(resource_id=image_id, resource_type="snapshot", tags=tags)
 
     def restore_resource_tags(self, resource_id, resource_type, tags):
+        """
+        Restore the tags from the specified resource.
+
+        Args:
+            self: (todo): write your description
+            resource_id: (str): write your description
+            resource_type: (str): write your description
+            tags: (todo): write your description
+        """
         existing_tags = self.get_resource_tags(resource_type, resource_id)
         self.ec2_client.delete_tags(Resources=[resource_id],
                                     Tags=[{"Key": t} for t in existing_tags if t not in tags and not t.startswith("aws:")])
         self.create_tags([resource_id], {t: tags[t] for t in tags if not t.startswith("aws:")})
 
     def get_snapshot_create_volume_permission_users(self, snapshot_id):
+        """
+        Returns a new ebs
+
+        Args:
+            self: (todo): write your description
+            snapshot_id: (str): write your description
+        """
         attributes = self.ec2_service.get(services.ec2_service.SNAPSHOT_ATTRIBUTE,
                                           SnapshotId=snapshot_id,
                                           Attribute="createVolumePermission",
@@ -217,14 +404,39 @@ class Ec2(object):
         return [p["UserId"] for p in attributes.get("CreateVolumePermissions", []) if p.get("UserId") is not None]
 
     def get_volume_tags(self, volume_id):
+        """
+        Retrieves a list of a volume.
+
+        Args:
+            self: (todo): write your description
+            volume_id: (str): write your description
+        """
         return self.get_resource_tags("volume", volume_id)
 
     def create_tags(self, resource_ids, tags):
+        """
+        Create the tags to the given list of ids
+
+        Args:
+            self: (todo): write your description
+            resource_ids: (str): write your description
+            tags: (str): write your description
+        """
         if tags is not None and len(tags) > 0:
             resources = resource_ids if isinstance(resource_ids, list) else [resource_ids]
             self.ec2_client.create_tags(Resources=resources, Tags=[{"Key": t, "Value": tags[t]} for t in tags])
 
     def create_snapshot(self, volume_id, tags=None, description=None, wait_to_complete=300):
+        """
+        Create a new snapshot
+
+        Args:
+            self: (todo): write your description
+            volume_id: (str): write your description
+            tags: (str): write your description
+            description: (str): write your description
+            wait_to_complete: (str): write your description
+        """
         args = {
             "VolumeId": volume_id
         }
@@ -259,6 +471,17 @@ class Ec2(object):
                     return None
 
     def copy_snapshot(self, snapshot_id, destination_region, tags=None, description=None, wait_to_complete=300):
+        """
+        Copy a snapshot to another snapshot.
+
+        Args:
+            self: (todo): write your description
+            snapshot_id: (str): write your description
+            destination_region: (str): write your description
+            tags: (list): write your description
+            description: (str): write your description
+            wait_to_complete: (str): write your description
+        """
 
         ec2_destination = Ec2(region=destination_region)
         ec2_destination_client = boto3.client("ec2", region_name=destination_region)
@@ -300,8 +523,22 @@ class Ec2(object):
                     return None
 
     def get_snapshots_for_volume(self, volume_id, source_volume_tag=None):
+        """
+        Returns a list of snapshots associated with this volume
+
+        Args:
+            self: (todo): write your description
+            volume_id: (str): write your description
+            source_volume_tag: (str): write your description
+        """
 
         def for_volume(snapshot):
+            """
+            Return true if the given volume is associated with the given snapshot
+
+            Args:
+                snapshot: (dict): write your description
+            """
             if snapshot["VolumeId"] == volume_id:
                 return True
 
@@ -311,6 +548,13 @@ class Ec2(object):
         return self.ec2_service.describe(services.ec2_service.SNAPSHOTS, filter_func=for_volume, OwnerIds=["self"])
 
     def delete_snapshots_by_tags(self, tag_filter_expression):
+        """
+        Deletes snapshots by tag_snapshots
+
+        Args:
+            self: (todo): write your description
+            tag_filter_expression: (str): write your description
+        """
         delete_filter = TagFilterExpression(tag_filter_expression)
         snapshots = []
         for s in self.ec2_service.describe(services.ec2_service.SNAPSHOTS, region=self.region, tags=True, OwnerIds=["self"]):
@@ -320,6 +564,12 @@ class Ec2(object):
 
     @property
     def ebs_default_key_arn(self):
+        """
+        The default ebs key. gbs.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._ebs_default_key_arn is None:
             kms = services.kms_service.KmsService()
             aliases = [a for a in kms.describe(services.kms_service.ALIASES, region=self.region) if
@@ -330,6 +580,13 @@ class Ec2(object):
         return self._ebs_default_key_arn
 
     def get_image(self, image_id):
+        """
+        Get an image by its id.
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+        """
         try:
             return self.ec2_service.get(services.ec2_service.IMAGES,
                                         ImageIds=[image_id],
@@ -340,6 +597,14 @@ class Ec2(object):
             raise ex
 
     def wait_for_image_available(self, image_id, timeout=300):
+        """
+        Waits for an image to appear
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+            timeout: (float): write your description
+        """
 
         with Timer(timeout_seconds=timeout, start=True) as t:
             count = 0
@@ -353,6 +618,14 @@ class Ec2(object):
         return False
 
     def wait_for_image_not_longer_available(self, image_id, timeout=300):
+        """
+        Waits for long running image to complete.
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+            timeout: (int): write your description
+        """
 
         with Timer(timeout_seconds=timeout, start=True) as t:
             count = 0
@@ -366,12 +639,26 @@ class Ec2(object):
         return False
 
     def get_images(self, image_ids):
+        """
+        : param image ids : param image_ids : list of image ids
+
+        Args:
+            self: (todo): write your description
+            image_ids: (str): write your description
+        """
         for img in image_ids:
             image = self.get_image(image_id=img)
             if image is not None:
                 yield image
 
     def get_image_state(self, image_id):
+        """
+        Get the image state
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+        """
         image = self.get_image(image_id)
         if image is None:
             return None
@@ -379,6 +666,13 @@ class Ec2(object):
             return image["State"]
 
     def deregister_image(self, image_id):
+        """
+        Deregisters an image.
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+        """
         try:
             self.ec2_client.deregister_image(ImageId=image_id)
         except Exception as ex:
@@ -386,12 +680,26 @@ class Ec2(object):
                 raise ex
 
     def get_image_snapshots(self, image_id):
+        """
+        Returns a snapshot of an image
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+        """
         image = self.get_image(image_id)
         if image is None:
             return None
         return [b["Ebs"]["SnapshotId"] for b in image["BlockDeviceMappings"] if "Ebs" in b]
 
     def delete_images(self, image_ids):
+        """
+        Deletes the image with given image.
+
+        Args:
+            self: (todo): write your description
+            image_ids: (str): write your description
+        """
 
         for image_id in image_ids:
             snapshots = self.get_image_snapshots(image_id)
@@ -408,6 +716,13 @@ class Ec2(object):
                 time.sleep(10)
 
     def delete_images_by_tags(self, tag_filter_expression):
+        """
+        Delete all tags matching the given tag.
+
+        Args:
+            self: (todo): write your description
+            tag_filter_expression: (str): write your description
+        """
         delete_filter = TagFilterExpression(tag_filter_expression)
         images = []
 
@@ -418,6 +733,13 @@ class Ec2(object):
         self.delete_images(images)
 
     def get_image_launch_permissions_users(self, image_id):
+        """
+        Returns a list of launch permissions for an image.
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+        """
         attributes = self.ec2_service.get(services.ec2_service.IMAGE_ATTRIBUTE,
                                           ImageId=image_id,
                                           Attribute="launchPermission",
@@ -425,12 +747,39 @@ class Ec2(object):
         return [p["UserId"] for p in attributes.get("LaunchPermissions", []) if p.get("UserId") is not None]
 
     def get_image_tags(self, image_id):
+        """
+        Get the list of an image.
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+        """
         return self.get_resource_tags("image", image_id)
 
     def restore_image_tags(self, image_id, tags):
+        """
+        Restore the image tags from an image.
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+            tags: (todo): write your description
+        """
         self.restore_resource_tags(resource_id=image_id, resource_type="image", tags=tags)
 
     def create_image(self, instance_id, name, tags=None, description=None, no_reboot=True, wait_to_complete=600):
+        """
+        Create an instance.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            name: (str): write your description
+            tags: (todo): write your description
+            description: (str): write your description
+            no_reboot: (str): write your description
+            wait_to_complete: (str): write your description
+        """
 
         args = {
             "InstanceId": instance_id,
@@ -476,6 +825,19 @@ class Ec2(object):
                 return None
 
     def copy_image(self, image_id, destination_region, name, tags=None, description=None, wait_to_complete=300, encrypted=False):
+        """
+        Copy an image to an image to a new region.
+
+        Args:
+            self: (todo): write your description
+            image_id: (str): write your description
+            destination_region: (str): write your description
+            name: (str): write your description
+            tags: (str): write your description
+            description: (str): write your description
+            wait_to_complete: (str): write your description
+            encrypted: (str): write your description
+        """
 
         ec2_destination = Ec2(region=destination_region)
         ec2_destination_client = boto3.client("ec2", region_name=destination_region)
@@ -516,6 +878,13 @@ class Ec2(object):
                     return None
 
     def get_volume(self, volume_id):
+        """
+        Get a ebs by its id
+
+        Args:
+            self: (todo): write your description
+            volume_id: (str): write your description
+        """
         # noinspection PyPep8,PyBroadException
         try:
             return self.ec2_service.get(services.ec2_service.VOLUMES, VolumeIds=[volume_id], tags=True, region=self.region)
@@ -523,6 +892,14 @@ class Ec2(object):
             return None
 
     def start_instance(self, instance_id, timeout=600):
+        """
+        Starts the instance.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            timeout: (float): write your description
+        """
 
         with Timer(timeout) as timer:
 
@@ -543,6 +920,13 @@ class Ec2(object):
                 time.sleep(10)
 
     def get_instance_volumes(self, instance_id):
+        """
+        Returns a list of an ebs
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+        """
         return self.ec2_service.describe(services.ec2_service.VOLUMES,
                                          region=self.region,
                                          tags=True,
@@ -553,6 +937,14 @@ class Ec2(object):
                                              }])
 
     def stop_instance(self, instance_id, timeout=600):
+        """
+        Stops the instance gracefully.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            timeout: (float): write your description
+        """
         with Timer(timeout) as timer:
 
             while True:
@@ -572,12 +964,27 @@ class Ec2(object):
                 time.sleep(10)
 
     def get_system_status(self, instance_id):
+        """
+        Returns system status of a system.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+        """
         status = self.ec2_service.get(services.ec2_service.INSTANCE_STATUS, region=self.region, InstanceIds=[instance_id])
         if status is None:
             return None
         return status["SystemStatus"]["Status"]
 
     def wait_for_system_ready(self, instance_id, timeout=600):
+        """
+        Waits until instance is ready.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            timeout: (float): write your description
+        """
 
         with Timer(timeout_seconds=timeout, start=True) as t:
             while not t.timeout:
@@ -588,6 +995,14 @@ class Ec2(object):
         return False
 
     def resize_instance(self, instance_id, new_size):
+        """
+        Resize the instance.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            new_size: (int): write your description
+        """
 
         start_after_resize = self.get_instance_status(instance_id) in ["running", "pending"]
         if self.get_instance(instance_id)["InstanceType"] != new_size:
@@ -598,6 +1013,15 @@ class Ec2(object):
             self.start_instance(instance_id=instance_id)
 
     def wait_for_instance_stopped(self, instance_id, stop_if_running=False, timeout=600):
+        """
+        Wait for the instance is stopped.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            stop_if_running: (todo): write your description
+            timeout: (float): write your description
+        """
         with Timer(timeout) as timer:
 
             while True:
@@ -618,6 +1042,13 @@ class Ec2(object):
                 time.sleep(10)
 
     def set_all_volumes_to_delete_on_terminate(self, instance_id):
+        """
+        Set all ebs volume on an ec2
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+        """
         mappings = [
             {
                 "DeviceName": m["DeviceName"],
@@ -633,6 +1064,20 @@ class Ec2(object):
     def create_instance(self, instance_type, key_pair=None, root_vol_size=None, role_name=None, image_id=None, tags=None,
                         wait_to_complete=300,
                         hibernation=False):
+        """
+        Create an ec2 instance.
+
+        Args:
+            self: (todo): write your description
+            instance_type: (str): write your description
+            key_pair: (str): write your description
+            root_vol_size: (int): write your description
+            role_name: (str): write your description
+            image_id: (str): write your description
+            tags: (list): write your description
+            wait_to_complete: (str): write your description
+            hibernation: (str): write your description
+        """
 
         used_image = image_id if image_id is not None else self.latest_aws_linux_image["ImageId"]
         args = {
@@ -693,6 +1138,14 @@ class Ec2(object):
                 time.sleep(15)
 
     def terminate_instance(self, instance_id, wait_to_complete=300):
+        """
+        Terminate the instance
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            wait_to_complete: (str): write your description
+        """
 
         status = self.get_instance_status(instance_id)
         if status in [None, "terminated"]:
@@ -712,6 +1165,13 @@ class Ec2(object):
                 time.sleep(10)
 
     def allocate_address(self, instance_id=None):
+        """
+        Allocate an ec2 instance.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (int): write your description
+        """
         address = self.ec2_client.allocate_address(
             Domain="vpc"
         )
@@ -724,6 +1184,15 @@ class Ec2(object):
         return address
 
     def wait_for_volume_state(self, volume_id, state, timeout=300):
+        """
+        Wait for an ebs volume to have a given volume id.
+
+        Args:
+            self: (todo): write your description
+            volume_id: (str): write your description
+            state: (str): write your description
+            timeout: (float): write your description
+        """
 
         with Timer(timeout_seconds=timeout, start=True) as t:
             count = 0
@@ -737,6 +1206,15 @@ class Ec2(object):
         return False
 
     def add_instance_volume(self, instance_id=None, device=None, tags=None):
+        """
+        Add an ebs volume to an ec2 instance.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            device: (todo): write your description
+            tags: (list): write your description
+        """
         instance = self.get_instance(instance_id=instance_id)
         assert instance is not None
         args = {
@@ -767,6 +1245,14 @@ class Ec2(object):
         return vol
 
     def delete_volume(self, volume_id, forced=False):
+        """
+        Delete a ebs volume
+
+        Args:
+            self: (todo): write your description
+            volume_id: (str): write your description
+            forced: (bool): write your description
+        """
         vol = self.get_volume(volume_id)
 
         if vol is None:
@@ -788,6 +1274,13 @@ class Ec2(object):
 
     # noinspection PyPep8
     def get_next_device_name(self, instance_id):
+        """
+        Returns the next device name.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+        """
 
         instance = self.get_instance(instance_id)
         assert instance is not None
@@ -810,6 +1303,13 @@ class Ec2(object):
         return None
 
     def release_addresses(self, allocation_ids):
+        """
+        Release all ec2 elastic ip addresses
+
+        Args:
+            self: (todo): write your description
+            allocation_ids: (str): write your description
+        """
         addresses = self.ec2_service.describe(services.ec2_service.ADDRESSES,
                                               region=self.region,
                                               Filters=[
@@ -824,6 +1324,13 @@ class Ec2(object):
             self.ec2_client.release_address(AllocationId=a["AllocationId"])
 
     def get_address(self, allocation_id):
+        """
+        Returns an elastic ip address.
+
+        Args:
+            self: (todo): write your description
+            allocation_id: (str): write your description
+        """
         address = self.ec2_service.get(services.ec2_service.ADDRESSES,
                                        region=self.region,
                                        Filters=[
@@ -833,6 +1340,13 @@ class Ec2(object):
         return address
 
     def get_default_security_group(self, vpc_id):
+        """
+        Returns the default security group for a vpc.
+
+        Args:
+            self: (todo): write your description
+            vpc_id: (str): write your description
+        """
 
         filters = [
             {
@@ -854,6 +1368,13 @@ class Ec2(object):
                                     Filters=filters)
 
     def delete_key_pair(self, key_pairname):
+        """
+        Deletes a public key pair.
+
+        Args:
+            self: (todo): write your description
+            key_pairname: (str): write your description
+        """
         try:
             self.ec2_client.delete_key_pair(KeyName=key_pairname)
         except Exception as ex:

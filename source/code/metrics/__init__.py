@@ -32,6 +32,18 @@ METRICS_STATUS_NAMES = {
 
 
 def put_task_state_metrics(task_name, metric_state_name, task_level, count=1, logger=None, data=None, context=None, ):
+    """
+    Store task metrics.
+
+    Args:
+        task_name: (str): write your description
+        metric_state_name: (str): write your description
+        task_level: (todo): write your description
+        count: (int): write your description
+        logger: (todo): write your description
+        data: (array): write your description
+        context: (todo): write your description
+    """
     with TaskMetrics(datetime.utcnow(), context=context, logger=logger) as metrics:
         metrics.put_task_state_metrics(task_name=task_name,
                                        metric_state_name=metric_state_name,
@@ -41,16 +53,46 @@ def put_task_state_metrics(task_name, metric_state_name, task_level, count=1, lo
 
 
 def put_task_select_data(task_name, items, selected_items, selection_time, logger=None, context=None):
+    """
+    Put selected items in the queue
+
+    Args:
+        task_name: (str): write your description
+        items: (todo): write your description
+        selected_items: (str): write your description
+        selection_time: (str): write your description
+        logger: (todo): write your description
+        context: (todo): write your description
+    """
     with TaskMetrics(datetime.utcnow(), logger=logger, context=context) as metrics:
         metrics.put_task_select_data(task_name=task_name, items=items, selected_items=selected_items, selection_time=selection_time)
 
 
 def put_general_errors_and_warnings(error_count=0, warning_count=0, logger=None, context=None):
+    """
+    This function to general general error.
+
+    Args:
+        error_count: (todo): write your description
+        warning_count: (int): write your description
+        logger: (todo): write your description
+        context: (todo): write your description
+    """
     with TaskMetrics(datetime.utcnow(), logger=logger, context=context) as metrics:
         metrics.put_general_errors_and_warnings(error_count=error_count, warning_count=warning_count)
 
 
 def setup_tasks_metrics(task, action_name, task_level_metrics, logger=None, context=None):
+    """
+    Setup all the metrics for the given task.
+
+    Args:
+        task: (todo): write your description
+        action_name: (str): write your description
+        task_level_metrics: (todo): write your description
+        logger: (todo): write your description
+        context: (dict): write your description
+    """
     with TaskMetrics(dt=datetime.utcnow(), logger=logger, context=context)as metrics:
 
         task_class = actions.get_action_class(action_name)

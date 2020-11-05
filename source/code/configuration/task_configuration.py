@@ -186,12 +186,23 @@ class TaskConfiguration(object):
 
     @property
     def ssm_client(self):
+        """
+        Return ssm client.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._ssm_client is None:
             self._ssm_client = get_client_with_retries("ssm", ["get_parameters"])
         return self._ssm_client
 
     @staticmethod
     def config_table_exists():
+        """
+        Checks if the configuration table exists.
+
+        Args:
+        """
         tablename = os.environ[configuration.ENV_CONFIG_TABLE]
         for t in boto3.resource("dynamodb").tables.all():
             if t.table_name == tablename:
@@ -199,6 +210,13 @@ class TaskConfiguration(object):
         return False
 
     def _info(self, msg, *args):
+        """
+        Prints a message
+
+        Args:
+            self: (todo): write your description
+            msg: (str): write your description
+        """
         if self._logger:
             self._logger.info(msg, *args)
         else:
@@ -257,6 +275,12 @@ class TaskConfiguration(object):
         """
 
         def remove_empty_strings(item):
+            """
+            Recursively remove empty strings
+
+            Args:
+                item: (str): write your description
+            """
 
             if item is None:
                 return None
@@ -300,6 +324,13 @@ class TaskConfiguration(object):
         return config_item
 
     def create_task_config_objects(self, config_item):
+        """
+        Create task config task objects.
+
+        Args:
+            self: (todo): write your description
+            config_item: (str): write your description
+        """
         # get the class that implements the action and test if there is a static method for creating templates
         action_class = actions.get_action_class(config_item[configuration.CONFIG_ACTION_NAME])
         create_task_objects_method = getattr(action_class, "create_task_config_objects", None)
@@ -364,6 +395,12 @@ class TaskConfiguration(object):
 
     @staticmethod
     def is_valid_account_number(arn):
+        """
+        Check if a valid account number is valid.
+
+        Args:
+            arn: (int): write your description
+        """
         return re.match(VALID_ACCOUNT_REGEX, arn) is not None
 
     def validate_action(self, action_name):
@@ -430,6 +467,13 @@ class TaskConfiguration(object):
         validated_parameters = {}
 
         def verify_numeric_parameter(value, action_param):
+            """
+            Verify that the value is numeric.
+
+            Args:
+                value: (todo): write your description
+                action_param: (todo): write your description
+            """
             if type(value) in [int, float, int, complex, decimal]:
                 if actions.PARAM_MIN_VALUE in action_param and value < action_param[actions.PARAM_MIN_VALUE]:
                     raise_value_error(ERR_MIN_VALUE, value, action_param[actions.PARAM_MIN_VALUE], param_name)
@@ -437,6 +481,13 @@ class TaskConfiguration(object):
                     raise_value_error(ERR_MAX_VALUE, value, action_param[actions.PARAM_MAX_VALUE], param_name)
 
         def verify_string_parameter(value, action_param):
+            """
+            Verify that the value and action_parameter string.
+
+            Args:
+                value: (str): write your description
+                action_param: (str): write your description
+            """
             if type(value) in [str, str]:
                 if actions.PARAM_MIN_LEN in action_param and len(value) < action_param[actions.PARAM_MIN_LEN]:
                     raise_value_error(ERR_MIN_LEN, value, action_param[actions.PARAM_MIN_LEN], param_name)
@@ -446,6 +497,13 @@ class TaskConfiguration(object):
                     raise_value_error(ERR_PATTERN_VALUE, value, action_param[actions.PARAM_PATTERN], param_name)
 
         def verify_known_parameter(parameters, action_params):
+            """
+            Verify that all required parameters have the same
+
+            Args:
+                parameters: (list): write your description
+                action_params: (dict): write your description
+            """
             # test for unknown parameters in the task definition
             for tp in parameters:
                 if tp not in action_params:
@@ -455,6 +513,13 @@ class TaskConfiguration(object):
                         self._logger.warning(WARN_NO_PARAMETERS, tp, action_name)
 
         def verify_parameter_type(value, action_param):
+            """
+            Verify that the value of the given type.
+
+            Args:
+                value: (todo): write your description
+                action_param: (dict): write your description
+            """
             parameter_type = action_param.get(actions.PARAM_TYPE)
             if parameter_type is not None:
 
@@ -472,22 +537,53 @@ class TaskConfiguration(object):
             return value
 
         def verify_allowed_values(value, action_param):
+            """
+            Verifies that the given value is allowed.
+
+            Args:
+                value: (todo): write your description
+                action_param: (todo): write your description
+            """
             if actions.PARAM_ALLOWED_VALUES in action_param and value not in action_param[actions.PARAM_ALLOWED_VALUES]:
                 raise ValueError(
                     ERR_NOT_ALLOWED_VALUE.format(str(parameter_value), ",".join(action_param[actions.PARAM_ALLOWED_VALUES]),
                                                  param_name))
 
         def verify_required_parameter_available(parameter_name, action_params, parameters):
+            """
+            Checks that the specified parameters are required.
+
+            Args:
+                parameter_name: (str): write your description
+                action_params: (dict): write your description
+                parameters: (todo): write your description
+            """
             if action_params[parameter_name].get(actions.PARAM_REQUIRED, False) and parameter_name not in parameters:
                 raise_value_error(ERR_REQUIRED_PARAM_MISSING, parameter_name)
 
         def get_param_value(name, action_param, parameters):
+            """
+            Get the value of a given parameter.
+
+            Args:
+                name: (str): write your description
+                action_param: (dict): write your description
+                parameters: (dict): write your description
+            """
             value = parameters.get(name)
             if value is None:
                 value = action_param.get(actions.PARAM_DEFAULT)
             return value
 
         def action_class_parameter_check(parameters, tsk_settings, name):
+            """
+            Checks if the given action has been set.
+
+            Args:
+                parameters: (todo): write your description
+                tsk_settings: (todo): write your description
+                name: (str): write your description
+            """
             # get the class that implements the action and test if there is a static method for additional checks of the parameters
             action_class = actions.get_action_class(name)
             validate_params_method = getattr(action_class, handlers.ACTION_VALIDATE_PARAMETERS_METHOD, None)
@@ -527,6 +623,13 @@ class TaskConfiguration(object):
 
     @staticmethod
     def validate_events(events, action_name):
+        """
+        Validate events.
+
+        Args:
+            events: (array): write your description
+            action_name: (str): write your description
+        """
 
         validated = {}
         # get properties for action for the task and the actions parameter definitions
@@ -566,6 +669,13 @@ class TaskConfiguration(object):
 
     @staticmethod
     def validate_event_scopes(scopes, action_name):
+        """
+        Validate the scopes.
+
+        Args:
+            scopes: (list): write your description
+            action_name: (str): write your description
+        """
 
         validated = {}
         # get properties for action for the task and the actions parameter definitions
@@ -603,6 +713,14 @@ class TaskConfiguration(object):
         return validated
 
     def validate_regions(self, regions, action_name, ):
+        """
+        Returns a list of regions.
+
+        Args:
+            self: (todo): write your description
+            regions: (str): write your description
+            action_name: (str): write your description
+        """
         action_properties = actions.get_action_properties(action_name)
         service_name = action_properties[actions.ACTION_SERVICE]
         is_multi_region_action = action_properties.get(actions.ACTION_MULTI_REGION, True)
@@ -628,6 +746,13 @@ class TaskConfiguration(object):
         return []
 
     def verified_timezone(self, tz_name):
+        """
+        Return a timezone object for the given timezone.
+
+        Args:
+            self: (todo): write your description
+            tz_name: (str): write your description
+        """
         tz_lower = str(tz_name).lower()
         if tz_lower in _checked_timezones:
             return str(_checked_timezones[tz_lower])
@@ -646,6 +771,12 @@ class TaskConfiguration(object):
 
     @staticmethod
     def as_boolean(val):
+        """
+        Convert a boolean value.
+
+        Args:
+            val: (str): write your description
+        """
         if val is not None:
             if type(val) == bool:
                 return val
@@ -672,6 +803,16 @@ class TaskConfiguration(object):
         return internal
 
     def verify_accounts(self, this_account, accounts, action_name, task_name):
+        """
+        Verify that the accounts have been scheduled.
+
+        Args:
+            self: (todo): write your description
+            this_account: (todo): write your description
+            accounts: (list): write your description
+            action_name: (str): write your description
+            task_name: (str): write your description
+        """
         results = []
 
         action_properties = actions.get_action_properties(action_name)
@@ -694,6 +835,13 @@ class TaskConfiguration(object):
 
     @staticmethod
     def verify_task_role_name(role_name, action_name):
+        """
+        Verify role name.
+
+        Args:
+            role_name: (str): write your description
+            action_name: (str): write your description
+        """
         if role_name in ["", None]:
             return None
 
@@ -705,6 +853,16 @@ class TaskConfiguration(object):
         return role_name
 
     def verify_interval(self, interval, item, action_name, task_name):
+        """
+        Verifies that the given interval is valid.
+
+        Args:
+            self: (todo): write your description
+            interval: (str): write your description
+            item: (str): write your description
+            action_name: (str): write your description
+            task_name: (str): write your description
+        """
 
         action_properties = actions.get_action_properties(action_name)
         use_intervals = actions.ACTION_TRIGGER_INTERVAL[0] in action_properties.get(actions.ACTION_TRIGGERS,
@@ -759,6 +917,13 @@ class TaskConfiguration(object):
 
     @staticmethod
     def verify_timeout(action_name, timeout):
+        """
+        Verify the timeout.
+
+        Args:
+            action_name: (str): write your description
+            timeout: (float): write your description
+        """
         completion_method = getattr(actions.get_action_class(action_name), handlers.COMPLETION_METHOD, None)
         if completion_method is None and timeout is not None:
             raise_value_error(ERR_TIMEOUT_NOT_ALLOWED, action_name)
@@ -782,14 +947,33 @@ class TaskConfiguration(object):
 
     @staticmethod
     def validate_lambda_size(size):
+        """
+        Validate the size.
+
+        Args:
+            size: (int): write your description
+        """
         valid_sizes = {a.lower(): a for a in actions.ACTION_SIZE_ALL_WITH_ECS}
         if size.lower() not in valid_sizes:
             raise_value_error(ERR_INVALID_LAMBDA_SIZE, ", ".join(actions.ACTION_SIZE_ALL_WITH_ECS))
         return valid_sizes[size.lower()]
 
     def get_parameters(self, itm):
+        """
+        Return a list of a list.
+
+        Args:
+            self: (todo): write your description
+            itm: (todo): write your description
+        """
 
         def get_param(value):
+            """
+            Get ssm parameter
+
+            Args:
+                value: (str): write your description
+            """
             if isinstance(value, str) or isinstance(value, str):
                 m = re.match(SSM_PARAM_REGEX, value)
                 if m is not None:
@@ -958,8 +1142,20 @@ class TaskConfiguration(object):
         valid_attributes = VALID_TASK_ATTRIBUTES
 
         def remove_empty_attributes(o):
+            """
+            Recursively remove empty dict.
+
+            Args:
+                o: (todo): write your description
+            """
 
             def clean_dict(d):
+                """
+                Recursively empty dicts.
+
+                Args:
+                    d: (dict): write your description
+                """
                 result_dict = {}
                 for k, v in d.items():
                     vv = remove_empty_attributes(v)
@@ -968,6 +1164,12 @@ class TaskConfiguration(object):
                 return result_dict if len(result_dict) > 0 else None
 
             def clean_val(l):
+                """
+                Remove empty list from l
+
+                Args:
+                    l: (array): write your description
+                """
                 result_list = []
                 for i in l:
                     ii = remove_empty_attributes(i)
@@ -1165,6 +1367,13 @@ class TaskConfiguration(object):
         return None
 
     def _regions_for_tasks_with_events(self, task_name=None):
+        """
+        Return a list of tasks that have been registered.
+
+        Args:
+            self: (todo): write your description
+            task_name: (str): write your description
+        """
         regions = set()
         if task_name is None:
             tasks = self.get_tasks(include_internal=False)
@@ -1180,11 +1389,27 @@ class TaskConfiguration(object):
 
     @staticmethod
     def _event_bus_permissions_sid_prefix():
+        """
+        Returns the event prefix for the given event bus.
+
+        Args:
+        """
         return "ops-automator-{}-{}-".format(os.getenv(handlers.ENV_STACK_NAME).lower(), services.get_session().region_name)
 
     def _update_ops_automator_topic_permissions(self):
+        """
+        Update automator automposes automator was created.
+
+        Args:
+            self: (todo): write your description
+        """
 
         def get_accounts_with_events():
+            """
+            Returns a list of all accounts.
+
+            Args:
+            """
 
             accounts_with_events = set()
             for task in self.get_tasks(include_internal=False):

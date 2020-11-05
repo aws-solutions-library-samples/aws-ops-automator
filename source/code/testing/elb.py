@@ -19,12 +19,28 @@ import services.elb_service
 class Elb(object):
 
     def __init__(self, region=None, session=None):
+        """
+        Initialize the service.
+
+        Args:
+            self: (todo): write your description
+            region: (str): write your description
+            session: (todo): write your description
+        """
         self.region = region if region is not None else boto3.Session().region_name
         self.session = session if session is not None else boto3.Session(region_name=self.region)
         self.elb_client = self.session.client("elb", region_name=self.region)
         self.elb_service = services.elb_service.ElbService(session=self.session)
 
     def register_instance(self, load_balancer_name, instance_id):
+        """
+        Register an load balancer.
+
+        Args:
+            self: (todo): write your description
+            load_balancer_name: (str): write your description
+            instance_id: (str): write your description
+        """
         self.elb_client.register_instances_with_load_balancer(LoadBalancerName=load_balancer_name,
                                                               Instances=[
                                                                   {
@@ -33,6 +49,13 @@ class Elb(object):
                                                               ])
 
     def get_instance_load_balancers(self, instance_id):
+        """
+        Get load balancers.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+        """
 
         result = []
 

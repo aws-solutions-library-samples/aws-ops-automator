@@ -141,6 +141,16 @@ class ActionTemplateBuilder(object):
     """
 
     def __init__(self, context, service_token_arn=None, ops_automator_role=None, use_ecs=False):
+        """
+        Initialize the lambda service.
+
+        Args:
+            self: (todo): write your description
+            context: (str): write your description
+            service_token_arn: (todo): write your description
+            ops_automator_role: (todo): write your description
+            use_ecs: (bool): write your description
+        """
 
         self._context = context,
 
@@ -181,10 +191,23 @@ class ActionTemplateBuilder(object):
 
     @classmethod
     def _format_event_name(cls, event_name):
+        """
+        Return the event name.
+
+        Args:
+            cls: (todo): write your description
+            event_name: (str): write your description
+        """
         return event_name[0].upper() + event_name[1:]
 
     @property
     def ops_automator_stack_template(self):
+        """
+        Provides a list of the automator stack.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._ops_automator_stack_template is None:
             cfn = get_client_with_retries("cloudformation", methods=["get_template"], context=self._context)
             ops_automator_name = os.getenv(handlers.ENV_STACK_NAME, "")
@@ -329,6 +352,11 @@ class ActionTemplateBuilder(object):
             self._parameter_groups[0]["Parameters"].insert(2, configuration.CONFIG_TASK_TIMEOUT)
 
         def setup_tag_filter_parameter():
+            """
+            Setup filter parameters
+
+            Args:
+            """
 
             if self.action_properties.get(actions.ACTION_NO_TAG_SELECT, False):
                 return
@@ -360,6 +388,19 @@ class ActionTemplateBuilder(object):
 
         def build_memory_parameter(size_group, lambda_size, lambda_size_param, config_ecs_memory_param, description, label,
                                    ecs_memory_label, ecs_description):
+            """
+            Builds memory memory parameter group.
+
+            Args:
+                size_group: (int): write your description
+                lambda_size: (int): write your description
+                lambda_size_param: (int): write your description
+                config_ecs_memory_param: (str): write your description
+                description: (str): write your description
+                label: (todo): write your description
+                ecs_memory_label: (todo): write your description
+                ecs_description: (str): write your description
+            """
 
             memory_settings = self.ops_automator_stack_template["Mappings"]["Settings"]["ActionMemory"]
             memory_options = self.action_properties.get(lambda_size, [])
@@ -399,6 +440,11 @@ class ActionTemplateBuilder(object):
                 size_group["Parameters"].append(config_ecs_memory_param)
 
         def setup_memory_parameters():
+            """
+            Setup memory memory parameters.
+
+            Args:
+            """
 
             memory_group = {
                 "Label": {
@@ -534,6 +580,11 @@ class ActionTemplateBuilder(object):
             })
 
         def setup_event_parameters():
+            """
+            Setup event parameters for the event parameters.
+
+            Args:
+            """
 
             self._action_events = {}
             self._action_scopes = {}
@@ -668,6 +719,13 @@ class ActionTemplateBuilder(object):
                 })
 
         def setup_action_parameter(name, action_parameter):
+            """
+            Creates an action.
+
+            Args:
+                name: (str): write your description
+                action_parameter: (dict): write your description
+            """
             # single action parameter setup
             parameter_template = {}
 
@@ -809,6 +867,13 @@ class ActionTemplateBuilder(object):
         self._resources["Task"] = task_resource
 
     def _setup_event_properties(self, task_resource):
+        """
+        Setup event properties.
+
+        Args:
+            self: (todo): write your description
+            task_resource: (todo): write your description
+        """
         if (sum([len(d) for d in self._action_events])) > 0:
             task_resource["Properties"][configuration.CONFIG_EVENTS] = {}
             resource_events = {}
@@ -834,6 +899,13 @@ class ActionTemplateBuilder(object):
             task_resource["Properties"][configuration.CONFIG_EVENTS] = resource_events
 
     def _setup_event_scopes_properties(self, task_resource):
+        """
+        Setup scopes for scopes.
+
+        Args:
+            self: (todo): write your description
+            task_resource: (str): write your description
+        """
 
         if len(self._action_scopes) > 0:
             task_resource["Properties"][configuration.CONFIG_EVENT_SCOPES] = {}
@@ -859,6 +931,12 @@ class ActionTemplateBuilder(object):
             task_resource["Properties"][configuration.CONFIG_EVENT_SCOPES] = resource_scopes
 
     def _build_resource_parameters(self):
+        """
+        Build a dict of parameters for this object
+
+        Args:
+            self: (todo): write your description
+        """
         # parameters that are not hidden in the template
         params = {
             j: {"Ref": j} for j in self.action_properties[actions.ACTION_PARAMETERS] if
@@ -876,5 +954,11 @@ class ActionTemplateBuilder(object):
         return params
 
     def _setup_outputs(self):
+        """
+        Set up the outputs.
+
+        Args:
+            self: (todo): write your description
+        """
         if len(self._outputs) != 0:
             self._template["Outputs"] = self._outputs

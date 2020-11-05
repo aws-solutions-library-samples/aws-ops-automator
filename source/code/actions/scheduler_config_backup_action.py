@@ -81,6 +81,14 @@ class SchedulerConfigBackupAction(ActionBase):
     }
 
     def __init__(self, action_arguments, action_parameters):
+        """
+        Initialize an action.
+
+        Args:
+            self: (dict): write your description
+            action_arguments: (str): write your description
+            action_parameters: (todo): write your description
+        """
 
         ActionBase.__init__(self, action_arguments, action_parameters)
 
@@ -94,6 +102,12 @@ class SchedulerConfigBackupAction(ActionBase):
         self.S3Prefix = self.get(PARAM_S3_PREFIX)
 
     def execute(self):
+        """
+        Executes the session.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self._logger_.info("{}, version {}", str(self.__class__).split(".")[-1], self.properties[ACTION_VERSION])
         self._logger_.debug("Implementation {}", __name__)

@@ -146,6 +146,13 @@ class DynamodbSetCapacityAction(ActionBase):
 
     @staticmethod
     def action_logging_subject(arguments, parameters):
+        """
+        Returns a string representation of the given action.
+
+        Args:
+            arguments: (todo): write your description
+            parameters: (todo): write your description
+        """
         account = arguments[actions.ACTION_PARAM_RESOURCES]["AwsAccount"]
         region = arguments[actions.ACTION_PARAM_RESOURCES]["Region"]
         table = parameters[PARAM_TABLE_NAME]
@@ -153,6 +160,12 @@ class DynamodbSetCapacityAction(ActionBase):
 
     @staticmethod
     def action_concurrency_key(arguments):
+        """
+        Convert a list of actions into an iam table
+
+        Args:
+            arguments: (todo): write your description
+        """
 
         tablename = arguments[PARAM_TABLE_NAME]
         region = arguments[ACTION_PARAM_RESOURCES]["Region"]
@@ -160,8 +173,20 @@ class DynamodbSetCapacityAction(ActionBase):
         return "ec2:UpdateTable:{}:{}:{}".format(account, region, tablename)
 
     def _get_throughput_update(self, resp):
+        """
+        Writes the dynamodb
+
+        Args:
+            self: (dict): write your description
+            resp: (todo): write your description
+        """
 
         def get_gsi_throughput_updates():
+            """
+            Returns a dictionary of the gsi updates.
+
+            Args:
+            """
             result = {}
             for i in range(1, 6):
                 gsi_name = self.get(PARAM_GSI_NAME.format(i), None)
@@ -248,6 +273,14 @@ class DynamodbSetCapacityAction(ActionBase):
         return update_args
 
     def __init__(self, action_arguments, action_parameters):
+        """
+        Initialize the session.
+
+        Args:
+            self: (todo): write your description
+            action_arguments: (str): write your description
+            action_parameters: (todo): write your description
+        """
 
         self._table_read_units_ = None
         self._table_write_units_ = None
@@ -260,6 +293,13 @@ class DynamodbSetCapacityAction(ActionBase):
         self.result = {}
 
     def is_completed(self, start_data):
+        """
+        Returns true if the table has completed.
+
+        Args:
+            self: (todo): write your description
+            start_data: (todo): write your description
+        """
 
         if "update" not in start_data:
             return start_data["current"]
@@ -275,6 +315,12 @@ class DynamodbSetCapacityAction(ActionBase):
         return resp["Table"]
 
     def execute(self):
+        """
+        Executes the command.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self._logger_.info("{}, version {}", str(self.__class__).split(".")[-1], self.properties[ACTION_VERSION])
         self._logger_.debug("Implementation {}", __name__)

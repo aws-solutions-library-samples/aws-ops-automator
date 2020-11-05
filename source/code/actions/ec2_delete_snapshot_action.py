@@ -138,6 +138,14 @@ class Ec2DeleteSnapshotAction(ActionBase):
     # noinspection PyUnusedLocal
     @staticmethod
     def custom_aggregation(resources, parameters, logger):
+        """
+        Yields snapshots of snapshots.
+
+        Args:
+            resources: (dict): write your description
+            parameters: (dict): write your description
+            logger: (todo): write your description
+        """
         if parameters.get(PARAM_RETENTION_COUNT, 0) > 0:
             snapshots_sorted_by_volumeid = sorted(resources, key=lambda k: k['VolumeId'])
             volume = snapshots_sorted_by_volumeid[0]["VolumeId"] if len(snapshots_sorted_by_volumeid) > 0 else None
@@ -163,6 +171,18 @@ class Ec2DeleteSnapshotAction(ActionBase):
     # noinspection PyUnusedLocal
     @staticmethod
     def process_and_select_resource(service, logger, resource_name, resource, context, task, task_assumed_role):
+        """
+        Processes a single resource and return an instance
+
+        Args:
+            service: (str): write your description
+            logger: (todo): write your description
+            resource_name: (str): write your description
+            resource: (dict): write your description
+            context: (todo): write your description
+            task: (dict): write your description
+            task_assumed_role: (todo): write your description
+        """
         volume_id = resource["VolumeId"]
         if volume_id == actions.DUMMY_VOLUME_IF_FOR_COPIED_SNAPSHOT:
             volume_from_tag = resource.get("Tags", {}).get(actions.marker_snapshot_tag_source_source_volume_id(), None)
@@ -178,6 +198,14 @@ class Ec2DeleteSnapshotAction(ActionBase):
     # noinspection PyUnusedLocal
     @staticmethod
     def action_validate_parameters(parameters, task_settings, logger):
+        """
+        Validate that the parameters are valid.
+
+        Args:
+            parameters: (dict): write your description
+            task_settings: (todo): write your description
+            logger: (todo): write your description
+        """
 
         retention_days = parameters.get(PARAM_RETENTION_DAYS)
         retention_count = parameters.get(PARAM_RETENTION_COUNT)
@@ -190,6 +218,14 @@ class Ec2DeleteSnapshotAction(ActionBase):
         return parameters
 
     def __init__(self, action_arguments, action_parameters):
+        """
+        Initialize the state
+
+        Args:
+            self: (dict): write your description
+            action_arguments: (str): write your description
+            action_parameters: (todo): write your description
+        """
 
         ActionBase.__init__(self, action_arguments, action_parameters)
         
@@ -210,6 +246,12 @@ class Ec2DeleteSnapshotAction(ActionBase):
 
     @property
     def ec2_client(self):
+        """
+        Return ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec2 ec
+
+        Args:
+            self: (todo): write your description
+        """
         if self._ec2_client is None:
             self._ec2_client = get_client_with_retries("ec2",
                                                        methods=[
@@ -223,6 +265,13 @@ class Ec2DeleteSnapshotAction(ActionBase):
 
     @staticmethod
     def action_logging_subject(arguments, _):
+        """
+        Logging actions for the given arguments
+
+        Args:
+            arguments: (dict): write your description
+            _: (todo): write your description
+        """
         account = arguments[ACTION_PARAM_RESOURCES][0]["AwsAccount"]
         region = arguments[ACTION_PARAM_RESOURCES][0]["Region"]
         retention_count = int(arguments["event"][ACTION_PARAMETERS].get(PARAM_RETENTION_COUNT, 0))
@@ -242,15 +291,37 @@ class Ec2DeleteSnapshotAction(ActionBase):
                                         log_stream_date())
 
     def execute(self):
+        """
+        Executes all snapshots.
+
+        Args:
+            self: (todo): write your description
+        """
 
         def get_start_time(sn):
+            """
+            Get the start time of the start datetime object.
+
+            Args:
+                sn: (todo): write your description
+            """
             if isinstance(sn["StartTime"], datetime):
                 return sn["StartTime"]
             return dateutil.parser.parse(sn["StartTime"])
 
         def snapshots_to_delete():
+            """
+            Delete snapshots that all snapshots
+
+            Args:
+            """
 
             def by_retention_days():
+                """
+                Yield retention days
+
+                Args:
+                """
 
                 delete_before_dt = self._datetime_.utcnow().replace(tzinfo=pytz.timezone("UTC")) - timedelta(
                     days=int(self.retention_days))
@@ -268,6 +339,11 @@ class Ec2DeleteSnapshotAction(ActionBase):
                                             get_start_time(sn), delete_before_dt.isoformat())
 
             def by_retention_count():
+                """
+                Return a generator over all retention snapshots
+
+                Args:
+                """
 
                 self._logger_.info(INF_KEEP_RETENTION_COUNT, self.retention_count)
 

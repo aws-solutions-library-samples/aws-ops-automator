@@ -60,6 +60,14 @@ HANDLED_EVENTS = {
 
 class Ec2StateEventHandler(EventHandlerBase):
     def __init__(self, event, context):
+        """
+        Initialize an event.
+
+        Args:
+            self: (todo): write your description
+            event: (todo): write your description
+            context: (str): write your description
+        """
         EventHandlerBase.__init__(self, event=event,
                                   context=context,
                                   resource=services.ec2_service.INSTANCES,
@@ -69,6 +77,13 @@ class Ec2StateEventHandler(EventHandlerBase):
 
     @staticmethod
     def is_handling_event(event, logger):
+        """
+        Determine if event.
+
+        Args:
+            event: (dict): write your description
+            logger: (todo): write your description
+        """
         try:
             return event.get("source", "") == EC2_EVENT_SOURCE and \
                    event.get("detail-type") == EC2_STATE_NOTIFICATION
@@ -77,9 +92,23 @@ class Ec2StateEventHandler(EventHandlerBase):
             return False
 
     def _resource_ids(self):
+        """
+        Return list of resource ids.
+
+        Args:
+            self: (todo): write your description
+        """
         return [r.split("/")[-1] for r in self._event.get("resources")]
 
     def _select_parameters(self, event_name, task):
+        """
+        Select the event parameters of given event.
+
+        Args:
+            self: (todo): write your description
+            event_name: (str): write your description
+            task: (dict): write your description
+        """
 
         params = {}
 
@@ -98,6 +127,14 @@ class Ec2StateEventHandler(EventHandlerBase):
         return params
 
     def _source_resource_tags(self, session, task):
+        """
+        Return the tags for each source
+
+        Args:
+            self: (todo): write your description
+            session: (todo): write your description
+            task: (todo): write your description
+        """
         ec2 = get_client_with_retries("ec2", methods=["DescribeTags"], context=self._context, region=self._event_region(),
                                       session=session, logger=self._logger)
 

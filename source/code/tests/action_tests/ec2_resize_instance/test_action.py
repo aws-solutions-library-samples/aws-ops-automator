@@ -42,14 +42,33 @@ class TestAction(unittest.TestCase):
     original_tags = None
 
     def __init__(self, method_name):
+        """
+        Initialize a method.
+
+        Args:
+            self: (todo): write your description
+            method_name: (str): write your description
+        """
         unittest.TestCase.__init__(self, method_name)
 
     @classmethod
     def get_methods(cls):
+        """
+        Return a list of methods
+
+        Args:
+            cls: (todo): write your description
+        """
         return [x for x, y in list(cls.__dict__.items()) if type(y) == FunctionType and x.startswith("test_")]
 
     @classmethod
     def setUpClass(cls):
+        """
+        Set aws ec2 instance
+
+        Args:
+            cls: (todo): write your description
+        """
         if not sys.warnoptions:
             import warnings
             warnings.simplefilter("ignore")
@@ -77,6 +96,13 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def create_resource_stack(cls, resource_stack_name):
+        """
+        Creates cloudformation stack.
+
+        Args:
+            cls: (callable): write your description
+            resource_stack_name: (str): write your description
+        """
         try:
             cls.logger.test("Creating test resources stack {}", resource_stack_name)
             ami = Ec2(region()).latest_aws_linux_image["ImageId"]
@@ -95,9 +121,22 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def restore_tags(cls):
+        """
+        Restore tags from ec2
+
+        Args:
+            cls: (todo): write your description
+        """
         cls.ec2.restore_instance_tags(cls.instance_id, cls.original_tags)
 
     def reset_instance_type(self, start_type):
+        """
+        Reset this ec2 instance
+
+        Args:
+            self: (todo): write your description
+            start_type: (str): write your description
+        """
         org_size = self.ec2.get_instance(instance_id=self.instance_id)["InstanceType"]
         if org_size != start_type:
             self.ec2.stop_instance(self.instance_id)
@@ -115,6 +154,23 @@ class TestAction(unittest.TestCase):
                        assumed_type=None,
                        try_next_in_range=None,
                        running=True):
+        """
+        Perform a resize.
+
+        Args:
+            self: (todo): write your description
+            test_method: (str): write your description
+            resize_mode: (int): write your description
+            start_type: (str): write your description
+            expected_type: (todo): write your description
+            resized_types: (int): write your description
+            scaling_range: (todo): write your description
+            unavailable_types: (str): write your description
+            tags: (todo): write your description
+            assumed_type: (todo): write your description
+            try_next_in_range: (todo): write your description
+            running: (todo): write your description
+        """
 
         if not running:
             self.ec2.stop_instance(self.instance_id)
@@ -200,6 +256,12 @@ class TestAction(unittest.TestCase):
             self.restore_tags()
 
     def test_resize_running(self):
+        """
+        Resize the state of the running process.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_SPECIFIED_TYPE,
                             start_type=TEST_INSTANCE_TYPES[0],
@@ -207,6 +269,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[1])
 
     def test_resize_stopped(self):
+        """
+        Resize the state of the resize.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_SPECIFIED_TYPE,
@@ -216,6 +284,12 @@ class TestAction(unittest.TestCase):
                             running=False)
 
     def test_no_resize(self):
+        """
+        Test for resize of the current instance.
+
+        Args:
+            self: (todo): write your description
+        """
         current_size = self.ec2.get_instance(self.instance_id)["InstanceType"]
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_SPECIFIED_TYPE,
@@ -224,6 +298,12 @@ class TestAction(unittest.TestCase):
                             expected_type=current_size)
 
     def test_alternative_type(self):
+        """
+        Determine the alternative type.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_SPECIFIED_TYPE,
@@ -233,6 +313,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[3])
 
     def test_no_alternative_avail_keep_org(self):
+        """
+        Test whether the keep only one of - rest of the method.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_SPECIFIED_TYPE,
@@ -242,6 +328,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[0])
 
     def test_step_up(self):
+        """
+        Resize the current step.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
                             tags={"scaling": "up"},
@@ -250,6 +342,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[1])
 
     def test_step_up_already_at_largest(self):
+        """
+        Test for the state step.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
                             tags={"scaling": "up"},
@@ -258,6 +356,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[-1])
 
     def test_step_up_alternative_type(self):
+        """
+        Test if the step step step.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
@@ -269,6 +373,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[2])
 
     def test_step_up_no_alternative_avail(self):
+        """
+        Resize the step step step.
+
+        Args:
+            self: (todo): write your description
+        """
 
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
@@ -280,6 +390,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[0])
 
     def test_step_up_no_next(self):
+        """
+        Test if the next step.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
                             tags={"scaling": "up"},
@@ -290,6 +406,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[0])
 
     def test_step_up_assumed(self):
+        """
+        Resize the state of the step step.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
                             tags={"scaling": "up"},
@@ -299,6 +421,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[1])
 
     def test_up_not_assumed(self):
+        """
+        Test if the state of the test state of the test.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
                             tags={"scaling": "up"},
@@ -307,6 +435,12 @@ class TestAction(unittest.TestCase):
                             expected_type="t2.nano")
 
     def test_step_down(self):
+        """
+        Resize the current step.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
                             tags={"scaling": "down"},
@@ -315,6 +449,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[0])
 
     def test_step_down_already_at_smallest(self):
+        """
+        Perform a single step of every step.
+
+        Args:
+            self: (todo): write your description
+        """
         smallest_size = TEST_INSTANCE_TYPES[0]
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
@@ -324,6 +464,12 @@ class TestAction(unittest.TestCase):
                             expected_type=smallest_size)
 
     def test_step_down_alternative_type(self):
+        """
+        Resize the step step.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
                             tags={"scaling": "down"},
@@ -334,6 +480,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[0])
 
     def test_step_down_no_next(self):
+        """
+        Test if the next step.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
                             tags={"scaling": "down"},
@@ -344,6 +496,12 @@ class TestAction(unittest.TestCase):
                             expected_type=TEST_INSTANCE_TYPES[2])
 
     def test_step_down_no_available(self):
+        """
+        Resize the current step of the current step.
+
+        Args:
+            self: (todo): write your description
+        """
         self.do_test_resize(test_method=inspect.stack()[0][3],
                             resize_mode=r.RESIZE_BY_STEP,
                             tags={"scaling": "down"},
@@ -355,6 +513,12 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """
+        Tear down the context manager.
+
+        Args:
+            cls: (todo): write your description
+        """
 
         if cls.resource_stack is not None and not KEEP_AND_USE_EXISTING_RESOURCES_STACK:
             cls.resource_stack.delete_stack()
@@ -363,9 +527,21 @@ class TestAction(unittest.TestCase):
             cls.task_runner.cleanup(KEEP_AND_USE_EXISTING_ACTION_STACK)
 
     def setUp(self):
+        """
+        Sets the result of this thread.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
     def tearDown(self):
+        """
+        Tear down the next callable.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
 

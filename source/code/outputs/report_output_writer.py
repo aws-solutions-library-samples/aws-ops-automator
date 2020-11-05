@@ -19,21 +19,53 @@ ENV_REPORT_BUCKET = "REPORTING_BUCKET"
 
 
 def create_output_writer(context=None, logger=None):
+    """
+    Create a context output_writer : param logger : : return : : return :
+
+    Args:
+        context: (todo): write your description
+        logger: (todo): write your description
+    """
     return ReportOutputWriter(context=context, logger=logger)
 
 
 class ReportOutputWriter(object):
 
     def __init__(self, **kwargs):
+        """
+        Initialize the context.
+
+        Args:
+            self: (todo): write your description
+        """
         self._context = kwargs.get("context")
         self._logger = kwargs.get("logger")
 
     def write(self, data, key):
+        """
+        Write an object to the given key.
+
+        Args:
+            self: (todo): write your description
+            data: (todo): write your description
+            key: (str): write your description
+        """
         s3_client = get_client_with_retries("s3", ["put_object"], context=self._context, logger=self._logger)
         s3_client.put_object_with_retries(Bucket=os.getenv(ENV_REPORT_BUCKET), Key=key, Body=data)
 
 
 def report_key_name(action, account=None, region=None, subject=None, with_task_id=True, ext="csv"):
+    """
+    Generate the key name for a key.
+
+    Args:
+        action: (dict): write your description
+        account: (todo): write your description
+        region: (str): write your description
+        subject: (str): write your description
+        with_task_id: (str): write your description
+        ext: (str): write your description
+    """
     return "{}/{}/{}-{}{}-{}{}{}".format(action.__class__.__name__[0:-len("Action")],
                                          action.get("task"),
                                          account if account is not None else action.get("account"),

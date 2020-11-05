@@ -25,11 +25,27 @@ MEGA_BYTE = 1024 * 1024
 class CloudwatchMetrics(object):
 
     def __init__(self, region=None, session=None):
+        """
+        Initialize the boto region.
+
+        Args:
+            self: (todo): write your description
+            region: (str): write your description
+            session: (todo): write your description
+        """
         self.region = region if region is not None else boto3.Session().region_name
         self.session = session if session is not None else boto3.Session(region_name=self.region)
         self.metrics_client = self.session.client("cloudwatch", region_name=self.region)
 
     def get_daily_volume_iops(self, volume_id, days):
+        """
+        Get daily daily daily daily daily information for a given volume
+
+        Args:
+            self: (todo): write your description
+            volume_id: (str): write your description
+            days: (todo): write your description
+        """
         query_data = [
             {
                 "Id": "rw",
@@ -83,6 +99,14 @@ class CloudwatchMetrics(object):
         return metrics_data[0]["Values"]
 
     def get_daily_cpu_utilization(self, instance_id, days):
+        """
+        Retrieve daily daily daily daily daily daily daily data for the given instance.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            days: (todo): write your description
+        """
         query_data = [
 
             {
@@ -113,6 +137,14 @@ class CloudwatchMetrics(object):
         return metrics_data[0]["Values"]
 
     def get_daily_network_io(self, instance_id, days):
+        """
+        Get daily daily metrics for a given instance
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            days: (todo): write your description
+        """
         query_data = [
             {
                 "Id": "io",
@@ -166,6 +198,15 @@ class CloudwatchMetrics(object):
         return metrics_data[0]["Values"]
 
     def wait_for_volume_iops(self, volume_id, timeout, min_iops):
+        """
+        Wait for a volume to complete
+
+        Args:
+            self: (todo): write your description
+            volume_id: (str): write your description
+            timeout: (float): write your description
+            min_iops: (float): write your description
+        """
         with Timer(timeout, start=True) as t:
             while not t.timeout:
                 iops = self.get_daily_volume_iops(volume_id, 1)
@@ -176,6 +217,15 @@ class CloudwatchMetrics(object):
         return False
 
     def wait_for_cpu_load(self, instance_id, timeout, load):
+        """
+        Waits for the specified instance is loaded.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            timeout: (float): write your description
+            load: (todo): write your description
+        """
         with Timer(timeout, start=True) as t:
             while not t.timeout:
                 cpu = self.get_daily_cpu_utilization(instance_id, 1)
@@ -186,6 +236,15 @@ class CloudwatchMetrics(object):
         return False
 
     def wait_for_network_io(self, instance_id, timeout, io_mb):
+        """
+        Wait for a network to complete.
+
+        Args:
+            self: (todo): write your description
+            instance_id: (str): write your description
+            timeout: (float): write your description
+            io_mb: (str): write your description
+        """
         with Timer(timeout, start=True) as t:
             while not t.timeout:
                 io = self.get_daily_network_io(instance_id, 1)
@@ -196,6 +255,14 @@ class CloudwatchMetrics(object):
         return False
 
     def get_daily_database_connections(self, db_instance_id, days):
+        """
+        Returns a list of daily daily daily daily metrics.
+
+        Args:
+            self: (todo): write your description
+            db_instance_id: (str): write your description
+            days: (todo): write your description
+        """
         query_data = [
 
             {
@@ -228,6 +295,14 @@ class CloudwatchMetrics(object):
         return self.metrics_client.get_metric_data(**args).get("MetricDataResults", [{}])[0].get("Values", [])
 
     def wait_for_db_connections(self, db_instance_id, timeout):
+        """
+        Wait until a db instance has been closed.
+
+        Args:
+            self: (todo): write your description
+            db_instance_id: (int): write your description
+            timeout: (int): write your description
+        """
         with Timer(timeout_seconds=timeout, start=True) as t:
             while not t.timeout:
                 c = self.get_daily_database_connections(db_instance_id, 1)

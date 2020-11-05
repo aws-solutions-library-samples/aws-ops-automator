@@ -19,13 +19,32 @@ EXPRESSION_ESCAPE_CHARACTER = '%'
 
 class TagFilterExpression(object):
     def __init__(self, filter_expression):
+        """
+        Initialize filter_expression.
+
+        Args:
+            self: (todo): write your description
+            filter_expression: (str): write your description
+        """
         self.filter_expression = filter_expression
         self.not_matching = None
 
     @classmethod
     def split_expression(cls, s):
+        """
+        Splits a string.
+
+        Args:
+            cls: (callable): write your description
+            s: (todo): write your description
+        """
 
         def next_char():
+            """
+            Return the next char.
+
+            Args:
+            """
             return s[i] if i < len(s) else None
 
         group_level = 0
@@ -67,6 +86,13 @@ class TagFilterExpression(object):
         return elements
 
     def is_match(self, tags_dict):
+        """
+        Returns true if the filter matches the filter.
+
+        Args:
+            self: (todo): write your description
+            tags_dict: (dict): write your description
+        """
 
         elements = self.split_expression(self.filter_expression)
         temp = elements.pop(0)
@@ -90,6 +116,12 @@ class TagFilterExpression(object):
         return a
 
     def get_filters(self):
+        """
+        Return a list of filters matching filters.
+
+        Args:
+            self: (todo): write your description
+        """
         result = []
 
         elements = self.split_expression(self.filter_expression)
@@ -108,4 +140,10 @@ class TagFilterExpression(object):
         return result
 
     def get_filter_keys(self):
+        """
+        Return all filters
+
+        Args:
+            self: (todo): write your description
+        """
         return set([f.split("=")[0] for f in self.get_filters()])

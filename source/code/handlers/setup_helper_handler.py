@@ -202,6 +202,12 @@ class SetupHelperHandler(CustomResource):
             self.generate_templates()
 
     def _send_create_metrics(self):
+        """
+        Send metrics to cloud256 metrics
+
+        Args:
+            self: (todo): write your description
+        """
 
         metrics_data = {
             "Type": "stack",
@@ -216,6 +222,12 @@ class SetupHelperHandler(CustomResource):
         send_metrics_data(metrics_data=metrics_data, logger=self._logger)
 
     def _send_delete_metrics(self):
+        """
+        Send the delete to aws
+
+        Args:
+            self: (todo): write your description
+        """
 
         metrics_data = {
             "Type": "stack",
@@ -311,12 +323,29 @@ class SetupHelperHandler(CustomResource):
         """
 
         def generate_configuration_template(s3, builder, action):
+            """
+            Generate the template template.
+
+            Args:
+                s3: (todo): write your description
+                builder: (todo): write your description
+                action: (str): write your description
+            """
             configuration_template = S3_KEY_ACTION_CONFIGURATION_TEMPLATE.format(action)
             self._logger.info(INF_CREATE_ACTION_TEMPLATE, action, configuration_template)
             template = json.dumps(builder.build_template(action), indent=3)
             s3.put_object_with_retries(Body=template, Bucket=self.configuration_bucket, Key=configuration_template)
 
         def generate_all_actions_cross_account_role_template_parameterized(s3, builder, all_act, template_description):
+            """
+            Generate the list of - actions for each of the roles.
+
+            Args:
+                s3: (todo): write your description
+                builder: (todo): write your description
+                all_act: (todo): write your description
+                template_description: (str): write your description
+            """
             self._logger.info(INF_CREATE_ALL_ACTIONS_CROSS_ROLES_TEMPLATE, S3_KEY_ACCOUNT_CONFIG_WITH_PARAMS)
 
             template = builder.build_template(action_list=all_act, description=template_description, with_conditional_params=True)
@@ -327,6 +356,15 @@ class SetupHelperHandler(CustomResource):
 
         # noinspection PyUnusedLocal
         def generate_all_actions_cross_account_role_template(s3, builder, all_act, template_description):
+            """
+            Generate the cross - of - actions.
+
+            Args:
+                s3: (todo): write your description
+                builder: (todo): write your description
+                all_act: (todo): write your description
+                template_description: (todo): write your description
+            """
             self._logger.info(INF_CREATE_ALL_ACTIONS_CROSS_ROLES_TEMPLATE, S3_KEY_ACCOUNT_CONFIG_CREATE_ALL)
             template = json.dumps(
                 builder.build_template(action_list=all_act, description=template_description, with_conditional_params=False),
@@ -334,6 +372,12 @@ class SetupHelperHandler(CustomResource):
             s3.put_object_with_retries(Body=template, Bucket=self.configuration_bucket, Key=S3_KEY_ACCOUNT_CONFIG_CREATE_ALL)
 
         def generate_forward_events_template(s3):
+            """
+            Generate a new s3 template.
+
+            Args:
+                s3: (todo): write your description
+            """
             self._logger.info(INF_CREATE_EVENT_FORWARD_TEMPLATE, S3_KEY_ACCOUNT_EVENTS_FORWARD_TEMPLATE)
             template = build_events_forward_template(template_filename="./cloudformation/{}".format(FORWARD_EVENTS_TEMPLATE),
                                                      script_filename="./forward-events.py",
@@ -345,6 +389,12 @@ class SetupHelperHandler(CustomResource):
             s3.put_object_with_retries(Body=template, Bucket=self.configuration_bucket, Key=S3_KEY_ACCOUNT_EVENTS_FORWARD_TEMPLATE)
 
         def generate_scenario_templates(s3):
+            """
+            Generate s3 templates
+
+            Args:
+                s3: (todo): write your description
+            """
             self._logger.info("Creating task scenarios templates")
 
             for template_name, template in list(builders.build_scenario_templates(templates_dir="./cloudformation/scenarios",
@@ -355,6 +405,12 @@ class SetupHelperHandler(CustomResource):
                                            Key=S3_KEY_SCENARIO_TEMPLATE_KEY.format(template_name))
 
         def generate_custom_resource_builder(s3):
+            """
+            Generate a custom custom s3.
+
+            Args:
+                s3: (todo): write your description
+            """
             self._logger.info("Create custom resource builder script {}", S3_KEY_CUSTOM_RESOURCE_BUILDER)
 
             with open("./build_task_custom_resource.py", "rt") as f:
@@ -367,6 +423,12 @@ class SetupHelperHandler(CustomResource):
             s3.put_object_with_retries(Body=script_text, Bucket=self.configuration_bucket, Key=S3_KEY_CUSTOM_RESOURCE_BUILDER)
 
         def generate_actions_html_page(s3):
+            """
+            Generate actions related actions.
+
+            Args:
+                s3: (todo): write your description
+            """
             self._logger.info("Generating Actions HTML page {}", S3_KEY_ACTIONS_HTML_PAGE)
             html = builders.generate_html_actions_page(html_file="./builders/actions.html", region=self.region)
             s3.put_object_with_retries(Body=html, Bucket=self.configuration_bucket, Key=S3_KEY_ACTIONS_HTML_PAGE,
@@ -416,6 +478,12 @@ class SetupHelperHandler(CustomResource):
             self._logger.error(ERR_BUILDING_TEMPLATES, str(ex), full_stack())
 
     def delete_templates(self):
+        """
+        Delete templates.
+
+        Args:
+            self: (todo): write your description
+        """
 
         s3_client = get_client_with_retries("s3", ["delete_object"], context=self.context)
         s3_key = ""

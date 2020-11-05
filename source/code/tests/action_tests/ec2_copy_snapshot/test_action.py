@@ -48,15 +48,34 @@ class TestAction(unittest.TestCase):
     snapshot_encrypted_custom = None
 
     def __init__(self, method_name):
+        """
+        Initialize this method.
+
+        Args:
+            self: (todo): write your description
+            method_name: (str): write your description
+        """
         unittest.TestCase.__init__(self, method_name)
         self.snapshots = []
 
     @classmethod
     def get_methods(cls):
+        """
+        Return a list of methods
+
+        Args:
+            cls: (todo): write your description
+        """
         return [x for x, y in list(cls.__dict__.items()) if type(y) == FunctionType and x.startswith("test_")]
 
     @classmethod
     def setUpClass(cls):
+        """
+        Set the stack stack stack
+
+        Args:
+            cls: (todo): write your description
+        """
         if not sys.warnoptions:
             import warnings
             warnings.simplefilter("ignore")
@@ -81,6 +100,13 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def create_resource_stack(cls, resource_stack_name):
+        """
+        Creates stack stack.
+
+        Args:
+            cls: (callable): write your description
+            resource_stack_name: (str): write your description
+        """
         try:
             cls.logger.test("Creating test resources stack {}", resource_stack_name)
             role = cls.task_runner.action_stack.stack_resources[testing.OPS_AUTOMATOR_ROLE_NAME]["PhysicalResourceId"]
@@ -95,6 +121,13 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def create_remote_resource_stack(cls, resource_stack_name):
+        """
+        Create cloudformation.
+
+        Args:
+            cls: (callable): write your description
+            resource_stack_name: (str): write your description
+        """
         try:
             cls.logger.test("Creating test remote resources stack {}", resource_stack_name)
             role = cls.task_runner.action_stack.stack_resources[testing.OPS_AUTOMATOR_ROLE_NAME]["PhysicalResourceId"]
@@ -108,6 +141,15 @@ class TestAction(unittest.TestCase):
             return None
 
     def check_copy_snapshot(self, snapshot_id, source_snapshot, destination):
+        """
+        Check if a snapshot of the same
+
+        Args:
+            self: (todo): write your description
+            snapshot_id: (str): write your description
+            source_snapshot: (str): write your description
+            destination: (str): write your description
+        """
 
         ec2_destination = Ec2(region=destination)
         self.logger.test("Checking copied snapshot")
@@ -148,6 +190,16 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X] Description is copied")
 
     def check_source_snapshot(self, snapshot_source__id, snapshot_copy_id, task_name, destination):
+        """
+        Creates the snapshot of a snapshot snapshot
+
+        Args:
+            self: (todo): write your description
+            snapshot_source__id: (str): write your description
+            snapshot_copy_id: (str): write your description
+            task_name: (str): write your description
+            destination: (str): write your description
+        """
         self.logger.test("Checking source snapshot")
         snapshot_tags = self.ec2.get_snapshot_tags(snapshot_source__id)
 
@@ -169,9 +221,22 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X] Snapshot copied marker tag set and has expected values")
 
     def cleanup_leftover_source_snapshots(self, test_method):
+        """
+        Removes the snapshot from snapshot
+
+        Args:
+            self: (todo): write your description
+            test_method: (str): write your description
+        """
         self.ec2.delete_snapshots_by_tags(tag_filter_expression="{}={}".format(tasklist_tagname(TESTED_ACTION), test_method))
 
     def test_copy_unencrypted_snapshot_same_region(self):
+        """
+        Test to make a snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         test_method = inspect.stack()[0][3]
 
@@ -226,6 +291,12 @@ class TestAction(unittest.TestCase):
                                                                                     self.task_runner.tested_region))
 
     def test_copy_snapshot_description(self):
+        """
+        Creates a new snapshot of the snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         test_method = inspect.stack()[0][3]
 
@@ -260,6 +331,12 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X]Source description copied")
 
     def test_snapshot_only_copied_once(self):
+        """
+        Create snapshot snapshot snapshot of snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         test_method = inspect.stack()[0][3]
 
@@ -292,8 +369,20 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X] Snapshot was not copied for second time")
 
     def test_snapshot_not_longer_available(self):
+        """
+        Test if snapshot snapshots
+
+        Args:
+            self: (todo): write your description
+        """
 
         def delete_snapshot_after_select(tracker):
+            """
+            Delete snapshot snapshot of snapshot
+
+            Args:
+                tracker: (todo): write your description
+            """
             for item in tracker.task_items:
                 self.ec2.delete_snapshots(snapshot_ids=[item.get(handlers.TASK_TR_RESOURCES, {}).get("SnapshotId")])
 
@@ -323,6 +412,12 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X] Snapshot was not longer available")
 
     def test_copy_unencrypted_snapshot_other_region(self):
+        """
+        Test if the snapshot of this snapshot isochrone
+
+        Args:
+            self: (todo): write your description
+        """
 
         test_method = inspect.stack()[0][3]
 
@@ -384,6 +479,12 @@ class TestAction(unittest.TestCase):
                 destination_ec2.delete_snapshots([remote_snapshot_copy_id])
 
     def test_delete_source_snapshot_after_copy(self):
+        """
+        Delete snapshot snapshot snapshot snapshot to snapshot snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         test_method = inspect.stack()[0][3]
 
@@ -422,6 +523,12 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X] Source snapshot deleted")
 
     def test_copy_default_key_encrypted_snapshot_same_region(self):
+        """
+        This method to copy to snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         test_method = inspect.stack()[0][3]
 
@@ -452,6 +559,12 @@ class TestAction(unittest.TestCase):
         self.assertIsNotNone(snapshot_copy, "Snapshot created")
 
     def test_copy_custom_key_encrypted_snapshot_same_region(self):
+        """
+        This method to snapshot snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         test_method = inspect.stack()[0][3]
 
@@ -482,6 +595,12 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X] Snapshot created")
 
     def test_copy_snapshot_encrypt_with_custom_key_other_region(self):
+        """
+        Encrypts a snapshot of this method
+
+        Args:
+            self: (todo): write your description
+        """
 
         destination_ec2 = Ec2(region=remote_region())
 
@@ -536,6 +655,12 @@ class TestAction(unittest.TestCase):
                 destination_ec2.delete_snapshots([remote_snapshot_copy_id])
 
     def test_copy_snapshot_encrypted_with_default_key(self):
+        """
+        This function to update the state machine to snapshot state machine
+
+        Args:
+            self: (todo): write your description
+        """
 
         test_method = inspect.stack()[0][3]
 
@@ -570,6 +695,12 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X] Snapshot created and encrypted")
 
     def test_copy_snapshot_encrypted_with_custom_key(self):
+        """
+        This function todo a snapshot of snapshot of a snapshot
+
+        Args:
+            self: (todo): write your description
+        """
 
         test_method = inspect.stack()[0][3]
 
@@ -609,6 +740,12 @@ class TestAction(unittest.TestCase):
         self.logger.test("[X] Snapshot created and encrypted")
 
     def delete_snapshots(self):
+        """
+        Delete all snapshots
+
+        Args:
+            self: (todo): write your description
+        """
         if len(self.snapshots) > 0:
             self.logger.test("Deleting created snapshots {}", ",".join(self.snapshots))
         # noinspection PyBroadException,PyPep8
@@ -620,6 +757,12 @@ class TestAction(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """
+        Tear down the stack tasks.
+
+        Args:
+            cls: (todo): write your description
+        """
 
         if not KEEP_AND_USE_EXISTING_RESOURCES_STACK:
             if cls.resource_stack is not None:
@@ -629,9 +772,21 @@ class TestAction(unittest.TestCase):
             cls.task_runner.cleanup(KEEP_AND_USE_EXISTING_ACTION_STACK)
 
     def setUp(self):
+        """
+        Sets the currently running task.
+
+        Args:
+            self: (todo): write your description
+        """
         self.snapshots = []
 
     def tearDown(self):
+        """
+        Deletes the snapshot.
+
+        Args:
+            self: (todo): write your description
+        """
         self.delete_snapshots()
 
 

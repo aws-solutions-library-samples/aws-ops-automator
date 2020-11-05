@@ -32,6 +32,21 @@ class TagFilterSet(object):
 
     def __init__(self, filters, name_val_sep=NAME_VAL_SEP, filter_sep=FILTER_SEP, regex_char=REGEX_CHAR,
                  wildcard_char=WILDCARD_CHAR):
+        """
+        Initialize a filter.
+
+        Args:
+            self: (todo): write your description
+            filters: (list): write your description
+            name_val_sep: (str): write your description
+            NAME_VAL_SEP: (str): write your description
+            filter_sep: (todo): write your description
+            FILTER_SEP: (todo): write your description
+            regex_char: (str): write your description
+            REGEX_CHAR: (str): write your description
+            wildcard_char: (todo): write your description
+            WILDCARD_CHAR: (todo): write your description
+        """
         if filters.startswith("\\") or "=\\" in filters or "!=\\" in filters:
             self._filters = [filters.strip()]
         else:
@@ -83,6 +98,12 @@ class TagFilterSet(object):
             return filter_string == tested_string
 
     def tag_names(self):
+        """
+        A list of tag names.
+
+        Args:
+            self: (todo): write your description
+        """
         names = [f.split(self._name_val_sep)[0] for f in self._filters]
         return [n[1:] if n.startswith(NOT_OPERATOR) else n for n in names]
 
@@ -114,6 +135,13 @@ class TagFilterSet(object):
         return result
 
     def all_pairs_matching_filter(self, key_pairs):
+        """
+        Returns true if all filters in - filter.
+
+        Args:
+            self: (todo): write your description
+            key_pairs: (str): write your description
+        """
         for key_name in key_pairs:
             if not any([self.matches_name_value_pair(f, key_name, key_pairs[key_name]) for f in self._filters]):
                 return False
@@ -121,6 +149,13 @@ class TagFilterSet(object):
 
     @classmethod
     def _split_filter(cls, filter_str):
+        """
+        Splits the filter.
+
+        Args:
+            cls: (todo): write your description
+            filter_str: (str): write your description
+        """
         not_equal = False
         not_tag = False
 
@@ -141,6 +176,12 @@ class TagFilterSet(object):
         return tag_name, tag_value, not_equal, not_tag
 
     def has_not_operator(self):
+        """
+        Returns true if the filter has a filter.
+
+        Args:
+            self: (todo): write your description
+        """
         for f in self._filters:
             if f.startswith(NOT_OPERATOR):
                 return True

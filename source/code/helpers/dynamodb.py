@@ -15,7 +15,19 @@ from decimal import Decimal
 
 
 def unpack_record(record):
+    """
+    Unpack a record into a dictionary.
+
+    Args:
+        record: (todo): write your description
+    """
     def get_data(item):
+        """
+        Convert data from item
+
+        Args:
+            item: (str): write your description
+        """
         data_type = list(item.keys())[0]
         data = item[data_type]
         if data_type == "M":
@@ -29,7 +41,20 @@ def unpack_record(record):
 
 
 def build_record(item):
+    """
+    Recursively serialization.
+
+    Args:
+        item: (todo): write your description
+    """
     def build_typed_item(o, dict_as_map=True):
+        """
+        Build a dictionary of a json object.
+
+        Args:
+            o: (todo): write your description
+            dict_as_map: (dict): write your description
+        """
         if isinstance(o, datetime):
             return {"S": o.isoformat()}
         if isinstance(o, bool):
@@ -46,7 +71,19 @@ def build_record(item):
 
 
 def as_dynamo_safe_types(data):
+    """
+    Convert dynamo object to a dynamically.
+
+    Args:
+        data: (array): write your description
+    """
     def check_attributes(d):
+        """
+        Check if d is a list of dicts.
+
+        Args:
+            d: (todo): write your description
+        """
         for attr in list(d.keys()):
             if isinstance(d[attr], datetime):
                 d[attr] = d[attr].isoformat()

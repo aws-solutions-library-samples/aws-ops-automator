@@ -88,6 +88,14 @@ class SchedulerTaskExportAction(ActionBase):
     }
 
     def __init__(self, action_arguments, action_parameters):
+        """
+        Initializes an action.
+
+        Args:
+            self: (dict): write your description
+            action_arguments: (str): write your description
+            action_parameters: (todo): write your description
+        """
 
         ActionBase.__init__(self, action_arguments, action_parameters)
 
@@ -101,8 +109,20 @@ class SchedulerTaskExportAction(ActionBase):
         self.S3Prefix = self.get(PARAM_S3_PREFIX, "")
 
     def execute(self):
+        """
+        Executes the query.
+
+        Args:
+            self: (todo): write your description
+        """
 
         def decimal_default(obj):
+            """
+            Convert the decimal.
+
+            Args:
+                obj: (todo): write your description
+            """
             if isinstance(obj, decimal.Decimal):
                 return float(obj)
             raise TypeError

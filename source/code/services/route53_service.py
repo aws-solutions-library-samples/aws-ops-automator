@@ -181,6 +181,11 @@ class Route53Service(AwsService):
 
     @staticmethod
     def is_regional():
+        """
+        Determine if a regional is a callable.
+
+        Args:
+        """
         return False
 
     def describe_resources_function_name(self, resource_name):
@@ -288,6 +293,15 @@ class Route53Service(AwsService):
         return self._nexttoken_result
 
     def set_continuation_call_parameters(self, function_args, next_token, resp):
+        """
+        Set the parameters of the function call.
+
+        Args:
+            self: (todo): write your description
+            function_args: (todo): write your description
+            next_token: (str): write your description
+            resp: (todo): write your description
+        """
         if self._resource_name in MULTI_ELEMENT_CONTINUATION_MARKERS:
             for marker in MULTI_ELEMENT_CONTINUATION_MARKERS[self._resource_name]:
                 if marker[1] in resp:

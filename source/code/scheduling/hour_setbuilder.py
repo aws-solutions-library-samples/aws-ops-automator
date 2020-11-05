@@ -19,15 +19,35 @@ class HourSetBuilder(SetBuilder):
     """
 
     def __init__(self):
+        """
+        Initialize the internal state.
+
+        Args:
+            self: (todo): write your description
+        """
         SetBuilder.__init__(self, min_value=0, max_value=23, wrap=False)
 
     def _get_value_by_name(self, name_str):
+        """
+        Returns the value by name.
+
+        Args:
+            self: (todo): write your description
+            name_str: (str): write your description
+        """
         # allow usage of am and pm in value strings
         hour = SetBuilder._get_value_by_name(self, name_str)
         if hour is None:
             return self._get_hour_am_pm(name_str)
 
     def _get_hour_am_pm(self, hour_am_pm_str):
+        """
+        Returns the hour hour - hour hour.
+
+        Args:
+            self: (todo): write your description
+            hour_am_pm_str: (str): write your description
+        """
         # process times with am and pm
         if 2 < len(hour_am_pm_str) <= 4:
             s = hour_am_pm_str.lower()
