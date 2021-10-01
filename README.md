@@ -430,3 +430,11 @@ or in the "license" file accompanying this file. This file is distributed on an
 "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied.
 See the License for the specific language governing permissions and limitations
 under the License.
+
+<a name="collection-of-operational-metrics"></a>
+# Collection of operational metrics
+
+This solution collects anonymous operational metrics to help AWS improve the
+quality of features of the solution. For more information, including how to disable
+this capability, please see the
+[Implementation Guide](https://docs.aws.amazon.com/solutions/latest/ops-automator/appendix-k.html)
