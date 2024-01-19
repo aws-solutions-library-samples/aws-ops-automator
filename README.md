@@ -168,12 +168,12 @@ OpsAutomatorLambdaFunctionStandard": {
 **S3Key:** ops-automator/latest/ops-automator-2.2.0.61.zip
 
 **url for us-east-1:**
-https://ops-automator-deploy-us-east-1.s3.amazonaws.com/ops-automator/latest/ops-automator-2.2.0.61.zip
+\<NOT AVAILABLE\>
 
 **Get the source:**
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-wget https://ops-automator-deploy-us-east-1.s3.amazonaws.com/ops-automator/latest/ops-automator-2.2.0.61.zip
+<NOT AVAILABLE>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Create Build Area
